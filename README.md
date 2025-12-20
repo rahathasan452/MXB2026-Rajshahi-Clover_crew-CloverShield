@@ -28,9 +28,23 @@ CloverShield is an AI-powered fraud detection system designed specifically for B
 ### Run the Demo (2 minutes)
 
 **Windows:**
+
+**PowerShell:**
+```powershell
+cd demo
+.\run_demo.bat
+```
+
+**Command Prompt (CMD):**
 ```cmd
 cd demo
 run_demo.bat
+```
+
+**Or use PowerShell script:**
+```powershell
+cd demo
+.\run_demo.ps1
 ```
 
 **Linux/Mac:**

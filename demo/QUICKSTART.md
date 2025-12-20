@@ -5,10 +5,24 @@ Get the demo running in 2 minutes!
 ## 🚀 Fastest Way to Run
 
 ### Windows
-1. Open PowerShell/CMD in the `demo` folder
-2. Double-click `run_demo.bat`
-3. Wait for browser to open
-4. Done! 🎉
+
+**Option 1: PowerShell (Recommended)**
+```powershell
+cd demo
+.\run_demo.bat
+```
+
+**Option 2: Command Prompt (CMD)**
+```cmd
+cd demo
+run_demo.bat
+```
+
+**Option 3: Double-click**
+- Navigate to the `demo` folder in File Explorer
+- Double-click `run_demo.bat`
+- Wait for browser to open
+- Done! 🎉
 
 ### Linux/Mac
 ```bash
