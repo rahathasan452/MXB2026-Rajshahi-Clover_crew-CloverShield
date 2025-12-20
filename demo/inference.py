@@ -15,12 +15,14 @@ import shap
 # Import FraudFeatureEngineer to make it available for pickle
 try:
     from feature_engineering import FraudFeatureEngineer
-    # Register in 'main' module namespace for pickle compatibility
+    # Register in '__main__' module namespace for pickle compatibility
     # This allows pickle to find the class when loading models saved from notebooks/scripts
-    if 'main' not in sys.modules:
+    # Note: Python uses '__main__' (double underscores) for scripts run directly
+    if '__main__' not in sys.modules:
         import types
-        sys.modules['main'] = types.ModuleType('main')
-    sys.modules['main'].FraudFeatureEngineer = FraudFeatureEngineer
+        sys.modules['__main__'] = types.ModuleType('__main__')
+    # Add class to __main__ module (works whether it already exists or was just created)
+    setattr(sys.modules['__main__'], 'FraudFeatureEngineer', FraudFeatureEngineer)
 except ImportError:
     # If feature_engineering module not found, try to create a minimal class
     from sklearn.base import BaseEstimator, TransformerMixin
@@ -32,10 +34,11 @@ except ImportError:
         def transform(self, X):
             return X
     
-    # Register in 'main' module
-    if 'main' not in sys.modules:
-        sys.modules['main'] = types.ModuleType('main')
-    sys.modules['main'].FraudFeatureEngineer = FraudFeatureEngineer
+    # Register in '__main__' module
+    if '__main__' not in sys.modules:
+        sys.modules['__main__'] = types.ModuleType('__main__')
+    # Add class to __main__ module (works whether it already exists or was just created)
+    setattr(sys.modules['__main__'], 'FraudFeatureEngineer', FraudFeatureEngineer)
 
 # Load environment variables from .env file
 try:
@@ -99,9 +102,10 @@ class FraudInference:
             try:
                 from feature_engineering import FraudFeatureEngineer
                 import types
-                if 'main' not in sys.modules:
-                    sys.modules['main'] = types.ModuleType('main')
-                sys.modules['main'].FraudFeatureEngineer = FraudFeatureEngineer
+                if '__main__' not in sys.modules:
+                    sys.modules['__main__'] = types.ModuleType('__main__')
+                # Add class to __main__ module (works whether it already exists or was just created)
+                setattr(sys.modules['__main__'], 'FraudFeatureEngineer', FraudFeatureEngineer)
             except ImportError:
                 # Already registered in module imports, continue
                 pass

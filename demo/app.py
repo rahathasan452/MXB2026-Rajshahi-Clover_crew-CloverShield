@@ -43,11 +43,13 @@ except ImportError:
 # Register FraudFeatureEngineer for pickle compatibility before any model loading
 try:
     from feature_engineering import FraudFeatureEngineer
-    # Register in 'main' module namespace for pickle compatibility
+    # Register in '__main__' module namespace for pickle compatibility
+    # Note: Python uses '__main__' (double underscores) for scripts run directly
     import types
-    if 'main' not in sys.modules:
-        sys.modules['main'] = types.ModuleType('main')
-    sys.modules['main'].FraudFeatureEngineer = FraudFeatureEngineer
+    if '__main__' not in sys.modules:
+        sys.modules['__main__'] = types.ModuleType('__main__')
+    # Add class to __main__ module (works whether it already exists or was just created)
+    setattr(sys.modules['__main__'], 'FraudFeatureEngineer', FraudFeatureEngineer)
 except ImportError:
     # If feature_engineering module not found, try to create a minimal class
     from sklearn.base import BaseEstimator, TransformerMixin
@@ -59,10 +61,11 @@ except ImportError:
         def transform(self, X):
             return X
     
-    # Register in 'main' module
-    if 'main' not in sys.modules:
-        sys.modules['main'] = types.ModuleType('main')
-    sys.modules['main'].FraudFeatureEngineer = FraudFeatureEngineer
+    # Register in '__main__' module
+    if '__main__' not in sys.modules:
+        sys.modules['__main__'] = types.ModuleType('__main__')
+    # Add class to __main__ module (works whether it already exists or was just created)
+    setattr(sys.modules['__main__'], 'FraudFeatureEngineer', FraudFeatureEngineer)
 
 # Try to import inference module
 try:
