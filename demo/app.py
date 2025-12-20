@@ -403,11 +403,14 @@ def process_transaction_ml(transaction_df, sender_data):
                 shap_bg = st.session_state.shap_background
                 
                 # Get prediction and explanations
+                # Pass current language setting for LLM explanation
+                current_language = st.session_state.get('language', 'en')
                 result = st.session_state.inference_engine.predict_and_explain(
                     transaction_df,
                     shap_background=shap_bg,
                     topk=10,
-                    use_llm=True
+                    use_llm=True,
+                    language=current_language
                 )
                 
                 probability = float(result['probabilities'][0])
@@ -622,7 +625,7 @@ def render_decision_panel(probability, decision, reasons):
     
     # LLM Explanation
     if 'llm_explanation' in st.session_state and st.session_state.llm_explanation:
-        st.markdown("### 🤖 AI Explanation")
+        st.markdown(f"### {get_text('ai_explanation')}")
         st.info(st.session_state.llm_explanation)
     
     # Explanation

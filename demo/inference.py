@@ -272,7 +272,7 @@ class FraudInference:
         
         return feat_df.head(topk)
     
-    def explain_llm(self, probability: float, shap_table: pd.DataFrame, topk: int = 6) -> Optional[str]:
+    def explain_llm(self, probability: float, shap_table: pd.DataFrame, topk: int = 6, language: str = 'en') -> Optional[str]:
         """
         Generate human-readable explanation using Groq LLM
         
@@ -280,6 +280,7 @@ class FraudInference:
             probability: Fraud probability
             shap_table: DataFrame with SHAP contributions
             topk: Number of top features to include in explanation
+            language: Language code ('en' for English, 'bn' for Bangla)
             
         Returns:
             LLM-generated explanation text or None
@@ -303,19 +304,36 @@ class FraudInference:
             for _, row in top_feats.iterrows():
                 top_lines.append(f"- {row['feature']}: value={row['value']:.6g}, shap={row['shap']:.6g}")
             
-            system_prompt = (
-                "You are a concise fraud-analytics assistant. "
-                "Given feature contributions (SHAP values) and their observed values for a single transaction, "
-                "produce a short (3-6 sentences) human-readable explanation why the model assigned the given fraud probability. "
-                "Mention which factors increase or decrease risk, and a brief recommended action (e.g., block / review / allow)."
-            )
-            
-            user_prompt = (
-                f"Model fraud probability: {probability:.4f}\n"
-                f"Threshold for blocking: {self.threshold:.4f}\n"
-                f"Top contributing features (feature: value, shap):\n" + "\n".join(top_lines) +
-                "\n\nWrite the short explanation now."
-            )
+            # Language-specific prompts
+            if language == 'bn':
+                system_prompt = (
+                    "আপনি একজন সংক্ষিপ্ত ফ্রড-বিশ্লেষণ সহায়ক। "
+                    "একটি লেনদেনের জন্য বৈশিষ্ট্য অবদান (SHAP মান) এবং তাদের পর্যবেক্ষিত মান দেওয়া হলে, "
+                    "মডেল কেন প্রদত্ত ফ্রড সম্ভাবনা নির্ধারণ করেছে তার একটি সংক্ষিপ্ত (৩-৬ বাক্য) মানব-পাঠযোগ্য ব্যাখ্যা তৈরি করুন। "
+                    "কোন কারণগুলি ঝুঁকি বাড়ায় বা কমায় তা উল্লেখ করুন, এবং একটি সংক্ষিপ্ত সুপারিশকৃত পদক্ষেপ (যেমন, ব্লক / পর্যালোচনা / অনুমোদন) দিন। "
+                    "সমস্ত উত্তর বাংলায় লিখুন।"
+                )
+                
+                user_prompt = (
+                    f"মডেল ফ্রড সম্ভাবনা: {probability:.4f}\n"
+                    f"ব্লক করার থ্রেশহোল্ড: {self.threshold:.4f}\n"
+                    f"শীর্ষ অবদানকারী বৈশিষ্ট্য (বৈশিষ্ট্য: মান, shap):\n" + "\n".join(top_lines) +
+                    "\n\nএখন সংক্ষিপ্ত ব্যাখ্যা লিখুন।"
+                )
+            else:
+                system_prompt = (
+                    "You are a concise fraud-analytics assistant. "
+                    "Given feature contributions (SHAP values) and their observed values for a single transaction, "
+                    "produce a short (3-6 sentences) human-readable explanation why the model assigned the given fraud probability. "
+                    "Mention which factors increase or decrease risk, and a brief recommended action (e.g., block / review / allow)."
+                )
+                
+                user_prompt = (
+                    f"Model fraud probability: {probability:.4f}\n"
+                    f"Threshold for blocking: {self.threshold:.4f}\n"
+                    f"Top contributing features (feature: value, shap):\n" + "\n".join(top_lines) +
+                    "\n\nWrite the short explanation now."
+                )
             
             chat_completion = client.chat.completions.create(
                 messages=[
@@ -331,14 +349,18 @@ class FraudInference:
             return explanation
             
         except Exception as e:
-            return f"(LLM generation failed: {str(e)})"
+            error_msg = f"(LLM generation failed: {str(e)})"
+            if language == 'bn':
+                error_msg = f"(LLM তৈরি করতে ব্যর্থ: {str(e)})"
+            return error_msg
     
     def predict_and_explain(
         self, 
         transaction_df: pd.DataFrame, 
         shap_background: Optional[pd.DataFrame] = None,
         topk: int = 6,
-        use_llm: bool = True
+        use_llm: bool = True,
+        language: str = 'en'
     ) -> Dict:
         """
         Complete prediction and explanation pipeline
@@ -348,6 +370,7 @@ class FraudInference:
             shap_background: Optional background data for SHAP
             topk: Number of top features to explain
             use_llm: Whether to generate LLM explanation
+            language: Language code ('en' for English, 'bn' for Bangla)
             
         Returns:
             Dictionary with:
@@ -369,7 +392,7 @@ class FraudInference:
         # Generate LLM explanation if requested
         llm_explanation = None
         if use_llm and GROQ_AVAILABLE:
-            llm_explanation = self.explain_llm(probabilities[0], shap_table, topk=topk)
+            llm_explanation = self.explain_llm(probabilities[0], shap_table, topk=topk, language=language)
         
         return {
             'probabilities': probabilities,

@@ -59,6 +59,7 @@ TRANSLATIONS = {
         # Explanations
         "explanation_title": "📊 Risk Analysis",
         "explanation_subtitle": "Key factors influencing this decision:",
+        "ai_explanation": "🤖 AI Explanation",
         
         # Analytics
         "analytics_title": "📈 Real-Time Analytics",
@@ -144,6 +145,7 @@ TRANSLATIONS = {
         # Explanations
         "explanation_title": "📊 ঝুঁকি বিশ্লেষণ",
         "explanation_subtitle": "এই সিদ্ধান্তে প্রভাব ফেলেছে এমন মূল বিষয়:",
+        "ai_explanation": "🤖 AI ব্যাখ্যা",
         
         # Analytics
         "analytics_title": "📈 রিয়েল-টাইম অ্যানালিটিক্স",
