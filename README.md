@@ -18,12 +18,31 @@ CloverShield is an AI-powered fraud detection system designed specifically for B
 - 🎯 **99.8% Accuracy**: 95% recall, 92% precision
 - 🌐 **Bilingual**: Full English and Bangla support
 - 🎨 **User-Friendly**: Designed for all demographics
-- 🔍 **Explainable**: Clear reasons for every decision
+- 🔍 **Explainable AI**: SHAP feature contributions + Groq LLM explanations
+- 📊 **Visual Analytics**: Interactive SHAP visualizations
+- 🤖 **AI Explanations**: Human-readable fraud risk explanations
 - 🚀 **Production-Ready**: Deploy in days, not months
 
 ---
 
 ## 🚀 Quick Start
+
+### Prerequisites
+
+1. **Install Python 3.8+**
+2. **Place your trained model** (`fraud_pipeline_final.pkl`) in `Models/` directory
+   - See [MODEL_SETUP.md](MODEL_SETUP.md) for detailed instructions
+3. **(Optional) Set Groq API key** for LLM explanations:
+   ```bash
+   # Option 1: Use .env file (Recommended)
+   cp .env.example .env
+   # Edit .env and add your GROQ_API_KEY
+   
+   # Option 2: Environment variable
+   export GROQ_API_KEY="your_api_key_here"  # Linux/Mac
+   set GROQ_API_KEY=your_api_key_here       # Windows
+   ```
+   See [ENV_SETUP.md](ENV_SETUP.md) for detailed instructions.
 
 ### Run the Demo (2 minutes)
 
@@ -104,8 +123,12 @@ mrf/
 │   └── Dockerfile                # Docker config
 │
 ├── Models/                        # ML models
-│   ├── fraud_pipeline_final.pkl  # Trained model (optional)
+│   ├── fraud_pipeline_final.pkl  # Trained model (see MODEL_SETUP.md)
 │   └── modelDesc.md              # Model documentation
+│
+├── demo/
+│   ├── inference.py              # Inference module with SHAP & LLM
+│   ├── inference_example.py      # Standalone usage example
 │
 ├── notebook/                      # Training notebooks
 │   └── frd-dtct.ipynb            # Model training
@@ -144,7 +167,8 @@ mrf/
 ### Backend
 - **Python 3.8+**: Core language
 - **XGBoost**: ML classifier
-- **SHAP**: Explainability
+- **SHAP**: Feature contribution explainability
+- **Groq LLM**: Human-readable AI explanations
 - **Pandas/NumPy**: Data processing
 - **NetworkX**: Graph features
 
@@ -206,6 +230,8 @@ See [DEPLOYMENT.md](demo/DEPLOYMENT.md) for full guide
 
 | Document | Purpose |
 |----------|---------|
+| [MODEL_SETUP.md](MODEL_SETUP.md) | **Model file setup guide** (IMPORTANT) |
+| [ENV_SETUP.md](ENV_SETUP.md) | **Environment variables & API keys** (IMPORTANT) |
 | [QUICKSTART.md](demo/QUICKSTART.md) | Get running in 2 minutes |
 | [README.md](demo/README.md) | Full feature documentation |
 | [DEPLOYMENT.md](demo/DEPLOYMENT.md) | Production deployment guide |

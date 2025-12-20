@@ -12,6 +12,16 @@ from datetime import datetime
 import os
 import sys
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    # Try loading from project root and demo directory
+    load_dotenv()  # Load from current directory
+    load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))  # Load from project root
+except ImportError:
+    # python-dotenv not installed, skip .env loading
+    pass
+
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -30,10 +40,34 @@ except ImportError:
     MODEL_AVAILABLE = False
     st.warning("⚠️ joblib not installed. Running in demo mode without ML model.")
 
+# Try to import inference module
+try:
+    from inference import load_inference_engine, FraudInference
+    INFERENCE_AVAILABLE = True
+except ImportError:
+    INFERENCE_AVAILABLE = False
+    st.warning("⚠️ Inference module not available. Using basic ML mode.")
+
+# Logo path - try multiple possible locations
+LOGO_FILENAME = "1766264240252.png"
+LOGO_PATHS = [
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", LOGO_FILENAME),
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", LOGO_FILENAME),
+    os.path.join("assets", LOGO_FILENAME),
+]
+
+LOGO_PATH = None
+for path in LOGO_PATHS:
+    if os.path.exists(path):
+        LOGO_PATH = path
+        break
+
 # Page configuration
+# Use PNG logo for page icon (PNG works better than JPG for favicons)
+page_icon = LOGO_PATH if (LOGO_PATH and os.path.exists(LOGO_PATH)) else "🛡️"
 st.set_page_config(
     page_title="CloverShield - Fraud Detection",
-    page_icon="🛡️",
+    page_icon=page_icon,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -180,13 +214,47 @@ def init_session_state():
         st.session_state.show_payload = False
     if 'ml_model' not in st.session_state:
         st.session_state.ml_model = None
-        if MODEL_AVAILABLE:
-            load_ml_model()
+    if 'inference_engine' not in st.session_state:
+        st.session_state.inference_engine = None
+    if 'shap_background' not in st.session_state:
+        st.session_state.shap_background = None
+    if 'shap_table' not in st.session_state:
+        st.session_state.shap_table = None
+    if 'llm_explanation' not in st.session_state:
+        st.session_state.llm_explanation = None
+    if 'model_load_attempted' not in st.session_state:
+        st.session_state.model_load_attempted = False
+    # Only load model if not already attempted (prevents reloading on every rerun)
+    # This ensures we only try once, even if the model file is missing
+    if MODEL_AVAILABLE and not st.session_state.model_load_attempted:
+        st.session_state.model_load_attempted = True
+        load_ml_model()
 
 def load_ml_model():
-    """Load the ML model pipeline"""
+    """Load the ML model pipeline and inference engine"""
     try:
-        # Try multiple paths
+        # Try to load inference engine first (preferred)
+        if INFERENCE_AVAILABLE:
+            try:
+                groq_key = os.getenv('GROQ_API_KEY')
+                st.session_state.inference_engine = load_inference_engine(
+                    model_path=MODEL_CONFIG['model_path'],
+                    threshold=MODEL_CONFIG['default_threshold'],
+                    groq_api_key=groq_key
+                )
+                st.sidebar.success("✅ Inference engine loaded with SHAP & LLM support")
+                
+                # Also load raw model for backward compatibility
+                if st.session_state.inference_engine and st.session_state.inference_engine.pipeline:
+                    st.session_state.ml_model = st.session_state.inference_engine.pipeline
+                
+                return
+            except FileNotFoundError as e:
+                st.sidebar.warning(f"⚠️ Inference engine: {str(e)}")
+            except Exception as e:
+                st.sidebar.warning(f"⚠️ Inference engine error: {str(e)}")
+        
+        # Fallback: Try to load model directly
         paths = [
             MODEL_CONFIG['model_path'],
             MODEL_CONFIG['fallback_model_path'],
@@ -299,16 +367,70 @@ def rule_based_fraud_detection(transaction_df, sender_data):
     return risk_score, reasons
 
 def process_transaction_ml(transaction_df, sender_data):
-    """Process transaction using ML model"""
+    """Process transaction using ML model with SHAP and LLM explanations"""
     try:
+        # Use inference engine if available
+        if st.session_state.inference_engine is not None:
+            try:
+                # Prepare background data for SHAP (use sample from training data if available)
+                shap_bg = st.session_state.shap_background
+                
+                # Get prediction and explanations
+                result = st.session_state.inference_engine.predict_and_explain(
+                    transaction_df,
+                    shap_background=shap_bg,
+                    topk=10,
+                    use_llm=True
+                )
+                
+                probability = float(result['probabilities'][0])
+                
+                # Convert SHAP table to reasons list
+                reasons = []
+                shap_table = result['shap_table']
+                
+                # Add top contributing features as reasons
+                for _, row in shap_table.head(5).iterrows():
+                    feature = row['feature']
+                    shap_val = row['shap']
+                    value = row['value']
+                    
+                    if abs(shap_val) > 0.1:  # Only include significant contributors
+                        direction = "increases" if shap_val > 0 else "decreases"
+                        reasons.append(f"{feature} ({value:.2f}) {direction} fraud risk")
+                
+                # Add LLM explanation if available
+                if result.get('llm_explanation'):
+                    st.session_state.llm_explanation = result['llm_explanation']
+                else:
+                    st.session_state.llm_explanation = None
+                
+                # Store SHAP table for visualization
+                st.session_state.shap_table = shap_table
+                
+                return probability, reasons
+                
+            except Exception as e:
+                st.warning(f"Inference engine error: {str(e)}. Falling back to basic prediction.")
+                # Clear stale SHAP and LLM data when falling back
+                st.session_state.shap_table = None
+                st.session_state.llm_explanation = None
+                # Fall through to basic model prediction
+        
+        # Fallback: Use basic model prediction
         if st.session_state.ml_model is None:
-            # Use rule-based detection
+            # Clear stale SHAP and LLM data
+            st.session_state.shap_table = None
+            st.session_state.llm_explanation = None
             return rule_based_fraud_detection(transaction_df, sender_data)
         
-        # ML model prediction
+        # Basic ML model prediction - clear SHAP/LLM data since we're not using them
+        st.session_state.shap_table = None
+        st.session_state.llm_explanation = None
+        
         probability = st.session_state.ml_model.predict_proba(transaction_df)[0, 1]
         
-        # Get feature importances (simplified - actual SHAP would be more complex)
+        # Get feature importances (simplified)
         reasons = []
         amount = transaction_df['amount'].iloc[0]
         balance = transaction_df['oldBalanceOrig'].iloc[0]
@@ -326,6 +448,9 @@ def process_transaction_ml(transaction_df, sender_data):
         
     except Exception as e:
         st.error(f"ML model error: {str(e)}")
+        # Clear stale SHAP and LLM data on error
+        st.session_state.shap_table = None
+        st.session_state.llm_explanation = None
         return rule_based_fraud_detection(transaction_df, sender_data)
 
 def render_user_card(user_data, title):
@@ -373,6 +498,65 @@ def render_transaction_history(user_id):
     df_history = pd.DataFrame(history)
     st.dataframe(df_history, use_container_width=True, height=200)
 
+def render_shap_visualization(shap_table):
+    """Render SHAP feature contributions visualization"""
+    if shap_table is None or len(shap_table) == 0:
+        return
+    
+    st.markdown("### 📊 Feature Contributions (SHAP)")
+    
+    # Create bar chart for top features
+    top_features = shap_table.head(10)
+    
+    fig = go.Figure()
+    
+    # Positive contributions (increase fraud risk)
+    pos_features = top_features[top_features['shap'] > 0]
+    if len(pos_features) > 0:
+        fig.add_trace(go.Bar(
+            x=pos_features['shap'],
+            y=pos_features['feature'],
+            orientation='h',
+            name='Increases Risk',
+            marker_color='#FF4444',
+            text=[f"{v:.3f}" for v in pos_features['shap']],
+            textposition='outside'
+        ))
+    
+    # Negative contributions (decrease fraud risk)
+    neg_features = top_features[top_features['shap'] <= 0]
+    if len(neg_features) > 0:
+        fig.add_trace(go.Bar(
+            x=neg_features['shap'],
+            y=neg_features['feature'],
+            orientation='h',
+            name='Decreases Risk',
+            marker_color='#00FF88',
+            text=[f"{v:.3f}" for v in neg_features['shap']],
+            textposition='outside'
+        ))
+    
+    fig.update_layout(
+        title="Top Feature Contributions to Fraud Probability",
+        xaxis_title="SHAP Value (Impact on Fraud Probability)",
+        yaxis_title="Feature",
+        height=400,
+        paper_bgcolor=THEME['card_bg'],
+        plot_bgcolor=THEME['card_bg'],
+        font={'color': THEME['text_primary']},
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Show detailed table
+    with st.expander("📋 Detailed Feature Contributions"):
+        display_table = shap_table[['feature', 'value', 'shap', 'shap_abs']].copy()
+        display_table.columns = ['Feature', 'Value', 'SHAP Contribution', '|SHAP|']
+        display_table['SHAP Contribution'] = display_table['SHAP Contribution'].apply(lambda x: f"{x:.6f}")
+        display_table['|SHAP|'] = display_table['|SHAP|'].apply(lambda x: f"{x:.6f}")
+        st.dataframe(display_table, use_container_width=True, height=300)
+
 def render_decision_panel(probability, decision, reasons):
     """Render the decision panel with visual feedback"""
     st.markdown(f"## {get_text('decision_title')}")
@@ -404,6 +588,15 @@ def render_decision_panel(probability, decision, reasons):
     # Risk assessment
     st.markdown(f"### {get_text('risk_assessment')}")
     st.markdown(f"<h2 style='text-align: center;'>{risk_text}</h2>", unsafe_allow_html=True)
+    
+    # SHAP Visualization
+    if 'shap_table' in st.session_state and st.session_state.shap_table is not None:
+        render_shap_visualization(st.session_state.shap_table)
+    
+    # LLM Explanation
+    if 'llm_explanation' in st.session_state and st.session_state.llm_explanation:
+        st.markdown("### 🤖 AI Explanation")
+        st.info(st.session_state.llm_explanation)
     
     # Explanation
     st.markdown(f"### {get_text('explanation_title')}")
@@ -487,17 +680,39 @@ def main():
     init_session_state()
     load_custom_css()
     
-    # Header
-    st.markdown(f"""
-    <div style='text-align: center; padding: 20px;'>
-        <h1>{get_text('app_title')}</h1>
-        <h3 style='color: {THEME['primary']};'>{get_text('app_subtitle')}</h3>
-        <p style='color: {THEME['text_secondary']};'>{get_text('tagline')}</p>
-    </div>
-    """, unsafe_allow_html=True)
+    # Header with Logo
+    if LOGO_PATH and os.path.exists(LOGO_PATH):
+        # Centered header with logo
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image(LOGO_PATH, width=180, use_container_width=False)
+        
+        st.markdown(f"""
+        <div style='text-align: center; padding: 10px 0;'>
+            <h1 style='margin: 10px 0;'>{get_text('app_title')}</h1>
+            <h3 style='color: {THEME['primary']}; margin: 5px 0;'>{get_text('app_subtitle')}</h3>
+            <p style='color: {THEME['text_secondary']}; margin: 0;'>{get_text('tagline')}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Fallback header without logo
+        st.markdown(f"""
+        <div style='text-align: center; padding: 20px;'>
+            <h1>{get_text('app_title')}</h1>
+            <h3 style='color: {THEME['primary']};'>{get_text('app_subtitle')}</h3>
+            <p style='color: {THEME['text_secondary']};'>{get_text('tagline')}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
     
     # Sidebar
     with st.sidebar:
+        # Logo in sidebar
+        if LOGO_PATH and os.path.exists(LOGO_PATH):
+            st.image(LOGO_PATH, use_container_width=True)
+            st.markdown("---")
+        
         st.markdown("## ⚙️ Settings")
         
         # Language toggle
@@ -513,10 +728,18 @@ def main():
         
         # Model status
         st.markdown("### 🤖 Model Status")
-        if st.session_state.ml_model:
+        if st.session_state.inference_engine:
+            st.success("✅ ML Model + SHAP + LLM Active")
+        elif st.session_state.ml_model:
             st.success("✅ ML Model Active")
         else:
             st.warning("⚠️ Rule-Based Mode")
+        
+        # Groq API Key status
+        if os.getenv('GROQ_API_KEY'):
+            st.success("✅ LLM Explanations Enabled")
+        else:
+            st.info("💡 Set GROQ_API_KEY for LLM explanations")
         
         st.markdown("---")
         

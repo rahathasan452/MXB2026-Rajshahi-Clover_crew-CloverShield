@@ -9,10 +9,23 @@ numpy>=1.23.0
 # Visualization
 plotly>=5.14.0
 
-# Model loading (optional - only needed if using ML model)
+# Model loading and ML dependencies
 joblib>=1.2.0
+scikit-learn>=1.2.0
+xgboost>=1.7.0
+
+# Explainability
+shap>=0.44.0
+
+# LLM explanations (optional)
+groq>=1.0.0
+
+# Environment variable management
+python-dotenv>=1.0.0
+
+# Graph features (for model pipeline)
+networkx>=3.0
 
 # Optional: For better performance
-# scikit-learn>=1.2.0  # Only if using ML model features
-# xgboost>=1.7.0       # Only if using ML model
+scipy>=1.10.0
 

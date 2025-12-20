@@ -1,0 +1,83 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Model files (too large for GitHub)
+*.pkl
+*.h5
+*.hdf5
+*.pb
+*.onnx
+*.pt
+*.pth
+*.ckpt
+Models/*.pkl
+Models/*.h5
+Models/*.hdf5
+demo/*.pkl
+demo/*.h5
+
+# Keep model directory structure but ignore contents
+Models/fraud_pipeline_final.pkl
+!Models/modelDesc.md
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables (confidential - never commit!)
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Streamlit
+.streamlit/
+
+# Data files (if large)
+*.csv
+!demo/mock_data.py
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
