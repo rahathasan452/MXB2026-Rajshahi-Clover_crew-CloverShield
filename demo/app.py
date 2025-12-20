@@ -40,6 +40,30 @@ except ImportError:
     MODEL_AVAILABLE = False
     st.warning("⚠️ joblib not installed. Running in demo mode without ML model.")
 
+# Register FraudFeatureEngineer for pickle compatibility before any model loading
+try:
+    from feature_engineering import FraudFeatureEngineer
+    # Register in 'main' module namespace for pickle compatibility
+    import types
+    if 'main' not in sys.modules:
+        sys.modules['main'] = types.ModuleType('main')
+    sys.modules['main'].FraudFeatureEngineer = FraudFeatureEngineer
+except ImportError:
+    # If feature_engineering module not found, try to create a minimal class
+    from sklearn.base import BaseEstimator, TransformerMixin
+    import types
+    
+    class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
+        def fit(self, X, y=None):
+            return self
+        def transform(self, X):
+            return X
+    
+    # Register in 'main' module
+    if 'main' not in sys.modules:
+        sys.modules['main'] = types.ModuleType('main')
+    sys.modules['main'].FraudFeatureEngineer = FraudFeatureEngineer
+
 # Try to import inference module
 try:
     from inference import load_inference_engine, FraudInference

@@ -4,12 +4,38 @@ Handles model loading, prediction, SHAP explainability, and Groq LLM explanation
 """
 
 import os
+import sys
 import numpy as np
 import pandas as pd
 import joblib
 import warnings
 from typing import Dict, Optional, Tuple, List
 import shap
+
+# Import FraudFeatureEngineer to make it available for pickle
+try:
+    from feature_engineering import FraudFeatureEngineer
+    # Register in 'main' module namespace for pickle compatibility
+    # This allows pickle to find the class when loading models saved from notebooks/scripts
+    if 'main' not in sys.modules:
+        import types
+        sys.modules['main'] = types.ModuleType('main')
+    sys.modules['main'].FraudFeatureEngineer = FraudFeatureEngineer
+except ImportError:
+    # If feature_engineering module not found, try to create a minimal class
+    from sklearn.base import BaseEstimator, TransformerMixin
+    import types
+    
+    class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
+        def fit(self, X, y=None):
+            return self
+        def transform(self, X):
+            return X
+    
+    # Register in 'main' module
+    if 'main' not in sys.modules:
+        sys.modules['main'] = types.ModuleType('main')
+    sys.modules['main'].FraudFeatureEngineer = FraudFeatureEngineer
 
 # Load environment variables from .env file
 try:
@@ -69,6 +95,17 @@ class FraudInference:
             if not os.path.exists(self.model_path):
                 raise FileNotFoundError(f"Model file not found: {self.model_path}")
             
+            # Ensure FraudFeatureEngineer is registered before loading
+            try:
+                from feature_engineering import FraudFeatureEngineer
+                import types
+                if 'main' not in sys.modules:
+                    sys.modules['main'] = types.ModuleType('main')
+                sys.modules['main'].FraudFeatureEngineer = FraudFeatureEngineer
+            except ImportError:
+                # Already registered in module imports, continue
+                pass
+            
             self.pipeline = joblib.load(self.model_path)
             print(f"✅ Model loaded successfully from {self.model_path}")
             
@@ -82,6 +119,16 @@ class FraudInference:
             if 'clf' not in self.pipeline.named_steps:
                 raise ValueError("Pipeline must have 'clf' (classifier) step")
                 
+        except AttributeError as e:
+            if 'FraudFeatureEngineer' in str(e):
+                error_msg = (
+                    f"❌ Error loading model: {str(e)}\n"
+                    "This usually means the FraudFeatureEngineer class is not available.\n"
+                    "Please ensure feature_engineering.py is in the same directory as inference.py"
+                )
+                print(error_msg)
+                raise AttributeError(error_msg) from e
+            raise
         except Exception as e:
             print(f"❌ Error loading model: {str(e)}")
             raise
