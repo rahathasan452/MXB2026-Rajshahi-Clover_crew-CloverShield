@@ -330,12 +330,9 @@ def create_transaction_dataframe(sender_data, receiver_id, amount, txn_type):
     # Create DataFrame
     df = pd.DataFrame([transaction_data])
     
-    # Add additional features that might be expected by the model
-    # These are common features in fraud detection models
-    df['amount_log'] = np.log1p(df['amount'])
-    df['balance_ratio'] = df['amount'] / (df['oldBalanceOrig'] + 1e-6)
-    df['hour'] = datetime.now().hour
-    df['day'] = datetime.now().day
+    # Note: Additional feature engineering (amount_log1p, amount_over_oldBalanceOrig, etc.)
+    # will be handled by the FraudFeatureEngineer in the pipeline
+    # We only need to provide the raw transaction data here
     
     return df
 

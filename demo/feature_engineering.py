@@ -41,7 +41,7 @@ class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
             X: Input DataFrame with raw transaction data
             
         Returns:
-            DataFrame with engineered features
+            DataFrame with engineered features matching the training feature set
         """
         # Create a copy to avoid modifying original
         df = X.copy()
@@ -49,17 +49,8 @@ class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
         # Basic amount features
         df['amount_log1p'] = np.log1p(df['amount'])
         
-        # Balance ratio features
+        # Balance ratio features (only amount_over_oldBalanceOrig was in training)
         df['amount_over_oldBalanceOrig'] = df['amount'] / (df['oldBalanceOrig'] + 1e-6)
-        df['amount_over_oldBalanceDest'] = df['amount'] / (df['oldBalanceDest'] + 1e-6)
-        
-        # Balance error features
-        df['orig_balance_error'] = np.abs(
-            df['oldBalanceOrig'] - df['amount'] - df['newBalanceOrig']
-        )
-        df['dest_balance_error'] = np.abs(
-            df['oldBalanceDest'] + df['amount'] - df['newBalanceDest']
-        )
         
         # Transaction type encoding
         type_map = {
@@ -71,13 +62,11 @@ class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
         }
         df['type_encoded'] = df['type'].map(type_map).fillna(0)
         
-        # Time features
+        # Time features (only hour was in training, not day)
         if 'step' in df.columns:
             df['hour'] = (df['step'] % 24).astype(int)
-            df['day'] = (df['step'] // 24).astype(int)
         else:
             df['hour'] = 12  # Default
-            df['day'] = 1
         
         # Initialize graph features (simplified - actual implementation may differ)
         df['in_degree'] = 0
@@ -95,25 +84,44 @@ class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
         df['is_new_origin'] = 0
         df['is_new_dest'] = 0
         
-        # Select and return engineered features
-        # This should match the features expected by the model
+        # Select and return engineered features in the EXACT order expected by the model
+        # This matches the training feature order: 
+        # ['step', 'amount', 'oldBalanceOrig', 'newBalanceOrig', 'oldBalanceDest', 
+        #  'newBalanceDest', 'hour', 'orig_txn_count', 'dest_txn_count', 
+        #  'amt_ratio_to_user_mean', 'amount_log1p', 'amount_over_oldBalanceOrig', 
+        #  'amt_ratio_to_user_median', 'amt_log_ratio_to_user_median', 
+        #  'in_degree', 'out_degree', 'network_trust', 'is_new_origin', 
+        #  'is_new_dest', 'type_encoded']
         feature_cols = [
-            'amount', 'amount_log1p',
-            'amount_over_oldBalanceOrig', 'amount_over_oldBalanceDest',
-            'orig_balance_error', 'dest_balance_error',
-            'type_encoded', 'hour', 'day',
-            'in_degree', 'out_degree', 'network_trust',
-            'orig_txn_count', 'dest_txn_count',
-            'amt_ratio_to_user_mean', 'amt_ratio_to_user_median',
-            'amt_log_ratio_to_user_median',
-            'is_new_origin', 'is_new_dest',
-            'oldBalanceOrig', 'newBalanceOrig',
-            'oldBalanceDest', 'newBalanceDest',
-            'step'
+            'step', 'amount', 'oldBalanceOrig', 'newBalanceOrig', 
+            'oldBalanceDest', 'newBalanceDest', 'hour', 
+            'orig_txn_count', 'dest_txn_count', 
+            'amt_ratio_to_user_mean', 'amount_log1p', 'amount_over_oldBalanceOrig', 
+            'amt_ratio_to_user_median', 'amt_log_ratio_to_user_median', 
+            'in_degree', 'out_degree', 'network_trust', 
+            'is_new_origin', 'is_new_dest', 'type_encoded'
         ]
         
-        # Only include columns that exist
+        # Only include columns that exist and maintain order
         available_cols = [col for col in feature_cols if col in df.columns]
         
-        return df[available_cols]
+        # Ensure all required columns exist, fill missing with defaults
+        for col in feature_cols:
+            if col not in df.columns:
+                if col in ['step', 'hour', 'orig_txn_count', 'dest_txn_count', 
+                          'in_degree', 'out_degree', 'is_new_origin', 'is_new_dest', 
+                          'type_encoded']:
+                    df[col] = 0
+                elif col in ['amount', 'oldBalanceOrig', 'newBalanceOrig', 
+                            'oldBalanceDest', 'newBalanceDest']:
+                    df[col] = 0.0
+                elif col in ['amt_ratio_to_user_mean', 'amt_ratio_to_user_median', 
+                            'amount_over_oldBalanceOrig', 'network_trust']:
+                    df[col] = 0.0
+                elif col == 'amount_log1p':
+                    df[col] = np.log1p(df.get('amount', 0))
+                elif col == 'amt_log_ratio_to_user_median':
+                    df[col] = 0.0
+        
+        return df[feature_cols]
 
