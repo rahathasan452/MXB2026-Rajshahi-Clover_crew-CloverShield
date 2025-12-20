@@ -178,7 +178,7 @@ TRANSLATIONS = {
 # Risk thresholds
 RISK_THRESHOLDS = {
     "pass": 0.30,      # Below this: PASS
-    "warn": 0.70,      # Between pass and warn: WARN
+    "warn": 0.30,      # Between pass and warn: WARN (0.30 to 0.70)
     "block": 0.70      # Above this: BLOCK
 }
 
