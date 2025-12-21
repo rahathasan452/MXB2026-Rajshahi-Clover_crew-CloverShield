@@ -18,7 +18,9 @@
     "zustand": "^4.4.0",
     "react-hot-toast": "^2.4.0",
     "clsx": "^2.0.0",
-    "date-fns": "^2.30.0"
+    "date-fns": "^2.30.0",
+    "posthog-js": "^1.0.0",
+    "resend": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -9,6 +9,8 @@ import React, { useEffect, useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { getUsers, createTransaction, updateTransaction } from '@/lib/supabase'
 import { predictFraud } from '@/lib/ml-api'
+import { initAnalytics, trackTransaction, trackMLAPICall } from '@/lib/analytics'
+import { sendTransactionAlertEmail } from '@/lib/email'
 import { TransactionForm } from '@/components/TransactionForm'
 import { UserProfileCard } from '@/components/UserProfileCard'
 import { DecisionZone } from '@/components/DecisionZone'
@@ -33,6 +35,11 @@ export default function Home() {
   } = useAppStore()
 
   const [receiver, setReceiver] = useState<any>(null)
+
+  // Initialize analytics on mount
+  useEffect(() => {
+    initAnalytics()
+  }, [])
 
   // Load users on mount
   useEffect(() => {
@@ -111,27 +118,45 @@ export default function Home() {
           : oldBalanceDest
 
       // Call ML API for prediction
-      const prediction = await predictFraud(
-        {
-          step: 1,
-          type: data.type,
-          amount: data.amount,
-          nameOrig: data.senderId,
-          oldBalanceOrig,
-          newBalanceOrig,
-          nameDest: data.receiverId,
-          oldBalanceDest,
-          newBalanceDest,
-        },
-        {
-          include_shap: true,
-          include_llm_explanation: false,
-          language,
-          topk: 10,
-        }
-      )
+      const startTime = Date.now()
+      let prediction
+      try {
+        prediction = await predictFraud(
+          {
+            step: 1,
+            type: data.type,
+            amount: data.amount,
+            nameOrig: data.senderId,
+            oldBalanceOrig,
+            newBalanceOrig,
+            nameDest: data.receiverId,
+            oldBalanceDest,
+            newBalanceDest,
+          },
+          {
+            include_shap: true,
+            include_llm_explanation: false,
+            language,
+            topk: 10,
+          }
+        )
 
-      setCurrentPrediction(prediction)
+        // Track ML API call
+        trackMLAPICall({
+          success: true,
+          processingTimeMs: Date.now() - startTime,
+        })
+
+        setCurrentPrediction(prediction)
+      } catch (error: any) {
+        // Track failed ML API call
+        trackMLAPICall({
+          success: false,
+          processingTimeMs: Date.now() - startTime,
+          error: error.message,
+        })
+        throw error
+      }
 
       // Create transaction record in Supabase
       const transaction = await createTransaction({
@@ -165,6 +190,41 @@ export default function Home() {
               ? 'REVIEW'
               : 'COMPLETED',
         })
+      }
+
+      // Track transaction event
+      trackTransaction({
+        transactionId: transaction.transaction_id,
+        senderId: data.senderId,
+        receiverId: data.receiverId,
+        amount: data.amount,
+        type: data.type,
+        fraudProbability: prediction.prediction.fraud_probability,
+        decision: prediction.prediction.decision,
+        riskLevel: prediction.prediction.risk_level,
+      })
+
+      // Send email alert for BLOCK or WARN decisions
+      if (prediction.prediction.decision === 'block' || prediction.prediction.decision === 'warn') {
+        try {
+          await sendTransactionAlertEmail({
+            transactionId: transaction.transaction_id,
+            senderId: data.senderId,
+            receiverId: data.receiverId,
+            senderName: sender.name_en,
+            receiverName: receiverUser.name_en,
+            amount: data.amount,
+            transactionType: data.type,
+            fraudProbability: prediction.prediction.fraud_probability,
+            decision: prediction.prediction.decision,
+            riskLevel: prediction.prediction.risk_level,
+            timestamp: transaction.transaction_timestamp,
+            shapExplanations: prediction.shap_explanations,
+          })
+        } catch (emailError: any) {
+          console.error('Failed to send email alert:', emailError)
+          // Don't fail the transaction if email fails
+        }
       }
 
       // Update analytics
