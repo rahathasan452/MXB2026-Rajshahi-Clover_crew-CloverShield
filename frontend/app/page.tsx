@@ -178,19 +178,16 @@ export default function Home() {
         note: data.note,
       })
 
-      // Update transaction with ML results if needed
-      if (prediction.shap_explanations) {
-        // Store SHAP explanations (would need separate API call)
-        // For now, just update the transaction
-        await updateTransaction(transaction.transaction_id, {
-          status:
-            prediction.prediction.decision === 'block'
-              ? 'BLOCKED'
-              : prediction.prediction.decision === 'warn'
-              ? 'REVIEW'
-              : 'COMPLETED',
-        })
-      }
+      // Update transaction status based on prediction decision
+      // This should execute regardless of whether SHAP explanations are available
+      await updateTransaction(transaction.transaction_id, {
+        status:
+          prediction.prediction.decision === 'block'
+            ? 'BLOCKED'
+            : prediction.prediction.decision === 'warn'
+            ? 'REVIEW'
+            : 'COMPLETED',
+      })
 
       // Track transaction event
       trackTransaction({

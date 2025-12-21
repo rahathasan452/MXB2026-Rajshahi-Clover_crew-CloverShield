@@ -63,7 +63,7 @@ class FraudInference:
     Inference class for fraud detection pipeline with explainability
     """
     
-    def __init__(self, model_path: str, threshold: float = 0.12684587, groq_api_key: Optional[str] = None):
+    def __init__(self, model_path: str, threshold: float = 0.0793, groq_api_key: Optional[str] = None):
         """
         Initialize inference engine
         
@@ -378,7 +378,7 @@ class FraudInference:
 
 def load_inference_engine(
     model_path: str = "Models/fraud_pipeline_final.pkl",
-    threshold: float = 0.12684587,
+    threshold: float = 0.0793,
     groq_api_key: Optional[str] = None
 ) -> FraudInference:
     """
