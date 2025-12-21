@@ -1,0 +1,22 @@
+# Render.com deployment configuration for CloverShield ML API
+
+services:
+  - type: web
+    name: clovershield-ml-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: MODEL_PATH
+        value: Models/fraud_pipeline_final.pkl
+      - key: MODEL_THRESHOLD
+        value: 0.0793
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0
+      - key: GROQ_API_KEY
+        sync: false  # Set in Render dashboard
+    healthCheckPath: /health
+    plan: starter  # Upgrade for production
+
