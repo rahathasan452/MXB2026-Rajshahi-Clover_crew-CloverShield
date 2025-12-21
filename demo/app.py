@@ -1031,11 +1031,11 @@ def categorize_risk_driver(feature_name, shap_value):
     """Categorize risk driver by strength"""
     abs_shap = abs(shap_value)
     if abs_shap > 0.3:
-        return 'high'  # Maps to trust-high CSS class
+        return 'strong'  # Maps to .risk-driver-card.strong CSS class
     elif abs_shap > 0.1:
-        return 'medium'  # Maps to trust-medium CSS class
+        return 'moderate'  # Maps to .risk-driver-card.moderate CSS class
     else:
-        return 'low'  # Maps to trust-low CSS class
+        return 'weak'  # Maps to .risk-driver-card.weak CSS class
 
 def get_risk_category(feature_name):
     """Get the category for a feature"""
@@ -1881,10 +1881,6 @@ def main():
     # Sync back to txn_amount for use elsewhere
     st.session_state.txn_amount = amount
     
-    # Validation error
-    if amount > balance:
-        st.markdown(f'<span class="field-error">{get_text("amount_too_large")}</span>', unsafe_allow_html=True)
-    
     st.markdown('</div>', unsafe_allow_html=True)
     
     # FIELD 5: Optional Note
@@ -1905,7 +1901,7 @@ def main():
     st.session_state.txn_note = note
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Validation
+    # Validation - centralized validation to avoid duplicate error messages
     validation_errors = validate_transaction(
         sender_data['user_id'],
         receiver_id,
@@ -1913,7 +1909,7 @@ def main():
         balance
     )
     
-    # Display validation errors
+    # Display validation errors (single location to avoid duplication)
     if validation_errors:
         for error in validation_errors:
             st.markdown(f'<span class="field-error">{error}</span>', unsafe_allow_html=True)
