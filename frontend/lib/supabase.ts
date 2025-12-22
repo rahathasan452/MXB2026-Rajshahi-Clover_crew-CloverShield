@@ -1,0 +1,160 @@
+/**
+ * Supabase Client
+ * Singleton instance for Supabase database access
+ */
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Database types (matching Supabase schema)
+export interface User {
+  user_id: string
+  name_en: string
+  name_bn?: string
+  phone: string
+  provider: 'bKash' | 'Nagad' | 'Rocket' | 'Upay'
+  balance: number
+  account_age_days: number
+  total_transactions: number
+  avg_transaction_amount: number
+  verified: boolean
+  kyc_complete: boolean
+  risk_level: 'low' | 'medium' | 'high' | 'suspicious'
+  created_at?: string
+  updated_at?: string
+  last_transaction_at?: string
+}
+
+export interface Transaction {
+  transaction_id: string
+  sender_id: string
+  receiver_id: string
+  amount: number
+  transaction_type: 'CASH_OUT' | 'TRANSFER' | 'CASH_IN' | 'PAYMENT' | 'DEBIT'
+  old_balance_orig: number
+  new_balance_orig: number
+  old_balance_dest: number
+  new_balance_dest: number
+  step?: number
+  hour?: number
+  transaction_timestamp: string
+  fraud_probability?: number
+  fraud_decision?: 'pass' | 'warn' | 'block'
+  risk_level?: 'low' | 'medium' | 'high'
+  model_confidence?: number
+  status: 'PENDING' | 'COMPLETED' | 'BLOCKED' | 'REVIEW' | 'FAILED'
+  note?: string
+  analyst_id?: string
+  reviewed_at?: string
+}
+
+// Supabase helper functions
+export const getUsers = async (): Promise<User[]> => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .order('name_en')
+
+  if (error) throw error
+  return data || []
+}
+
+export const getUser = async (userId: string): Promise<User | null> => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const getTransactionHistory = async (
+  userId: string,
+  limit: number = 10
+): Promise<Transaction[]> => {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+    .order('transaction_timestamp', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data || []
+}
+
+export const createTransaction = async (
+  transaction: Omit<Transaction, 'transaction_id' | 'transaction_timestamp'>
+): Promise<Transaction> => {
+  const { data, error } = await supabase
+    .from('transactions')
+    .insert(transaction)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const updateTransaction = async (
+  transactionId: string,
+  updates: Partial<Transaction>
+): Promise<Transaction> => {
+  const { data, error } = await supabase
+    .from('transactions')
+    .update(updates)
+    .eq('transaction_id', transactionId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const createAnalystAction = async (action: {
+  transaction_id?: string
+  user_id?: string
+  action_type: 'CREATE_CASE' | 'FLAG_ACCOUNT' | 'REPORT_FRAUD' | 'APPROVE' | 'REJECT' | 'REVIEW'
+  action_data?: any
+  analyst_id: string
+  analyst_name?: string
+}) => {
+  const { data, error } = await supabase
+    .from('analyst_actions')
+    .insert(action)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const flagAccount = async (
+  userId: string,
+  reason: string,
+  flaggedBy: string
+) => {
+  const { data, error } = await supabase
+    .from('flagged_accounts')
+    .insert({
+      user_id: userId,
+      flag_reason: reason,
+      flagged_by: flaggedBy,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+

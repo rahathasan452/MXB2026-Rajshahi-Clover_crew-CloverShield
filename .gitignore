@@ -13,7 +13,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+
 lib64/
 parts/
 sdist/
@@ -69,7 +69,7 @@ Thumbs.db
 logs/
 
 # Streamlit
-.streamlit/
+
 
 # Data files (if large)
 *.csv
