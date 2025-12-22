@@ -109,11 +109,11 @@ export default function Home() {
       const newBalanceOrig =
         data.type === 'CASH_OUT' || data.type === 'TRANSFER'
           ? oldBalanceOrig - data.amount
-          : oldBalanceOrig + data.amount
+          : oldBalanceOrig
 
       const oldBalanceDest = receiverUser.balance
       const newBalanceDest =
-        data.type === 'TRANSFER' || data.type === 'CASH_IN'
+        data.type === 'TRANSFER'
           ? oldBalanceDest + data.amount
           : oldBalanceDest
 
