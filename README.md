@@ -2,26 +2,70 @@
 
 **Protecting Bangladesh's Digital Financial Ecosystem**
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/streamlit-1.28+-red.svg)](https://streamlit.io)
+[![Next.js](https://img.shields.io/badge/Next.js-14+-black.svg)](https://nextjs.org/)
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
 
 ## 🎯 Overview
 
-CloverShield is an AI-powered fraud detection system designed specifically for Bangladesh's mobile banking ecosystem (bKash, Nagad, Upay, Rocket). It combines cutting-edge machine learning with user-friendly design to protect millions of digital transactions in real-time.
+CloverShield is an AI-powered fraud detection system designed specifically for Bangladesh's mobile banking ecosystem (bKash, Nagad, Upay, Rocket). It combines cutting-edge machine learning with a modern web interface to protect millions of digital transactions in real-time.
 
 ### Key Features
 
 - ⚡ **Real-time Detection**: <200ms response time
 - 🎯 **99.8% Accuracy**: 95% recall, 92% precision
 - 🌐 **Bilingual**: Full English and Bangla support
-- 🎨 **User-Friendly**: Designed for all demographics
+- 🎨 **Modern UI**: Next.js frontend with responsive design
 - 🔍 **Explainable AI**: SHAP feature contributions + Groq LLM explanations
-- 📊 **Visual Analytics**: Interactive SHAP visualizations
+- 📊 **Visual Analytics**: Interactive fraud probability gauges and risk drivers
 - 🤖 **AI Explanations**: Human-readable fraud risk explanations
-- 🚀 **Production-Ready**: Deploy in days, not months
+- 🚀 **Production-Ready**: Deployed on Vercel with scalable architecture
+
+---
+
+## 🏗️ Architecture
+
+CloverShield follows a modern microservices architecture:
+
+```
+┌─────────────────┐
+│  Next.js Frontend │  (Vercel)
+│  - React/TypeScript│
+│  - Tailwind CSS   │
+└────────┬────────┘
+          │
+          ├─────────────────┐
+          │                 │
+┌─────────▼─────────┐  ┌───▼──────────┐
+│   ML API (FastAPI) │  │   Supabase   │
+│   - XGBoost Model │  │   - PostgreSQL│
+│   - SHAP Explain  │  │   - Auth      │
+│   - LLM Explain   │  │   - Storage   │
+└───────────────────┘  └──────────────┘
+```
+
+### Components
+
+1. **Frontend** (`frontend/`): Next.js application with React components
+   - Deployed on Vercel
+   - Bilingual support (English/Bangla)
+   - Real-time fraud detection UI
+   - Analytics dashboard
+
+2. **ML API** (`ml-api/`): FastAPI microservice for fraud prediction
+   - XGBoost model inference
+   - SHAP explanations
+   - Optional Groq LLM explanations
+   - Deployable on Render/Railway/Vercel
+
+3. **Database** (`supabase/`): Supabase setup
+   - PostgreSQL database
+   - User authentication
+   - Transaction history
+   - Row-level security policies
 
 ---
 
@@ -29,153 +73,102 @@ CloverShield is an AI-powered fraud detection system designed specifically for B
 
 ### Prerequisites
 
-1. **Install Python 3.8+**
-2. **Place your trained model** (`fraud_pipeline_final.pkl`) in `Models/` directory
-   - See [MODEL_SETUP.md](MODEL_SETUP.md) for detailed instructions
-3. **(Optional) Set Groq API key** for LLM explanations:
-   ```bash
-   # Option 1: Use .env file (Recommended)
-   cp .env.example .env
-   # Edit .env and add your GROQ_API_KEY
-   
-   # Option 2: Environment variable
-   export GROQ_API_KEY="your_api_key_here"  # Linux/Mac
-   set GROQ_API_KEY=your_api_key_here       # Windows
-   ```
-   See [ENV_SETUP.md](ENV_SETUP.md) for detailed instructions.
+- **Node.js 18+** and npm/yarn (for frontend)
+- **Python 3.8+** (for ML API)
+- **Supabase account** (free tier available)
+- **Trained model** (`fraud_pipeline_final.pkl`) in `Models/` directory
 
-### Run the Demo (2 minutes)
+### 1. Frontend Setup
 
-**Windows:**
-
-**PowerShell:**
-```powershell
-cd demo
-.\run_demo.bat
-```
-
-**Command Prompt (CMD):**
-```cmd
-cd demo
-run_demo.bat
-```
-
-**Or use PowerShell script:**
-```powershell
-cd demo
-.\run_demo.ps1
-```
-
-**Linux/Mac:**
 ```bash
-cd demo
-chmod +x run_demo.sh
-./run_demo.sh
+cd frontend
+npm install
+cp env.template .env.local
+# Edit .env.local with your Supabase and ML API URLs
+npm run dev
 ```
 
-**Manual:**
+Frontend runs at `http://localhost:3000`
+
+### 2. ML API Setup
+
 ```bash
-cd demo
+cd ml-api
 pip install -r requirements.txt
-streamlit run app.py
+cp env.template .env
+# Edit .env with your model path and Groq API key (optional)
+python main.py
 ```
 
-The demo will open at `http://localhost:8501`
+ML API runs at `http://localhost:8000`
 
----
+### 3. Supabase Setup
 
-## 📸 Screenshots
-
-### Twin-View Interface
-```
-┌─────────────────────────────────────────────────────────┐
-│  🛡️ CloverShield - Fraud Detection System              │
-├──────────────────────┬──────────────────────────────────┤
-│  💳 Simulator        │  🔒 Guardian Command Center      │
-│  - User Selection    │  - Fraud Probability Gauge       │
-│  - Account Info      │  - Decision (Pass/Warn/Block)    │
-│  - Transaction Form  │  - Risk Factor Explanation       │
-│  - History Display   │  - Real-time Analytics           │
-└──────────────────────┴──────────────────────────────────┘
-```
-
-### Decision System
-- 🟢 **PASS** (<30% risk): Transaction approved instantly
-- 🟡 **WARN** (30-70% risk): Manual verification recommended
-- 🔴 **BLOCK** (>70% risk): Transaction blocked, money saved
+See [supabase/README.md](supabase/README.md) for database setup instructions.
 
 ---
 
 ## 📂 Project Structure
 
 ```
-mrf/
-├── demo/                          # 🎯 Main Demo Application
-│   ├── app.py                     # Streamlit app
-│   ├── config.py                  # Translations & settings
-│   ├── mock_data.py               # Mock database
-│   ├── requirements.txt           # Dependencies
-│   ├── QUICKSTART.md             # ⚡ 2-minute setup
-│   ├── README.md                 # Full documentation
-│   ├── DEPLOYMENT.md             # Production guide
-│   ├── SHOWCASE.md               # Demo presentation guide
-│   ├── PROJECT_OVERVIEW.md       # Big picture overview
-│   └── Dockerfile                # Docker config
+CloverShield/
+├── frontend/                 # Next.js frontend application
+│   ├── app/                  # Next.js app directory
+│   ├── components/           # React components
+│   ├── lib/                  # Utilities (Supabase, ML API clients)
+│   ├── store/                # State management (Zustand)
+│   └── README.md             # Frontend documentation
 │
-├── Models/                        # ML models
-│   ├── fraud_pipeline_final.pkl  # Trained model (see MODEL_SETUP.md)
-│   └── modelDesc.md              # Model documentation
+├── ml-api/                   # FastAPI ML inference service
+│   ├── main.py              # FastAPI application
+│   ├── inference.py         # ML inference logic
+│   ├── feature_engineering.py  # Feature engineering
+│   ├── requirements.txt     # Python dependencies
+│   └── README.md            # ML API documentation
 │
-├── demo/
-│   ├── inference.py              # Inference module with SHAP & LLM
-│   ├── inference_example.py      # Standalone usage example
+├── supabase/                 # Supabase configuration
+│   ├── migrations/          # Database migrations
+│   ├── scripts/             # Setup scripts
+│   └── README.md            # Supabase documentation
 │
-├── notebook/                      # Training notebooks
-│   └── frd-dtct.ipynb            # Model training
+├── Models/                   # ML models
+│   └── fraud_pipeline_final.pkl  # Trained model
 │
-└── README.md                      # This file
+├── notebook/                 # Training notebooks
+│   └── frd-dtct.ipynb       # Model training notebook
+│
+├── MODEL_SETUP.md           # Model setup guide
+├── ENV_SETUP.md             # Environment variables guide
+└── README.md                 # This file
 ```
-
----
-
-## 🎭 Demo Scenarios
-
-### Scenario 1: Normal Transaction ✅
-- **User**: Low-risk verified account
-- **Amount**: ৳3,000 (typical)
-- **Result**: 🟢 PASS - Instant approval
-
-### Scenario 2: Suspicious Activity ⚠️
-- **User**: Medium-risk account
-- **Amount**: ৳25,000 (3x average)
-- **Result**: 🟡 WARN - Manual review
-
-### Scenario 3: Fraud Attempt 🚫
-- **User**: Suspicious account
-- **Amount**: ৳80,000 (exceeds balance)
-- **Result**: 🔴 BLOCK - Fraud prevented
 
 ---
 
 ## 🤖 Technology Stack
 
 ### Frontend
-- **Streamlit**: Web framework
-- **Plotly**: Interactive charts
-- **Custom CSS**: Dark mode UI
+- **Next.js 14+**: React framework with App Router
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first styling
+- **Zustand**: State management
+- **Supabase Client**: Database and auth
 
-### Backend
-- **Python 3.8+**: Core language
+### Backend (ML API)
+- **FastAPI**: Modern Python web framework
 - **XGBoost**: ML classifier
 - **SHAP**: Feature contribution explainability
-- **Groq LLM**: Human-readable AI explanations
+- **Groq LLM**: Human-readable AI explanations (optional)
 - **Pandas/NumPy**: Data processing
-- **NetworkX**: Graph features
+
+### Database
+- **Supabase**: PostgreSQL with real-time capabilities
+- **Row-Level Security**: Secure data access
+- **Authentication**: Built-in user management
 
 ### Infrastructure
-- **Docker**: Containerization
-- **Streamlit Cloud**: Free hosting
-- **Kubernetes-ready**: Production scaling
+- **Vercel**: Frontend hosting
+- **Render/Railway**: ML API hosting
+- **Docker**: Containerization support
 
 ---
 
@@ -208,21 +201,28 @@ Full translation in English and Bangla (বাংলা):
 
 ---
 
-## 🚀 Deployment Options
+## 🚀 Deployment
 
-### 1. Streamlit Cloud (Free)
-- Perfect for demos and POCs
-- 1-click deployment from GitHub
-- URL: `https://yourapp.streamlit.app`
+### Frontend (Vercel)
 
-### 2. Docker
-```bash
-cd demo
-docker-compose up -d
-```
+1. Push code to GitHub
+2. Import project in Vercel
+3. Add environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_ML_API_URL`
+4. Deploy
 
-### 3. Production (Kubernetes)
-See [DEPLOYMENT.md](demo/DEPLOYMENT.md) for full guide
+### ML API (Render/Railway)
+
+See [ml-api/README.md](ml-api/README.md) for detailed deployment instructions.
+
+### Supabase
+
+1. Create project at [supabase.com](https://supabase.com)
+2. Run migrations from `supabase/migrations/`
+3. Configure RLS policies
+4. Get API keys
 
 ---
 
@@ -232,11 +232,9 @@ See [DEPLOYMENT.md](demo/DEPLOYMENT.md) for full guide
 |----------|---------|
 | [MODEL_SETUP.md](MODEL_SETUP.md) | **Model file setup guide** (IMPORTANT) |
 | [ENV_SETUP.md](ENV_SETUP.md) | **Environment variables & API keys** (IMPORTANT) |
-| [QUICKSTART.md](demo/QUICKSTART.md) | Get running in 2 minutes |
-| [README.md](demo/README.md) | Full feature documentation |
-| [DEPLOYMENT.md](demo/DEPLOYMENT.md) | Production deployment guide |
-| [SHOWCASE.md](demo/SHOWCASE.md) | Demo presentation guide |
-| [PROJECT_OVERVIEW.md](demo/PROJECT_OVERVIEW.md) | Big picture overview |
+| [frontend/README.md](frontend/README.md) | Frontend documentation |
+| [ml-api/README.md](ml-api/README.md) | ML API documentation |
+| [supabase/README.md](supabase/README.md) | Supabase setup guide |
 
 ---
 
@@ -258,14 +256,14 @@ See [DEPLOYMENT.md](demo/DEPLOYMENT.md) for full guide
 
 ## 🛣️ Roadmap
 
-- [x] Demo application with mock data
-- [x] ML model integration
+- [x] Next.js frontend with modern UI
+- [x] FastAPI ML inference service
+- [x] Supabase integration
 - [x] Bilingual support (EN/BN)
-- [x] Docker deployment
-- [ ] FastAPI backend (Q1 2026)
-- [ ] PostgreSQL integration (Q1 2026)
+- [x] Vercel deployment
 - [ ] Mobile app (Q2 2026)
 - [ ] Multi-country support (Q3 2026)
+- [ ] Advanced analytics dashboard
 
 ---
 
@@ -277,14 +275,12 @@ Built with ❤️ for Bangladesh's digital financial ecosystem.
 
 **Contact:**
 - GitHub: @rahathasan452
-- Email: [Your Email]
-- LinkedIn: [Your Profile]
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! 
 
 **Ways to contribute:**
 - Report bugs (GitHub Issues)
@@ -316,7 +312,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Powered by:**
 - XGBoost (ML framework)
 - SHAP (explainability)
-- Streamlit (UI framework)
+- Next.js (frontend framework)
+- FastAPI (API framework)
+- Supabase (database)
 - Open source community
 
 ---
@@ -324,10 +322,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 **Need Help?**
-- 📚 Read the [documentation](demo/)
+- 📚 Read the component documentation
 - 🐛 Report bugs: [GitHub Issues](https://github.com/yourrepo/issues)
 - 💬 Ask questions: [GitHub Discussions](https://github.com/yourrepo/discussions)
-- 📧 Email: @rahathasan452
 
 ---
 
@@ -343,6 +340,6 @@ If you find CloverShield useful, please give us a ⭐ on GitHub!
 
 *Making Bangladesh's digital financial ecosystem safer, one transaction at a time.*
 
-[Demo](https://yourapp.streamlit.app) • [Documentation](demo/) • [GitHub](https://github.com/yourrepo)
+[Frontend](frontend/) • [ML API](ml-api/) • [Documentation](.)
 
 </div>
