@@ -1,6 +1,7 @@
 /**
  * Transaction Form Component
  * Replaces Streamlit transaction input form (Zone 1)
+ * Supports both Regular Mode and Test Data Mode
  */
 
 import React, { useState, useEffect } from 'react'
@@ -16,6 +17,13 @@ interface TransactionFormProps {
     amount: number
     type: 'CASH_OUT' | 'TRANSFER'
     note?: string
+    // Test data mode fields
+    oldBalanceOrig?: number
+    newBalanceOrig?: number
+    oldBalanceDest?: number
+    newBalanceDest?: number
+    step?: number
+    isTestData?: boolean
   }) => void
   language?: 'en' | 'bn'
 }
@@ -27,6 +35,19 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 }) => {
   const { transactionForm, setTransactionForm, selectedUser } = useAppStore()
   const [errors, setErrors] = useState<Record<string, string>>({})
+  
+  // Test Data Mode state
+  const [isTestDataMode, setIsTestDataMode] = useState(false)
+  const [testSenders, setTestSenders] = useState<string[]>([])
+  const [testReceivers, setTestReceivers] = useState<string[]>([])
+  const [loadingTestData, setLoadingTestData] = useState(false)
+  const [testTransactionDetails, setTestTransactionDetails] = useState<{
+    oldBalanceOrig: number
+    newBalanceOrig: number
+    oldBalanceDest: number
+    newBalanceDest: number
+    step: number
+  } | null>(null)
 
   const formatCurrency = (amount: number) => {
     return `৳ ${amount.toLocaleString('en-BD')}`
@@ -38,6 +59,125 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   }
 
   const amountPresets = [500, 1000, 5000, 10000]
+
+  // Load test dataset senders when test mode is enabled
+  useEffect(() => {
+    if (isTestDataMode) {
+      loadTestSenders()
+    } else {
+      setTestSenders([])
+      setTestReceivers([])
+      setTestTransactionDetails(null)
+    }
+  }, [isTestDataMode])
+
+  // Load receivers when sender changes in test mode
+  useEffect(() => {
+    if (isTestDataMode && transactionForm.senderId) {
+      loadTestReceivers(transactionForm.senderId)
+      setTestTransactionDetails(null)
+      setTransactionForm({ receiverId: null })
+    }
+  }, [transactionForm.senderId, isTestDataMode])
+
+  // Load transaction details when both sender and receiver are selected in test mode
+  useEffect(() => {
+    if (
+      isTestDataMode &&
+      transactionForm.senderId &&
+      transactionForm.receiverId
+    ) {
+      loadTestTransactionDetails(
+        transactionForm.senderId,
+        transactionForm.receiverId
+      )
+    }
+  }, [transactionForm.senderId, transactionForm.receiverId, isTestDataMode])
+
+  const loadTestSenders = async () => {
+    try {
+      setLoadingTestData(true)
+      const response = await fetch('/api/test-dataset/senders?limit=100')
+      if (!response.ok) {
+        throw new Error('Failed to load test senders')
+      }
+      const data = await response.json()
+      setTestSenders(data.senders || [])
+    } catch (error: any) {
+      toast.error(
+        language === 'bn'
+          ? 'টেস্ট ডেটা লোড করতে ব্যর্থ'
+          : 'Failed to load test data: ' + error.message
+      )
+    } finally {
+      setLoadingTestData(false)
+    }
+  }
+
+  const loadTestReceivers = async (senderId: string) => {
+    try {
+      setLoadingTestData(true)
+      const response = await fetch(
+        `/api/test-dataset/receivers?senderId=${encodeURIComponent(senderId)}&limit=100`
+      )
+      if (!response.ok) {
+        throw new Error('Failed to load test receivers')
+      }
+      const data = await response.json()
+      setTestReceivers(data.receivers || [])
+    } catch (error: any) {
+      toast.error(
+        language === 'bn'
+          ? 'গ্রহীতাদের লোড করতে ব্যর্থ'
+          : 'Failed to load receivers: ' + error.message
+      )
+    } finally {
+      setLoadingTestData(false)
+    }
+  }
+
+  const loadTestTransactionDetails = async (
+    senderId: string,
+    receiverId: string
+  ) => {
+    try {
+      setLoadingTestData(true)
+      const response = await fetch(
+        `/api/test-dataset/transaction-details?senderId=${encodeURIComponent(
+          senderId
+        )}&receiverId=${encodeURIComponent(receiverId)}`
+      )
+      if (!response.ok) {
+        if (response.status === 404) {
+          setTestTransactionDetails(null)
+          return
+        }
+        throw new Error('Failed to load transaction details')
+      }
+      const data = await response.json()
+      if (data.transaction) {
+        setTestTransactionDetails({
+          oldBalanceOrig: data.transaction.oldBalanceOrig,
+          newBalanceOrig: data.transaction.newBalanceOrig,
+          oldBalanceDest: data.transaction.oldBalanceDest,
+          newBalanceDest: data.transaction.newBalanceDest,
+          step: data.transaction.step,
+        })
+        // Auto-fill amount and type if not already set
+        if (!transactionForm.amount || transactionForm.amount === 0) {
+          setTransactionForm({ amount: data.transaction.amount })
+        }
+        if (!transactionForm.type) {
+          setTransactionForm({ type: data.transaction.type })
+        }
+      }
+    } catch (error: any) {
+      console.error('Failed to load transaction details:', error)
+      setTestTransactionDetails(null)
+    } finally {
+      setLoadingTestData(false)
+    }
+  }
 
   const validate = () => {
     const newErrors: Record<string, string> = {}
@@ -90,13 +230,25 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       return
     }
 
-    onSubmit({
+    const submitData: any = {
       senderId: transactionForm.senderId,
       receiverId: transactionForm.receiverId,
       amount: transactionForm.amount,
       type: transactionForm.type,
       note: transactionForm.note,
-    })
+      isTestData: isTestDataMode,
+    }
+
+    // Include test data fields if in test mode
+    if (isTestDataMode && testTransactionDetails) {
+      submitData.oldBalanceOrig = testTransactionDetails.oldBalanceOrig
+      submitData.newBalanceOrig = testTransactionDetails.newBalanceOrig
+      submitData.oldBalanceDest = testTransactionDetails.oldBalanceDest
+      submitData.newBalanceDest = testTransactionDetails.newBalanceDest
+      submitData.step = testTransactionDetails.step
+    }
+
+    onSubmit(submitData)
   }
 
   const sender = users.find((u) => u.user_id === transactionForm.senderId)
@@ -109,12 +261,52 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
   return (
     <div className="bg-card-bg rounded-2xl p-6 border border-white/10 shadow-lg">
-      <div className="flex items-center gap-3 mb-6">
-        <span className="text-3xl">💳</span>
-        <h2 className="text-2xl font-bold text-text-primary">
-          {language === 'bn' ? 'লেনদেন ইনপুট' : 'Transaction Input'}
-        </h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">💳</span>
+          <h2 className="text-2xl font-bold text-text-primary">
+            {language === 'bn' ? 'লেনদেন ইনপুট' : 'Transaction Input'}
+          </h2>
+        </div>
+        
+        {/* Test Data Mode Toggle */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-text-secondary">
+            {language === 'bn' ? 'টেস্ট ডেটা' : 'Test Data'}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setIsTestDataMode(!isTestDataMode)
+              setTransactionForm({
+                senderId: null,
+                receiverId: null,
+                amount: 0,
+              })
+              setTestTransactionDetails(null)
+            }}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              isTestDataMode ? 'bg-primary' : 'bg-gray-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                isTestDataMode ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
       </div>
+
+      {isTestDataMode && (
+        <div className="mb-4 bg-primary/10 border border-primary/30 rounded-xl p-3">
+          <p className="text-sm text-primary font-medium">
+            {language === 'bn'
+              ? '📊 টেস্ট ডেটা মোড: টেস্ট ডেটাসেট থেকে সেন্ডার এবং রিসিভার নির্বাচন করুন'
+              : '📊 Test Data Mode: Select sender and receiver from test dataset'}
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Sender Selection */}
@@ -122,26 +314,39 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2">
             👤 {language === 'bn' ? 'প্রেরক অ্যাকাউন্ট' : 'Sender Account'}
           </label>
-          <select
-            value={transactionForm.senderId || ''}
-            onChange={(e) => setTransactionForm({ senderId: e.target.value })}
-            className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">
-              {language === 'bn' ? 'প্রেরক নির্বাচন করুন' : 'Select sender'}
-            </option>
-            {users.map((user) => (
-              <option key={user.user_id} value={user.user_id}>
-                {user.user_id} - {user.name_en} ({user.provider})
+          {loadingTestData && isTestDataMode ? (
+            <div className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-secondary text-center">
+              {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
+            </div>
+          ) : (
+            <select
+              value={transactionForm.senderId || ''}
+              onChange={(e) => setTransactionForm({ senderId: e.target.value })}
+              className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={loadingTestData}
+            >
+              <option value="">
+                {language === 'bn' ? 'প্রেরক নির্বাচন করুন' : 'Select sender'}
               </option>
-            ))}
-          </select>
+              {isTestDataMode
+                ? testSenders.map((senderId) => (
+                    <option key={senderId} value={senderId}>
+                      {senderId}
+                    </option>
+                  ))
+                : users.map((user) => (
+                    <option key={user.user_id} value={user.user_id}>
+                      {user.user_id} - {user.name_en} ({user.provider})
+                    </option>
+                  ))}
+            </select>
+          )}
           {errors.senderId && (
             <p className="text-danger text-sm mt-1">{errors.senderId}</p>
           )}
 
-          {/* Balance Display */}
-          {sender && (
+          {/* Balance Display - Only show in regular mode */}
+          {sender && !isTestDataMode && (
             <div className="mt-3 bg-success/10 border border-success/30 rounded-xl p-4 flex justify-between items-center">
               <span className="text-sm text-text-secondary">
                 {language === 'bn' ? 'উপলব্ধ ব্যালেন্স' : 'Available Balance'}
@@ -149,6 +354,28 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
               <span className="text-xl font-bold text-success">
                 {formatCurrency(sender.balance)}
               </span>
+            </div>
+          )}
+
+          {/* Test Data Balance Display */}
+          {isTestDataMode && testTransactionDetails && (
+            <div className="mt-3 bg-primary/10 border border-primary/30 rounded-xl p-4 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-text-secondary">
+                  {language === 'bn' ? 'পুরানো ব্যালেন্স' : 'Old Balance'}
+                </span>
+                <span className="text-lg font-bold text-primary">
+                  {formatCurrency(testTransactionDetails.oldBalanceOrig)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-text-secondary">
+                  {language === 'bn' ? 'নতুন ব্যালেন্স' : 'New Balance'}
+                </span>
+                <span className="text-lg font-bold text-primary">
+                  {formatCurrency(testTransactionDetails.newBalanceOrig)}
+                </span>
+              </div>
             </div>
           )}
         </div>
@@ -190,46 +417,66 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             📥 {language === 'bn' ? 'গ্রহীতা অ্যাকাউন্ট' : 'Receiver Account'}
           </label>
 
-          {/* Recent Receivers */}
-          {recentReceivers.length > 0 && transactionForm.senderId && (
-            <div className="flex gap-2 mb-3 flex-wrap">
-              {recentReceivers.map((user) => (
-                <button
-                  key={user.user_id}
-                  type="button"
-                  onClick={() => setTransactionForm({ receiverId: user.user_id })}
-                  className="px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-                >
-                  {maskAccountNumber(user.user_id)}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Recent Receivers - Only in regular mode */}
+          {!isTestDataMode &&
+            recentReceivers.length > 0 &&
+            transactionForm.senderId && (
+              <div className="flex gap-2 mb-3 flex-wrap">
+                {recentReceivers.map((user) => (
+                  <button
+                    key={user.user_id}
+                    type="button"
+                    onClick={() =>
+                      setTransactionForm({ receiverId: user.user_id })
+                    }
+                    className="px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                  >
+                    {maskAccountNumber(user.user_id)}
+                  </button>
+                ))}
+              </div>
+            )}
 
-          <select
-            value={transactionForm.receiverId || ''}
-            onChange={(e) =>
-              setTransactionForm({ receiverId: e.target.value })
-            }
-            className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">
-              {language === 'bn' ? 'গ্রহীতা নির্বাচন করুন' : 'Select receiver'}
-            </option>
-            {users
-              .filter((u) => u.user_id !== transactionForm.senderId)
-              .map((user) => (
-                <option key={user.user_id} value={user.user_id}>
-                  {user.user_id} - {user.name_en}
-                </option>
-              ))}
-          </select>
+          {loadingTestData && isTestDataMode ? (
+            <div className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-secondary text-center">
+              {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
+            </div>
+          ) : (
+            <select
+              value={transactionForm.receiverId || ''}
+              onChange={(e) =>
+                setTransactionForm({ receiverId: e.target.value })
+              }
+              className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={
+                loadingTestData ||
+                (isTestDataMode && !transactionForm.senderId)
+              }
+            >
+              <option value="">
+                {language === 'bn' ? 'গ্রহীতা নির্বাচন করুন' : 'Select receiver'}
+              </option>
+              {isTestDataMode
+                ? testReceivers.map((receiverId) => (
+                    <option key={receiverId} value={receiverId}>
+                      {receiverId}
+                    </option>
+                  ))
+                : users
+                    .filter((u) => u.user_id !== transactionForm.senderId)
+                    .map((user) => (
+                      <option key={user.user_id} value={user.user_id}>
+                        {user.user_id} - {user.name_en}
+                      </option>
+                    ))}
+            </select>
+          )}
           {errors.receiverId && (
             <p className="text-danger text-sm mt-1">{errors.receiverId}</p>
           )}
 
-          {/* Receiver Info */}
-          {receiver && (
+          {/* Receiver Info - Only in regular mode */}
+          {receiver && !isTestDataMode && (
             <div className="mt-3 bg-neutral/10 border border-neutral/30 rounded-xl p-3 flex justify-between items-center">
               <span className="text-text-primary font-semibold">
                 {receiver.name_en}
@@ -237,6 +484,28 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
               <span className="text-text-secondary font-mono text-sm">
                 {maskAccountNumber(receiver.user_id)}
               </span>
+            </div>
+          )}
+
+          {/* Test Data Receiver Balance Display */}
+          {isTestDataMode && testTransactionDetails && (
+            <div className="mt-3 bg-primary/10 border border-primary/30 rounded-xl p-4 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-text-secondary">
+                  {language === 'bn' ? 'গ্রহীতার পুরানো ব্যালেন্স' : 'Receiver Old Balance'}
+                </span>
+                <span className="text-lg font-bold text-primary">
+                  {formatCurrency(testTransactionDetails.oldBalanceDest)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-text-secondary">
+                  {language === 'bn' ? 'গ্রহীতার নতুন ব্যালেন্স' : 'Receiver New Balance'}
+                </span>
+                <span className="text-lg font-bold text-primary">
+                  {formatCurrency(testTransactionDetails.newBalanceDest)}
+                </span>
+              </div>
             </div>
           )}
         </div>

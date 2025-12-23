@@ -158,3 +158,40 @@ export const flagAccount = async (
   return data
 }
 
+// Transaction History interface (for test dataset transactions)
+export interface TransactionHistory {
+  transaction_id: string
+  sender_id: string
+  receiver_id: string
+  amount: number
+  transaction_type: 'CASH_OUT' | 'TRANSFER' | 'CASH_IN' | 'PAYMENT' | 'DEBIT'
+  old_balance_orig: number
+  new_balance_orig: number
+  old_balance_dest: number
+  new_balance_dest: number
+  step?: number
+  hour?: number
+  transaction_timestamp: string
+  fraud_probability?: number
+  fraud_decision?: 'pass' | 'warn' | 'block'
+  risk_level?: 'low' | 'medium' | 'high'
+  model_confidence?: number
+  status: 'PENDING' | 'COMPLETED' | 'BLOCKED' | 'REVIEW' | 'FAILED'
+  is_test_data: boolean
+  test_dataset_id?: number
+  note?: string
+}
+
+export const createTransactionHistory = async (
+  transaction: Omit<TransactionHistory, 'transaction_id' | 'transaction_timestamp'>
+): Promise<TransactionHistory> => {
+  const { data, error } = await supabase
+    .from('transaction_history')
+    .insert(transaction)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+

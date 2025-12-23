@@ -7,7 +7,12 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
-import { getUsers, createTransaction, updateTransaction } from '@/lib/supabase'
+import {
+  getUsers,
+  createTransaction,
+  updateTransaction,
+  createTransactionHistory,
+} from '@/lib/supabase'
 import { predictFraud } from '@/lib/ml-api'
 import { initAnalytics, trackTransaction, trackMLAPICall } from '@/lib/analytics'
 import { sendTransactionAlertEmail } from '@/lib/email'
@@ -93,29 +98,63 @@ export default function Home() {
     amount: number
     type: 'CASH_OUT' | 'TRANSFER'
     note?: string
+    // Test data mode fields
+    oldBalanceOrig?: number
+    newBalanceOrig?: number
+    oldBalanceDest?: number
+    newBalanceDest?: number
+    step?: number
+    isTestData?: boolean
   }) => {
     try {
       setIsLoading(true)
 
-      const sender = users.find((u) => u.user_id === data.senderId)
-      const receiverUser = users.find((u) => u.user_id === data.receiverId)
+      const isTestData = data.isTestData || false
 
-      if (!sender || !receiverUser) {
-        throw new Error('Invalid sender or receiver')
+      // For test data mode, use provided balances; otherwise calculate from users
+      let oldBalanceOrig: number
+      let newBalanceOrig: number
+      let oldBalanceDest: number
+      let newBalanceDest: number
+      let step: number
+
+      if (isTestData) {
+        // Use test data balances
+        if (
+          data.oldBalanceOrig === undefined ||
+          data.newBalanceOrig === undefined ||
+          data.oldBalanceDest === undefined ||
+          data.newBalanceDest === undefined
+        ) {
+          throw new Error('Test data balances are required in test data mode')
+        }
+        oldBalanceOrig = data.oldBalanceOrig
+        newBalanceOrig = data.newBalanceOrig
+        oldBalanceDest = data.oldBalanceDest
+        newBalanceDest = data.newBalanceDest
+        step = data.step || 1
+      } else {
+        // Regular mode - calculate from users
+        const sender = users.find((u) => u.user_id === data.senderId)
+        const receiverUser = users.find((u) => u.user_id === data.receiverId)
+
+        if (!sender || !receiverUser) {
+          throw new Error('Invalid sender or receiver')
+        }
+
+        oldBalanceOrig = sender.balance
+        newBalanceOrig =
+          data.type === 'CASH_OUT' || data.type === 'TRANSFER'
+            ? oldBalanceOrig - data.amount
+            : oldBalanceOrig
+
+        oldBalanceDest = receiverUser.balance
+        newBalanceDest =
+          data.type === 'TRANSFER'
+            ? oldBalanceDest + data.amount
+            : oldBalanceDest
+        step = 1
       }
-
-      // Calculate balances
-      const oldBalanceOrig = sender.balance
-      const newBalanceOrig =
-        data.type === 'CASH_OUT' || data.type === 'TRANSFER'
-          ? oldBalanceOrig - data.amount
-          : oldBalanceOrig
-
-      const oldBalanceDest = receiverUser.balance
-      const newBalanceDest =
-        data.type === 'TRANSFER'
-          ? oldBalanceDest + data.amount
-          : oldBalanceDest
 
       // Call ML API for prediction
       const startTime = Date.now()
@@ -123,7 +162,7 @@ export default function Home() {
       try {
         prediction = await predictFraud(
           {
-            step: 1,
+            step: step,
             type: data.type,
             amount: data.amount,
             nameOrig: data.senderId,
@@ -158,36 +197,63 @@ export default function Home() {
         throw error
       }
 
-      // Create transaction record in Supabase
-      const transaction = await createTransaction({
-        sender_id: data.senderId,
-        receiver_id: data.receiverId,
-        amount: data.amount,
-        transaction_type: data.type,
-        old_balance_orig: oldBalanceOrig,
-        new_balance_orig: newBalanceOrig,
-        old_balance_dest: oldBalanceDest,
-        new_balance_dest: newBalanceDest,
-        step: 1,
-        hour: new Date().getHours(),
-        status: 'PENDING',
-        fraud_probability: prediction.prediction.fraud_probability,
-        fraud_decision: prediction.prediction.decision,
-        risk_level: prediction.prediction.risk_level,
-        model_confidence: prediction.prediction.confidence,
-        note: data.note,
-      })
+      // Determine transaction status based on prediction decision
+      const transactionStatus =
+        prediction.prediction.decision === 'block'
+          ? 'BLOCKED'
+          : prediction.prediction.decision === 'warn'
+          ? 'REVIEW'
+          : 'COMPLETED'
 
-      // Update transaction status based on prediction decision
-      // This should execute regardless of whether SHAP explanations are available
-      await updateTransaction(transaction.transaction_id, {
-        status:
-          prediction.prediction.decision === 'block'
-            ? 'BLOCKED'
-            : prediction.prediction.decision === 'warn'
-            ? 'REVIEW'
-            : 'COMPLETED',
-      })
+      // Save transaction to appropriate table based on mode
+      let transaction
+      if (isTestData) {
+        // Save to transaction_history table for test data
+        transaction = await createTransactionHistory({
+          sender_id: data.senderId,
+          receiver_id: data.receiverId,
+          amount: data.amount,
+          transaction_type: data.type,
+          old_balance_orig: oldBalanceOrig,
+          new_balance_orig: newBalanceOrig,
+          old_balance_dest: oldBalanceDest,
+          new_balance_dest: newBalanceDest,
+          step: step,
+          hour: new Date().getHours(),
+          status: transactionStatus,
+          fraud_probability: prediction.prediction.fraud_probability,
+          fraud_decision: prediction.prediction.decision,
+          risk_level: prediction.prediction.risk_level,
+          model_confidence: prediction.prediction.confidence,
+          is_test_data: true,
+          note: data.note,
+        })
+      } else {
+        // Save to transactions table for regular transactions
+        transaction = await createTransaction({
+          sender_id: data.senderId,
+          receiver_id: data.receiverId,
+          amount: data.amount,
+          transaction_type: data.type,
+          old_balance_orig: oldBalanceOrig,
+          new_balance_orig: newBalanceOrig,
+          old_balance_dest: oldBalanceDest,
+          new_balance_dest: newBalanceDest,
+          step: step,
+          hour: new Date().getHours(),
+          status: 'PENDING',
+          fraud_probability: prediction.prediction.fraud_probability,
+          fraud_decision: prediction.prediction.decision,
+          risk_level: prediction.prediction.risk_level,
+          model_confidence: prediction.prediction.confidence,
+          note: data.note,
+        })
+
+        // Update transaction status based on prediction decision
+        await updateTransaction(transaction.transaction_id, {
+          status: transactionStatus,
+        })
+      }
 
       // Track transaction event
       trackTransaction({
@@ -201,23 +267,31 @@ export default function Home() {
         riskLevel: prediction.prediction.risk_level,
       })
 
-      // Send email alert for BLOCK or WARN decisions
-      if (prediction.prediction.decision === 'block' || prediction.prediction.decision === 'warn') {
+      // Send email alert for BLOCK or WARN decisions (only in regular mode)
+      if (
+        !isTestData &&
+        (prediction.prediction.decision === 'block' ||
+          prediction.prediction.decision === 'warn')
+      ) {
         try {
-          await sendTransactionAlertEmail({
-            transactionId: transaction.transaction_id,
-            senderId: data.senderId,
-            receiverId: data.receiverId,
-            senderName: sender.name_en,
-            receiverName: receiverUser.name_en,
-            amount: data.amount,
-            transactionType: data.type,
-            fraudProbability: prediction.prediction.fraud_probability,
-            decision: prediction.prediction.decision,
-            riskLevel: prediction.prediction.risk_level,
-            timestamp: transaction.transaction_timestamp,
-            shapExplanations: prediction.shap_explanations,
-          })
+          const sender = users.find((u) => u.user_id === data.senderId)
+          const receiverUser = users.find((u) => u.user_id === data.receiverId)
+          if (sender && receiverUser) {
+            await sendTransactionAlertEmail({
+              transactionId: transaction.transaction_id,
+              senderId: data.senderId,
+              receiverId: data.receiverId,
+              senderName: sender.name_en,
+              receiverName: receiverUser.name_en,
+              amount: data.amount,
+              transactionType: data.type,
+              fraudProbability: prediction.prediction.fraud_probability,
+              decision: prediction.prediction.decision,
+              riskLevel: prediction.prediction.risk_level,
+              timestamp: transaction.transaction_timestamp,
+              shapExplanations: prediction.shap_explanations,
+            })
+          }
         } catch (emailError: any) {
           console.error('Failed to send email alert:', emailError)
           // Don't fail the transaction if email fails
