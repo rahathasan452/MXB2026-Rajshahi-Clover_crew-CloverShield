@@ -150,15 +150,38 @@ RISK_THRESHOLDS = {
 # HELPER FUNCTIONS
 # ============================================================================
 
+def convert_google_drive_url(url: str) -> str:
+    """Convert Google Drive view link to direct download link"""
+    # Extract file ID from various Google Drive URL formats
+    file_id = None
+    
+    # Format: https://drive.google.com/file/d/FILE_ID/view?usp=drive_link
+    if '/file/d/' in url:
+        file_id = url.split('/file/d/')[1].split('/')[0]
+    # Format: https://drive.google.com/uc?id=FILE_ID
+    elif 'id=' in url:
+        file_id = url.split('id=')[1].split('&')[0]
+    
+    if file_id:
+        # Use direct download format that bypasses virus scan for large files
+        return f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t"
+    
+    return url  # Return as-is if not a Google Drive URL
+
 def download_model_if_needed():
     """Download model from cloud storage (Google Drive) if not present locally"""
     model_path = os.getenv("MODEL_PATH", "Models/fraud_pipeline_final.pkl")
     
-    # Check if model already exists
+    # Check if model already exists and validate size
     if os.path.exists(model_path):
         file_size = os.path.getsize(model_path) / (1024 * 1024)  # Size in MB
-        print(f"✅ Model already exists at {model_path} ({file_size:.1f} MB)")
-        return model_path
+        # Validate it's actually a model file (should be > 50MB for a 250MB model)
+        if file_size > 50:
+            print(f"✅ Model already exists at {model_path} ({file_size:.1f} MB)")
+            return model_path
+        else:
+            print(f"⚠️ Existing file too small ({file_size:.1f} MB), re-downloading...")
+            os.remove(model_path)
     
     # Get download URL from environment variable
     model_url = os.getenv("MODEL_URL")
@@ -168,39 +191,73 @@ def download_model_if_needed():
             "Please provide a URL to download the model file."
         )
     
+    # Convert Google Drive URL to direct download format
+    download_url = convert_google_drive_url(model_url)
+    if download_url != model_url:
+        print(f"🔗 Converted Google Drive URL to direct download format")
+    
     # Create Models directory if it doesn't exist
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     
-    print(f"📥 Downloading model from {model_url}")
+    print(f"📥 Downloading model from Google Drive")
     print("⏳ This may take a few minutes for large files (250MB)...")
     
     try:
         import urllib.request
         import ssl
         
-        # Create SSL context (some URLs may need this)
+        # Create SSL context
         ssl_context = ssl.create_default_context()
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
         
+        # Create opener with SSL context
+        opener = urllib.request.build_opener(
+            urllib.request.HTTPSHandler(context=ssl_context)
+        )
+        urllib.request.install_opener(opener)
+        
         # Download with progress tracking
+        downloaded_bytes = 0
         def show_progress(block_num, block_size, total_size):
+            nonlocal downloaded_bytes
             if total_size > 0:
-                downloaded = block_num * block_size
-                percent = min(100, (downloaded / total_size) * 100)
-                mb_downloaded = downloaded / (1024 * 1024)
+                downloaded_bytes = block_num * block_size
+                percent = min(100, (downloaded_bytes / total_size) * 100)
+                mb_downloaded = downloaded_bytes / (1024 * 1024)
                 mb_total = total_size / (1024 * 1024)
                 if block_num % 100 == 0:  # Print every 100 blocks
                     print(f"  Progress: {percent:.1f}% ({mb_downloaded:.1f}/{mb_total:.1f} MB)")
         
         # Download the file
         urllib.request.urlretrieve(
-            model_url, 
+            download_url, 
             model_path,
             reporthook=show_progress
         )
         
+        # Validate downloaded file
         file_size = os.path.getsize(model_path) / (1024 * 1024)
+        
+        # Check if it's actually a pickle file (not HTML)
+        with open(model_path, 'rb') as f:
+            first_bytes = f.read(100)
+            # Pickle files start with specific bytes, HTML starts with '<'
+            if first_bytes.startswith(b'<'):
+                raise ValueError(
+                    f"Downloaded file appears to be HTML (not a pickle file). "
+                    f"File size: {file_size:.1f} MB. "
+                    f"Please check your Google Drive link format. "
+                    f"Make sure the file is shared with 'Anyone with the link' and use direct download format."
+                )
+        
+        # Validate file size (should be close to 250MB)
+        if file_size < 50:
+            raise ValueError(
+                f"Downloaded file is too small ({file_size:.1f} MB). "
+                f"Expected ~250MB. The download may have failed or the URL is incorrect."
+            )
+        
         print(f"✅ Model downloaded successfully to {model_path} ({file_size:.1f} MB)")
         return model_path
         
@@ -208,7 +265,9 @@ def download_model_if_needed():
         # Clean up partial download
         if os.path.exists(model_path):
             os.remove(model_path)
-        raise Exception(f"Failed to download model: {str(e)}")
+        error_msg = f"Failed to download model: {str(e)}"
+        print(f"❌ {error_msg}")
+        raise Exception(error_msg)
 
 def load_model():
     """Load the ML model on startup"""
@@ -239,15 +298,41 @@ def load_model():
         )
     
     try:
+        # Validate file exists and is readable
+        if not os.path.exists(actual_path):
+            raise FileNotFoundError(f"Model file not found at {actual_path}")
+        
+        # Check file size
+        file_size = os.path.getsize(actual_path) / (1024 * 1024)
+        if file_size < 50:
+            raise ValueError(
+                f"Model file is too small ({file_size:.1f} MB). "
+                f"Expected ~250MB. The file may be corrupted or incomplete."
+            )
+        
+        # Try to load the model
         inference_engine = load_inference_engine(
             model_path=actual_path,
             threshold=MODEL_THRESHOLD,
             groq_api_key=groq_api_key
         )
-        print(f"✅ Model loaded successfully from {actual_path}")
+        print(f"✅ Model loaded successfully from {actual_path} ({file_size:.1f} MB)")
+    except FileNotFoundError as e:
+        error_msg = f"❌ Model file not found: {str(e)}"
+        print(error_msg)
+        raise FileNotFoundError(error_msg) from e
+    except ValueError as e:
+        error_msg = f"❌ Invalid model file: {str(e)}"
+        print(error_msg)
+        raise ValueError(error_msg) from e
     except Exception as e:
-        print(f"❌ Error loading model: {str(e)}")
-        raise
+        error_msg = f"❌ Error loading model: {str(e)}"
+        print(error_msg)
+        print(f"   Model path: {actual_path}")
+        print(f"   File exists: {os.path.exists(actual_path) if actual_path else False}")
+        if actual_path and os.path.exists(actual_path):
+            print(f"   File size: {os.path.getsize(actual_path) / (1024 * 1024):.1f} MB")
+        raise Exception(error_msg) from e
 
 def calculate_decision(probability: float) -> tuple[str, str]:
     """Calculate decision and risk level from probability"""
