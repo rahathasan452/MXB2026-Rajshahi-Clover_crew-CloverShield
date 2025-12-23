@@ -20,7 +20,7 @@ export const Icon: React.FC<IconProps> = ({
 }) => {
   const style: React.CSSProperties = {
     fontSize: typeof size === 'number' ? `${size}px` : size,
-    fontVariationSettings: filled ? '"FILL" 1' : '"FILL" 0',
+    fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' 400, 'GRAD' 0, 'opsz' ${typeof size === 'number' ? size : 24}`,
   }
 
   return (

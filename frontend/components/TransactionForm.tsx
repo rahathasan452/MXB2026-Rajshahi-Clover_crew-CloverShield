@@ -555,7 +555,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             type="number"
             min="1"
             max={sender && !isTestDataMode ? sender.balance : undefined}
-            step="100"
+            step="any"
             value={transactionForm.amount}
             onChange={(e) =>
               setTransactionForm({ amount: parseFloat(e.target.value) || 0 })
