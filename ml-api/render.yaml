@@ -15,6 +15,10 @@ services:
         value: 8000
       - key: HOST
         value: 0.0.0.0
+      - key: MAX_FIT_ROWS
+        value: "30000"  # Reduced for Render free tier (512MB RAM)
+      - key: PAGERANK_LIMIT
+        value: "5000"  # Reduced for memory efficiency
       - key: GROQ_API_KEY
         sync: false  # Set in Render dashboard
     healthCheckPath: /health

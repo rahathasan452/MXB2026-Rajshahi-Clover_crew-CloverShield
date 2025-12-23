@@ -158,23 +158,58 @@ class FraudInference:
             ])
             
             test_df = None
+            dataset_path = None
             for path in test_paths:
                 if os.path.exists(path):
-                    print(f"📊 Loading test dataset from {path}...")
-                    try:
-                        # Read CSV - handle large files efficiently
-                        test_df = pd.read_csv(path, nrows=None)  # Read all rows
-                        print(f"✅ Loaded {len(test_df)} rows from test dataset")
-                        break
-                    except Exception as e:
-                        print(f"⚠️ Failed to load {path}: {str(e)}")
-                        continue
+                    dataset_path = path
+                    print(f"📊 Found test dataset at {path}")
+                    break
             
-            if test_df is None:
+            if dataset_path is None:
                 raise FileNotFoundError(
                     f"Test dataset not found. Tried: {test_paths}\n"
                     "Please ensure test dataset CSV is available for fitting feature engineer."
                 )
+            
+            # Memory-efficient loading: sample dataset for fitting to reduce RAM usage
+            # Read a sample of the dataset instead of the full file
+            max_rows_for_fitting = int(os.getenv("MAX_FIT_ROWS", "50000"))  # Default 50k rows
+            print(f"💾 Loading sample of dataset (max {max_rows_for_fitting:,} rows) for memory efficiency...")
+            
+            try:
+                # Use chunked reading with sampling for memory efficiency
+                # Read in chunks and sample from each chunk
+                chunk_size = 10000
+                chunks = []
+                total_read = 0
+                
+                for chunk in pd.read_csv(dataset_path, chunksize=chunk_size):
+                    # Sample from chunk if we're getting close to limit
+                    if total_read + len(chunk) > max_rows_for_fitting:
+                        remaining = max_rows_for_fitting - total_read
+                        if remaining > 0:
+                            chunk = chunk.head(remaining)
+                        chunks.append(chunk)
+                        break
+                    chunks.append(chunk)
+                    total_read += len(chunk)
+                    if total_read >= max_rows_for_fitting:
+                        break
+                
+                # Combine chunks
+                if chunks:
+                    test_df = pd.concat(chunks, ignore_index=True)
+                    print(f"✅ Loaded {len(test_df):,} rows for feature engineering fitting (sampled from dataset)")
+                else:
+                    # Fallback: load with direct limit
+                    test_df = pd.read_csv(dataset_path, nrows=max_rows_for_fitting)
+                    print(f"✅ Loaded {len(test_df):,} rows (direct read with limit)")
+                    
+            except Exception as e:
+                print(f"⚠️ Failed to load with chunking, trying direct read: {str(e)}")
+                # Fallback: load with limit
+                test_df = pd.read_csv(dataset_path, nrows=max_rows_for_fitting)
+                print(f"✅ Loaded {len(test_df):,} rows (fallback method)")
             
             # Ensure required columns exist
             required_cols = ['step', 'type', 'amount', 'nameOrig', 'oldBalanceOrig', 
@@ -187,16 +222,30 @@ class FraudInference:
             if 'isFlaggedFraud' not in test_df.columns:
                 test_df['isFlaggedFraud'] = 0
             
-            # Fit feature engineer on test dataset
-            print("🔧 Fitting feature engineer on test dataset...")
+            # Fit feature engineer on sampled dataset
+            print("🔧 Fitting feature engineer on sampled dataset...")
             self.feature_engineer.fit(test_df)
             print("✅ Feature engineer fitted successfully")
             
-            # Prepare SHAP background from transformed test data (sample)
-            print("📊 Preparing SHAP background data...")
-            sample_size = min(200, len(test_df))
-            test_sample = test_df.sample(n=sample_size, random_state=42) if len(test_df) > sample_size else test_df
-            self.shap_background = self.feature_engineer.transform(test_sample)
+            # Clear the full dataset from memory
+            del test_df
+            import gc
+            gc.collect()
+            print("🧹 Cleared dataset from memory")
+            
+            # Prepare SHAP background from a small sample (reload minimal data)
+            print("📊 Preparing SHAP background data (small sample)...")
+            shap_sample_size = min(100, max_rows_for_fitting)  # Reduced from 200 to 100
+            # Reload just a tiny sample for SHAP background
+            shap_df = pd.read_csv(dataset_path, nrows=shap_sample_size * 2)  # Get more to sample from
+            shap_sample = shap_df.sample(n=min(shap_sample_size, len(shap_df)), random_state=42)
+            # Ensure required columns
+            if 'isFlaggedFraud' not in shap_sample.columns:
+                shap_sample['isFlaggedFraud'] = 0
+            self.shap_background = self.feature_engineer.transform(shap_sample)
+            del shap_df, shap_sample
+            gc.collect()
+            print(f"✅ SHAP background prepared ({len(self.shap_background)} samples)")
             
             # Initialize SHAP explainer
             if XGBOOST_AVAILABLE and isinstance(self.model, xgb.XGBClassifier):
