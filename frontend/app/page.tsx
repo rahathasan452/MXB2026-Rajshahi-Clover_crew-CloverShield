@@ -23,6 +23,7 @@ import { DecisionZone } from '@/components/DecisionZone'
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
 import { RiskDrivers } from '@/components/RiskDrivers'
 import { LanguageToggle } from '@/components/LanguageToggle'
+import { LLMExplanationBox } from '@/components/LLMExplanationBox'
 import { Icon } from '@/components/Icon'
 import toast from 'react-hot-toast'
 
@@ -412,15 +413,10 @@ export default function Home() {
 
                 {/* LLM Explanation */}
                 {currentPrediction.llm_explanation && (
-                  <div className="bg-card-bg rounded-xl p-6 border border-white/10">
-                    <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-                      <Icon name="psychology" size={24} className="text-primary" />
-                      {language === 'bn' ? 'AI ব্যাখ্যা' : 'AI Explanation'}
-                    </h3>
-                    <p className="text-text-primary">
-                      {currentPrediction.llm_explanation.text}
-                    </p>
-                  </div>
+                  <LLMExplanationBox
+                    explanation={currentPrediction.llm_explanation.text}
+                    language={language}
+                  />
                 )}
 
                 {/* Risk Drivers */}

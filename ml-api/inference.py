@@ -351,7 +351,7 @@ class FraudInference:
         
         return feat_df.head(topk)
     
-    def explain_llm(self, probability: float, shap_table: pd.DataFrame, topk: int = 6, language: str = 'en') -> Optional[str]:
+    def explain_llm(self, probability: float, shap_table: pd.DataFrame, transaction_df: Optional[pd.DataFrame] = None, topk: int = 6, language: str = 'en') -> Optional[str]:
         """
         Generate human-readable explanation using Groq LLM
         
@@ -376,39 +376,93 @@ class FraudInference:
         try:
             client = Groq(api_key=self.groq_api_key)
             
-            top_feats = shap_table.head(topk)[['feature', 'value', 'shap']].copy()
-            top_lines = []
-            for _, row in top_feats.iterrows():
-                top_lines.append(f"- {row['feature']}: value={row['value']:.6g}, shap={row['shap']:.6g}")
+            # Determine if fraud is detected
+            is_fraud = probability >= self.threshold
+            decision = "block" if is_fraud else ("warn" if probability >= self.threshold * 0.5 else "pass")
+            
+            # Get transaction details if available
+            amount = None
+            tx_type = None
+            old_balance_orig = None
+            new_balance_orig = None
+            old_balance_dest = None
+            new_balance_dest = None
+            
+            if transaction_df is not None and len(transaction_df) > 0:
+                row = transaction_df.iloc[0]
+                amount = row.get('amount', None)
+                tx_type = row.get('type', None)
+                old_balance_orig = row.get('oldBalanceOrig', None)
+                new_balance_orig = row.get('newBalanceOrig', None)
+                old_balance_dest = row.get('oldBalanceDest', None)
+                new_balance_dest = row.get('newBalanceDest', None)
             
             if language == 'bn':
                 system_prompt = (
-                    "আপনি একজন সংক্ষিপ্ত ফ্রড-বিশ্লেষণ সহায়ক। "
-                    "একটি লেনদেনের জন্য বৈশিষ্ট্য অবদান (SHAP মান) এবং তাদের পর্যবেক্ষিত মান দেওয়া হলে, "
-                    "মডেল কেন প্রদত্ত ফ্রড সম্ভাবনা নির্ধারণ করেছে তার একটি সংক্ষিপ্ত (৩-৬ বাক্য) মানব-পাঠযোগ্য ব্যাখ্যা তৈরি করুন। "
-                    "কোন কারণগুলি ঝুঁকি বাড়ায় বা কমায় তা উল্লেখ করুন, এবং একটি সংক্ষিপ্ত সুপারিশকৃত পদক্ষেপ (যেমন, ব্লক / পর্যালোচনা / অনুমোদন) দিন। "
+                    "আপনি একজন ব্যবহারকারী-বান্ধব ফ্রড সতর্কতা সহায়ক। "
+                    "আপনার কাজ হল সাধারণ ব্যবহারকারীদের জন্য সহজ ভাষায় ব্যাখ্যা করা, কোন লেনদেন কেন নিরাপদ বা ঝুঁকিপূর্ণ। "
+                    "কোনও প্রযুক্তিগত শব্দ (যেমন SHAP, বৈশিষ্ট্য মান, ইত্যাদি) ব্যবহার করবেন না। "
+                    "পরিবর্তে, ব্যবহারকারীকে বলুন: "
+                    "- এই লেনদেনে কোন লাল সংকেত আছে কিনা "
+                    "- তারা কী সতর্ক থাকতে হবে "
+                    "- কেন এই লেনদেন নিরাপদ বা ঝুঁকিপূর্ণ "
+                    "- যদি ফ্রড সনাক্ত হয়, তাহলে কেন এটি ফ্রড হতে পারে "
+                    "- তারা কী করতে পারে বা এড়াতে পারে "
+                    "ব্যাখ্যাটি সহজ, বন্ধুত্বপূর্ণ এবং ব্যবহারকারীর জন্য কার্যকর হতে হবে। "
                     "সমস্ত উত্তর বাংলায় লিখুন।"
                 )
                 
+                tx_info = ""
+                if amount is not None:
+                    tx_info += f"- লেনদেনের পরিমাণ: ৳ {amount:,.2f}\n"
+                if tx_type is not None:
+                    tx_type_bn = "ক্যাশ আউট" if tx_type == "CASH_OUT" else "স্থানান্তর" if tx_type == "TRANSFER" else tx_type
+                    tx_info += f"- লেনদেনের ধরন: {tx_type_bn}\n"
+                if old_balance_orig is not None and new_balance_orig is not None:
+                    balance_change = new_balance_orig - old_balance_orig
+                    tx_info += f"- প্রেরকের ব্যালেন্স পরিবর্তন: ৳ {balance_change:,.2f}\n"
+                if old_balance_dest is not None and new_balance_dest is not None:
+                    balance_change = new_balance_dest - old_balance_dest
+                    tx_info += f"- গ্রহীতার ব্যালেন্স পরিবর্তন: ৳ {balance_change:,.2f}\n"
+                
                 user_prompt = (
-                    f"মডেল ফ্রড সম্ভাবনা: {probability:.4f}\n"
-                    f"ব্লক করার থ্রেশহোল্ড: {self.threshold:.4f}\n"
-                    f"শীর্ষ অবদানকারী বৈশিষ্ট্য (বৈশিষ্ট্য: মান, shap):\n" + "\n".join(top_lines) +
-                    "\n\nএখন সংক্ষিপ্ত ব্যাখ্যা লিখুন।"
+                    f"লেনদেনের ফ্রড সম্ভাবনা: {probability*100:.2f}%\n"
+                    f"সিদ্ধান্ত: {'ফ্রড সনাক্ত হয়েছে - লেনদেন ব্লক করা হয়েছে' if is_fraud else ('সতর্কতা - ম্যানুয়াল পর্যালোচনা প্রয়োজন' if decision == 'warn' else 'লেনদেন নিরাপদ - অনুমোদন করা যেতে পারে')}\n"
+                    f"লেনদেনের তথ্য:\n{tx_info}"
+                    f"\nএকটি সহজ, ব্যবহারকারী-বান্ধব ব্যাখ্যা লিখুন যা ব্যবহারকারীকে বুঝতে সাহায্য করবে কেন এই লেনদেন নিরাপদ বা ঝুঁকিপূর্ণ, এবং তাদের কী জানা উচিত বা সতর্ক থাকতে হবে।"
                 )
             else:
                 system_prompt = (
-                    "You are a concise fraud-analytics assistant. "
-                    "Given feature contributions (SHAP values) and their observed values for a single transaction, "
-                    "produce a short (3-6 sentences) human-readable explanation why the model assigned the given fraud probability. "
-                    "Mention which factors increase or decrease risk, and a brief recommended action (e.g., block / review / allow)."
+                    "You are a user-friendly fraud alert assistant. "
+                    "Your job is to explain in simple language why a transaction is safe or risky for regular users. "
+                    "Do NOT use any technical terms (like SHAP, feature values, etc.). "
+                    "Instead, tell the user: "
+                    "- What red flags exist in this transaction (if any) "
+                    "- What they should be aware of or cautious about "
+                    "- Why this transaction is safe or risky "
+                    "- If fraud is detected, explain why it might be fraud "
+                    "- What they can do or should avoid "
+                    "The explanation should be simple, friendly, and actionable for the user. "
+                    "Focus on what matters to them, not technical details."
                 )
                 
+                tx_info = ""
+                if amount is not None:
+                    tx_info += f"- Transaction amount: ৳ {amount:,.2f}\n"
+                if tx_type is not None:
+                    tx_info += f"- Transaction type: {tx_type}\n"
+                if old_balance_orig is not None and new_balance_orig is not None:
+                    balance_change = new_balance_orig - old_balance_orig
+                    tx_info += f"- Sender balance change: ৳ {balance_change:,.2f}\n"
+                if old_balance_dest is not None and new_balance_dest is not None:
+                    balance_change = new_balance_dest - old_balance_dest
+                    tx_info += f"- Receiver balance change: ৳ {balance_change:,.2f}\n"
+                
                 user_prompt = (
-                    f"Model fraud probability: {probability:.4f}\n"
-                    f"Threshold for blocking: {self.threshold:.4f}\n"
-                    f"Top contributing features (feature: value, shap):\n" + "\n".join(top_lines) +
-                    "\n\nWrite the short explanation now."
+                    f"Transaction fraud probability: {probability*100:.2f}%\n"
+                    f"Decision: {'Fraud detected - Transaction blocked' if is_fraud else ('Warning - Manual review required' if decision == 'warn' else 'Transaction safe - Can be approved')}\n"
+                    f"Transaction details:\n{tx_info}"
+                    f"\nWrite a simple, user-friendly explanation that helps the user understand why this transaction is safe or risky, and what they should know or be cautious about."
                 )
             
             chat_completion = client.chat.completions.create(
@@ -417,8 +471,8 @@ class FraudInference:
                     {"role": "user", "content": user_prompt}
                 ],
                 model="llama-3.1-8b-instant",
-                temperature=0.0,
-                max_tokens=250
+                temperature=0.3,
+                max_tokens=500
             )
             
             explanation = chat_completion.choices[0].message.content.strip()
@@ -468,7 +522,7 @@ class FraudInference:
         # Generate LLM explanation if requested
         llm_explanation = None
         if use_llm and GROQ_AVAILABLE:
-            llm_explanation = self.explain_llm(probabilities[0], shap_table, topk=topk, language=language)
+            llm_explanation = self.explain_llm(probabilities[0], shap_table, transaction_df=transaction_df, topk=topk, language=language)
         
         return {
             'probabilities': probabilities,
