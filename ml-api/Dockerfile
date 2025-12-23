@@ -35,13 +35,18 @@ RUN mkdir -p Models
 # Note: In production, you may want to download from cloud storage
 # COPY Models/fraud_pipeline_final.pkl Models/
 
-# Expose port
+# Copy and set up entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Expose port (Render will assign PORT dynamically)
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Run the application using entrypoint script
+# This ensures PORT environment variable is properly read
+ENTRYPOINT ["/entrypoint.sh"]
 

@@ -372,14 +372,21 @@ def transaction_to_dataframe(transaction: TransactionInput) -> pd.DataFrame:
 @app.on_event("startup")
 async def startup_event():
     """Load model on startup"""
+    # Log that server is starting
+    port = os.getenv("PORT", "8000")
+    print(f"🚀 Server starting on port {port}")
+    print("📦 Starting model download/load process...")
+    
     try:
         # Download model from Google Drive if needed
         download_model_if_needed()
         # Then load it
         load_model()
+        print("✅ Model loaded successfully - API is ready!")
     except Exception as e:
         print(f"⚠️ Warning: Model not loaded: {str(e)}")
         print("⚠️ API will return errors until model is available")
+        print("⚠️ Server is running but model predictions will fail")
 
 @app.get("/")
 async def root():
