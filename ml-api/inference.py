@@ -399,9 +399,9 @@ class FraudInference:
             
             if language == 'bn':
                 system_prompt = (
-                    "আপনি একজন ব্যবহারকারী-বান্ধব ফ্রড সতর্কতা সহায়ক। "
+                    "আপনি একজন ব্যবহারকারী-বান্ধব মোবাইল ব্যাংকিং জালিয়াতি সতর্কতা সহায়ক। "
                     "আপনার কাজ হল সাধারণ ব্যবহারকারীদের জন্য সহজ ভাষায় ব্যাখ্যা করা, কোন লেনদেন কেন নিরাপদ বা ঝুঁকিপূর্ণ। "
-                    "কোনও প্রযুক্তিগত শব্দ (যেমন SHAP, বৈশিষ্ট্য মান, ইত্যাদি) ব্যবহার করবেন না। "
+                    "কোনও প্রযুক্তিগত শব্দ (যেমন SHAP, বৈশিষ্ট্য মান,technical detail, values ইত্যাদি) ব্যবহার করবেন না। "
                     "পরিবর্তে, ব্যবহারকারীকে বলুন: "
                     "- এই লেনদেনে কোন লাল সংকেত আছে কিনা "
                     "- তারা কী সতর্ক থাকতে হবে "
@@ -433,9 +433,9 @@ class FraudInference:
                 )
             else:
                 system_prompt = (
-                    "You are a user-friendly fraud alert assistant. "
+                    "You are a user-friendly mobile banking fraud alert assistant. "
                     "Your job is to explain in simple language why a transaction is safe or risky for regular users. "
-                    "Do NOT use any technical terms (like SHAP, feature values, etc.). "
+                    "Do NOT use any technical terms (like SHAP, feature values, technical detail, values etc.). "
                     "Instead, tell the user: "
                     "- What red flags exist in this transaction (if any) "
                     "- What they should be aware of or cautious about "
