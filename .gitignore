@@ -72,7 +72,7 @@ logs/
 
 
 # Data files (if large)
-*.csv
+
 !demo/mock_data.py
 
 # Temporary files
