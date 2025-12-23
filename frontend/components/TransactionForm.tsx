@@ -43,9 +43,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [loadingTestData, setLoadingTestData] = useState(false)
   const [testTransactionDetails, setTestTransactionDetails] = useState<{
     oldBalanceOrig: number
-    newBalanceOrig: number
     oldBalanceDest: number
-    newBalanceDest: number
     step: number
   } | null>(null)
 
@@ -158,9 +156,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       if (data.transaction) {
         setTestTransactionDetails({
           oldBalanceOrig: data.transaction.oldBalanceOrig,
-          newBalanceOrig: data.transaction.newBalanceOrig,
           oldBalanceDest: data.transaction.oldBalanceDest,
-          newBalanceDest: data.transaction.newBalanceDest,
           step: data.transaction.step,
         })
         // Auto-fill amount and type if not already set
@@ -241,10 +237,21 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
     // Include test data fields if in test mode
     if (isTestDataMode && testTransactionDetails) {
+      // Calculate new balances based on amount and transaction type
+      const newBalanceOrig =
+        transactionForm.type === 'CASH_OUT' || transactionForm.type === 'TRANSFER'
+          ? testTransactionDetails.oldBalanceOrig - transactionForm.amount
+          : testTransactionDetails.oldBalanceOrig
+      
+      const newBalanceDest =
+        transactionForm.type === 'TRANSFER'
+          ? testTransactionDetails.oldBalanceDest + transactionForm.amount
+          : testTransactionDetails.oldBalanceDest
+
       submitData.oldBalanceOrig = testTransactionDetails.oldBalanceOrig
-      submitData.newBalanceOrig = testTransactionDetails.newBalanceOrig
+      submitData.newBalanceOrig = newBalanceOrig
       submitData.oldBalanceDest = testTransactionDetails.oldBalanceDest
-      submitData.newBalanceDest = testTransactionDetails.newBalanceDest
+      submitData.newBalanceDest = newBalanceDest
       submitData.step = testTransactionDetails.step
     }
 
@@ -373,7 +380,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   {language === 'bn' ? 'নতুন ব্যালেন্স' : 'New Balance'}
                 </span>
                 <span className="text-lg font-bold text-primary">
-                  {formatCurrency(testTransactionDetails.newBalanceOrig)}
+                  {formatCurrency(
+                    transactionForm.type === 'CASH_OUT' || transactionForm.type === 'TRANSFER'
+                      ? testTransactionDetails.oldBalanceOrig - (transactionForm.amount || 0)
+                      : testTransactionDetails.oldBalanceOrig
+                  )}
                 </span>
               </div>
             </div>
@@ -503,7 +514,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   {language === 'bn' ? 'গ্রহীতার নতুন ব্যালেন্স' : 'Receiver New Balance'}
                 </span>
                 <span className="text-lg font-bold text-primary">
-                  {formatCurrency(testTransactionDetails.newBalanceDest)}
+                  {formatCurrency(
+                    transactionForm.type === 'TRANSFER'
+                      ? testTransactionDetails.oldBalanceDest + (transactionForm.amount || 0)
+                      : testTransactionDetails.oldBalanceDest
+                  )}
                 </span>
               </div>
             </div>
