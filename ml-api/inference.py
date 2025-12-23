@@ -61,107 +61,141 @@ except ImportError:
 class FraudInference:
     """
     Inference class for fraud detection pipeline with explainability
+    Uses fitted feature engineer and XGBoost model separately
     """
     
-    def __init__(self, model_path: str, threshold: float = 0.0793, groq_api_key: Optional[str] = None):
+    def __init__(
+        self, 
+        model_path: str, 
+        test_dataset_path: Optional[str] = None,
+        threshold: float = 0.0793, 
+        groq_api_key: Optional[str] = None,
+        pagerank_limit: Optional[int] = None
+    ):
         """
         Initialize inference engine
         
         Args:
-            model_path: Path to the saved pipeline pkl file
+            model_path: Path to the saved XGBoost model pkl file
+            test_dataset_path: Path to test dataset CSV for fitting feature engineer
             threshold: Decision threshold for fraud classification
             groq_api_key: Optional Groq API key for LLM explanations
+            pagerank_limit: Optional limit on nodes for PageRank computation
         """
         self.model_path = model_path
+        self.test_dataset_path = test_dataset_path
         self.threshold = threshold
         self.groq_api_key = groq_api_key
-        self.pipeline = None
+        self.pagerank_limit = pagerank_limit
+        self.model = None
+        self.feature_engineer = None
         self.shap_background = None
         self.shap_explainer = None
         
-        # Load model
+        # Load model and fit feature engineer
         self.load_model()
+        self.fit_feature_engineer()
     
     def load_model(self):
-        """Load the trained pipeline model"""
+        """Load the trained XGBoost model"""
         try:
             if not os.path.exists(self.model_path):
                 raise FileNotFoundError(f"Model file not found: {self.model_path}")
             
-            # Ensure FraudFeatureEngineer is registered
-            try:
-                from feature_engineering import FraudFeatureEngineer
-                import types
-                if '__main__' not in sys.modules:
-                    sys.modules['__main__'] = types.ModuleType('__main__')
-                setattr(sys.modules['__main__'], 'FraudFeatureEngineer', FraudFeatureEngineer)
-            except ImportError:
-                pass
+            # Load model - could be XGBoost directly or pipeline with XGBoost
+            loaded_obj = joblib.load(self.model_path)
             
-            self.pipeline = joblib.load(self.model_path)
-            print(f"✅ Model loaded successfully from {self.model_path}")
-            
-            # Verify pipeline structure
-            if not hasattr(self.pipeline, 'named_steps'):
-                raise ValueError("Pipeline must have 'named_steps' attribute")
-            
-            if 'fe' not in self.pipeline.named_steps:
-                raise ValueError("Pipeline must have 'fe' (feature engineering) step")
-            
-            if 'clf' not in self.pipeline.named_steps:
-                raise ValueError("Pipeline must have 'clf' (classifier) step")
+            # Check if it's a pipeline or just XGBoost
+            if hasattr(loaded_obj, 'named_steps') and 'clf' in loaded_obj.named_steps:
+                # It's a pipeline, extract the classifier
+                self.model = loaded_obj.named_steps['clf']
+                print(f"✅ Model loaded from pipeline at {self.model_path}")
+            elif XGBOOST_AVAILABLE and isinstance(loaded_obj, xgb.XGBClassifier):
+                # It's XGBoost directly
+                self.model = loaded_obj
+                print(f"✅ XGBoost model loaded successfully from {self.model_path}")
+            else:
+                # Try to use it as-is (might be XGBoost wrapped)
+                self.model = loaded_obj
+                print(f"✅ Model loaded from {self.model_path} (assuming XGBoost)")
                 
-        except AttributeError as e:
-            if 'FraudFeatureEngineer' in str(e):
-                error_msg = (
-                    f"❌ Error loading model: {str(e)}\n"
-                    "This usually means the FraudFeatureEngineer class is not available.\n"
-                    "Please ensure feature_engineering.py is in the same directory as inference.py"
-                )
-                print(error_msg)
-                raise AttributeError(error_msg) from e
-            raise
         except Exception as e:
             print(f"❌ Error loading model: {str(e)}")
             raise
     
-    def prepare_shap_background(self, background_df: Optional[pd.DataFrame] = None, n_samples: int = 200):
-        """
-        Prepare background data for SHAP explainer
-        
-        Args:
-            background_df: Optional background DataFrame (raw format)
-            n_samples: Number of samples to use for background
-        """
+    def fit_feature_engineer(self):
+        """Load test dataset and fit feature engineer"""
         try:
-            fe = self.pipeline.named_steps['fe']
+            # Initialize feature engineer
+            from feature_engineering import FraudFeatureEngineer
+            self.feature_engineer = FraudFeatureEngineer(pagerank_limit=self.pagerank_limit)
             
-            if background_df is not None:
-                self.shap_background = fe.transform(background_df)
+            # Find test dataset path
+            test_paths = []
+            if self.test_dataset_path:
+                test_paths.append(self.test_dataset_path)
+            
+            # Try common locations
+            test_paths.extend([
+                "assets/test_dataset_woIDX.csv",
+                "../assets/test_dataset_woIDX.csv",
+                "assets/test_dataset.csv",
+                "../assets/test_dataset.csv",
+                "/app/assets/test_dataset_woIDX.csv",
+                "/app/assets/test_dataset.csv"
+            ])
+            
+            test_df = None
+            for path in test_paths:
+                if os.path.exists(path):
+                    print(f"📊 Loading test dataset from {path}...")
+                    try:
+                        # Read CSV - handle large files efficiently
+                        test_df = pd.read_csv(path, nrows=None)  # Read all rows
+                        print(f"✅ Loaded {len(test_df)} rows from test dataset")
+                        break
+                    except Exception as e:
+                        print(f"⚠️ Failed to load {path}: {str(e)}")
+                        continue
+            
+            if test_df is None:
+                raise FileNotFoundError(
+                    f"Test dataset not found. Tried: {test_paths}\n"
+                    "Please ensure test dataset CSV is available for fitting feature engineer."
+                )
+            
+            # Ensure required columns exist
+            required_cols = ['step', 'type', 'amount', 'nameOrig', 'oldBalanceOrig', 
+                           'newBalanceOrig', 'nameDest', 'oldBalanceDest', 'newBalanceDest']
+            missing_cols = [col for col in required_cols if col not in test_df.columns]
+            if missing_cols:
+                raise ValueError(f"Test dataset missing required columns: {missing_cols}")
+            
+            # Add isFlaggedFraud if missing
+            if 'isFlaggedFraud' not in test_df.columns:
+                test_df['isFlaggedFraud'] = 0
+            
+            # Fit feature engineer on test dataset
+            print("🔧 Fitting feature engineer on test dataset...")
+            self.feature_engineer.fit(test_df)
+            print("✅ Feature engineer fitted successfully")
+            
+            # Prepare SHAP background from transformed test data (sample)
+            print("📊 Preparing SHAP background data...")
+            sample_size = min(200, len(test_df))
+            test_sample = test_df.sample(n=sample_size, random_state=42) if len(test_df) > sample_size else test_df
+            self.shap_background = self.feature_engineer.transform(test_sample)
+            
+            # Initialize SHAP explainer
+            if XGBOOST_AVAILABLE and isinstance(self.model, xgb.XGBClassifier):
+                self.shap_explainer = shap.TreeExplainer(self.model)
+                print("✅ SHAP explainer initialized")
             else:
-                print("⚠️ No background data provided. Using minimal background for SHAP.")
-                self.shap_background = None
-            
-            # Initialize SHAP explainer if we have background
-            if self.shap_background is not None and len(self.shap_background) > 0:
-                clf = self.pipeline.named_steps['clf']
-                try:
-                    if XGBOOST_AVAILABLE and isinstance(clf, xgb.XGBClassifier):
-                        self.shap_explainer = shap.TreeExplainer(clf)
-                    else:
-                        self.shap_explainer = shap.Explainer(
-                            clf, 
-                            self.shap_background.iloc[:min(100, len(self.shap_background))],
-                            feature_names=self.shap_background.columns.tolist()
-                        )
-                    print("✅ SHAP explainer initialized")
-                except Exception as e:
-                    print(f"⚠️ SHAP explainer initialization failed: {str(e)}")
-                    self.shap_explainer = None
-                    
+                print("⚠️ SHAP explainer not initialized (XGBoost not available or model type unknown)")
+                
         except Exception as e:
-            print(f"⚠️ Error preparing SHAP background: {str(e)}")
-            self.shap_explainer = None
+            print(f"❌ Error fitting feature engineer: {str(e)}")
+            raise
     
     def predict(self, transaction_df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -174,11 +208,17 @@ class FraudInference:
             probabilities: Array of fraud probabilities
             decisions: Array of binary decisions (0/1)
         """
-        if self.pipeline is None:
+        if self.model is None:
             raise ValueError("Model not loaded. Call load_model() first.")
         
-        # Get probabilities
-        probabilities = self.pipeline.predict_proba(transaction_df)[:, 1]
+        if self.feature_engineer is None:
+            raise ValueError("Feature engineer not fitted. Call fit_feature_engineer() first.")
+        
+        # Transform transaction using fitted feature engineer
+        X_transformed = self.feature_engineer.transform(transaction_df)
+        
+        # Get probabilities from XGBoost model
+        probabilities = self.model.predict_proba(X_transformed)[:, 1]
         
         # Make decisions based on threshold
         decisions = (probabilities >= self.threshold).astype(int)
@@ -196,14 +236,14 @@ class FraudInference:
         Returns:
             DataFrame with feature contributions sorted by importance
         """
-        if self.pipeline is None:
+        if self.model is None:
             raise ValueError("Model not loaded")
         
-        fe = self.pipeline.named_steps['fe']
-        clf = self.pipeline.named_steps['clf']
+        if self.feature_engineer is None:
+            raise ValueError("Feature engineer not fitted")
         
-        # Transform transaction
-        X_trans = fe.transform(transaction_df)
+        # Transform transaction using fitted feature engineer
+        X_trans = self.feature_engineer.transform(transaction_df)
         
         # Compute SHAP values
         shap_values = None
@@ -219,13 +259,14 @@ class FraudInference:
                     shap_exp = self.shap_explainer(X_trans)
                     shap_values = shap_exp.values[0] if shap_exp.values.ndim == 2 else shap_exp.values
             else:
-                if XGBOOST_AVAILABLE and isinstance(clf, xgb.XGBClassifier):
-                    explainer = shap.TreeExplainer(clf)
+                # Fallback: create explainer on the fly
+                if XGBOOST_AVAILABLE and isinstance(self.model, xgb.XGBClassifier):
+                    explainer = shap.TreeExplainer(self.model)
                     shap_values = explainer.shap_values(X_trans)
                     if isinstance(shap_values, list):
                         shap_values = shap_values[1]
                 else:
-                    explainer = shap.Explainer(clf, X_trans.iloc[[0]], feature_names=feature_names)
+                    explainer = shap.Explainer(self.model, X_trans.iloc[[0]], feature_names=feature_names)
                     shap_exp = explainer(X_trans)
                     shap_values = shap_exp.values[0] if shap_exp.values.ndim == 2 else shap_exp.values
         except Exception as e:
@@ -378,16 +419,20 @@ class FraudInference:
 
 def load_inference_engine(
     model_path: str = "Models/fraud_pipeline_final.pkl",
+    test_dataset_path: Optional[str] = None,
     threshold: float = 0.0793,
-    groq_api_key: Optional[str] = None
+    groq_api_key: Optional[str] = None,
+    pagerank_limit: Optional[int] = None
 ) -> FraudInference:
     """
     Convenience function to load inference engine
     
     Args:
         model_path: Path to model file
+        test_dataset_path: Path to test dataset CSV (optional, will search common locations)
         threshold: Decision threshold
         groq_api_key: Optional Groq API key
+        pagerank_limit: Optional limit on nodes for PageRank computation
         
     Returns:
         Initialized FraudInference instance
@@ -412,5 +457,11 @@ def load_inference_engine(
             "Please ensure the model file is in one of these locations."
         )
     
-    return FraudInference(actual_path, threshold, groq_api_key)
+    return FraudInference(
+        actual_path, 
+        test_dataset_path=test_dataset_path,
+        threshold=threshold, 
+        groq_api_key=groq_api_key,
+        pagerank_limit=pagerank_limit
+    )
 

@@ -269,9 +269,18 @@ def load_model():
     global inference_engine
     
     model_path = os.getenv("MODEL_PATH", "Models/fraud_pipeline_final.pkl")
+    test_dataset_path = os.getenv("TEST_DATASET_PATH", None)
     groq_api_key = os.getenv("GROQ_API_KEY")
+    pagerank_limit = os.getenv("PAGERANK_LIMIT", None)
     
-    # Try multiple paths
+    # Convert pagerank_limit to int if provided
+    if pagerank_limit:
+        try:
+            pagerank_limit = int(pagerank_limit)
+        except ValueError:
+            pagerank_limit = None
+    
+    # Try multiple paths for model
     possible_paths = [
         model_path,
         f"/app/{model_path}",
@@ -305,11 +314,13 @@ def load_model():
                 f"Expected ~250MB. The file may be corrupted or incomplete."
             )
         
-        # Try to load the model
+        # Try to load the model with test dataset for feature engineering
         inference_engine = load_inference_engine(
             model_path=actual_path,
+            test_dataset_path=test_dataset_path,
             threshold=MODEL_THRESHOLD,
-            groq_api_key=groq_api_key
+            groq_api_key=groq_api_key,
+            pagerank_limit=pagerank_limit
         )
         print(f"✅ Model loaded successfully from {actual_path} ({file_size:.1f} MB)")
     except FileNotFoundError as e:
