@@ -6,6 +6,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useAppStore } from '@/store/useAppStore'
 import {
   getUsers,
@@ -328,20 +329,34 @@ export default function Home() {
       <header className="bg-gradient-header border-b-4 border-success rounded-b-3xl shadow-2xl mb-8">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="text-center flex-1">
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white to-success bg-clip-text text-transparent mb-2">
-                {language === 'bn' ? 'ক্লোভারশিল্ড' : 'CloverShield'}
-              </h1>
-              <h2 className="text-xl md:text-2xl text-text-primary font-semibold">
-                {language === 'bn'
-                  ? 'মোবাইল ব্যাংকিং জালিয়াতি সনাক্তকরণ ব্যবস্থা'
-                  : 'Mobile Banking Fraud Detection System'}
-              </h2>
-              <p className="text-success italic mt-2">
-                {language === 'bn'
-                  ? 'বাংলাদেশের ডিজিটাল আর্থিক ইকোসিস্টেম রক্ষা করছি'
-                  : "Protecting Bangladesh's Digital Financial Ecosystem"}
-              </p>
+            <div className="flex items-center gap-4 flex-1">
+              {/* Logo */}
+              <div className="flex-shrink-0">
+                <Image
+                  src="/logo.jpg"
+                  alt="CloverShield Logo"
+                  width={80}
+                  height={80}
+                  className="h-16 w-16 md:h-20 md:w-20 object-contain"
+                  priority
+                />
+              </div>
+              {/* Title and Subtitle */}
+              <div className="text-center flex-1">
+                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white to-success bg-clip-text text-transparent mb-2">
+                  {language === 'bn' ? 'ক্লোভারশিল্ড' : 'CloverShield'}
+                </h1>
+                <h2 className="text-xl md:text-2xl text-text-primary font-semibold">
+                  {language === 'bn'
+                    ? 'মোবাইল ব্যাংকিং জালিয়াতি শনাক্তকরণ ব্যবস্থা'
+                    : 'Mobile Banking Fraud Detection System'}
+                </h2>
+                <p className="text-success italic mt-2">
+                  {language === 'bn'
+                    ? 'বাংলাদেশের ডিজিটাল আর্থিক ইকোসিস্টেম রক্ষা করছি'
+                    : "Protecting Bangladesh's Digital Financial Ecosystem"}
+                </p>
+              </div>
             </div>
             <div className="flex-shrink-0">
               <LanguageToggle />
@@ -383,7 +398,7 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
               <Icon name="security" size={28} className="text-primary" />
               {language === 'bn'
-                ? 'গার্ডিয়ান কমান্ড সেন্টার'
+                ? 'গার্ডিয়ান কমান্ড কেন্দ্র'
                 : 'Guardian Command Center'}
             </h2>
 
