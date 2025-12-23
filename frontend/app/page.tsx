@@ -425,7 +425,7 @@ export default function Home() {
                   <div className="bg-card-bg rounded-xl p-6 border border-white/10">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xl font-bold text-text-primary">
-                        {language === 'bn' ? 'শীর্ষ ঝুঁকি ড্রাইভার' : 'Top Risk Drivers'}
+                        {language === 'bn' ? 'শীর্ষ ঝুঁকি প্রভাবক' : 'Top Risk Drivers'}
                       </h3>
                       <button
                         onClick={() => setShowRiskDrivers(!showRiskDrivers)}

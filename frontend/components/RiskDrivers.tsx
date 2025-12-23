@@ -50,7 +50,7 @@ export const RiskDrivers: React.FC<RiskDriversProps> = ({
       <div className="bg-card-bg rounded-xl p-6 border border-white/10">
         <p className="text-text-secondary">
           {language === 'bn'
-            ? 'কোন ঝুঁকি ড্রাইভার উপলব্ধ নেই'
+            ? 'কোন ঝুঁকি প্রভাবক উপলব্ধ নেই'
             : 'No risk drivers available'}
         </p>
       </div>
@@ -61,7 +61,7 @@ export const RiskDrivers: React.FC<RiskDriversProps> = ({
     <div className="space-y-4">
       {!hideTitle && (
         <h3 className="text-xl font-bold text-text-primary">
-          {language === 'bn' ? 'শীর্ষ ঝুঁকি ড্রাইভার' : 'Top Risk Drivers'}
+          {language === 'bn' ? 'শীর্ষ ঝুঁকি প্রভাবক' : 'Top Risk Drivers'}
         </h3>
       )}
 
@@ -70,15 +70,52 @@ export const RiskDrivers: React.FC<RiskDriversProps> = ({
         .map((explanation, index) => {
           const strength = categorizeStrength(explanation.shap_abs)
           const direction = explanation.shap > 0 ? '↑' : '↓'
+          const isRiskIncreasing = explanation.shap > 0
 
           const getStrengthColor = () => {
-            switch (strength) {
-              case 'strong':
-                return 'border-l-high-risk'
-              case 'moderate':
-                return 'border-l-caution'
-              case 'weak':
-                return 'border-l-neutral'
+            // Color based on direction (risk-increasing vs risk-decreasing)
+            if (isRiskIncreasing) {
+              // Features that increase fraud risk
+              switch (strength) {
+                case 'strong':
+                  return 'border-l-high-risk'
+                case 'moderate':
+                  return 'border-l-caution'
+                case 'weak':
+                  return 'border-l-warning'
+              }
+            } else {
+              // Features that decrease fraud risk (protective factors)
+              switch (strength) {
+                case 'strong':
+                  return 'border-l-success'
+                case 'moderate':
+                  return 'border-l-success'
+                case 'weak':
+                  return 'border-l-neutral'
+              }
+            }
+          }
+
+          const getBadgeColor = () => {
+            if (isRiskIncreasing) {
+              switch (strength) {
+                case 'strong':
+                  return 'bg-high-risk/20 text-high-risk'
+                case 'moderate':
+                  return 'bg-caution/20 text-caution'
+                case 'weak':
+                  return 'bg-warning/20 text-warning'
+              }
+            } else {
+              switch (strength) {
+                case 'strong':
+                  return 'bg-success/20 text-success'
+                case 'moderate':
+                  return 'bg-success/20 text-success'
+                case 'weak':
+                  return 'bg-neutral/20 text-neutral'
+              }
             }
           }
 
@@ -101,13 +138,7 @@ export const RiskDrivers: React.FC<RiskDriversProps> = ({
                   </div>
                 </div>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                    strength === 'strong'
-                      ? 'bg-high-risk/20 text-high-risk'
-                      : strength === 'moderate'
-                      ? 'bg-caution/20 text-caution'
-                      : 'bg-neutral/20 text-neutral'
-                  }`}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${getBadgeColor()}`}
                 >
                   {strength}
                 </span>
