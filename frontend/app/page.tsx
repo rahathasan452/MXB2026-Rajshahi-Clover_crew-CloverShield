@@ -176,7 +176,7 @@ export default function Home() {
           },
           {
             include_shap: true,
-            include_llm_explanation: false,
+            include_llm_explanation: true,  // Change to true
             language,
             topk: 10,
           }
