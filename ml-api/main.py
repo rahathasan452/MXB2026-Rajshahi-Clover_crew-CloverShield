@@ -150,6 +150,66 @@ RISK_THRESHOLDS = {
 # HELPER FUNCTIONS
 # ============================================================================
 
+def download_model_if_needed():
+    """Download model from cloud storage (Google Drive) if not present locally"""
+    model_path = os.getenv("MODEL_PATH", "Models/fraud_pipeline_final.pkl")
+    
+    # Check if model already exists
+    if os.path.exists(model_path):
+        file_size = os.path.getsize(model_path) / (1024 * 1024)  # Size in MB
+        print(f"✅ Model already exists at {model_path} ({file_size:.1f} MB)")
+        return model_path
+    
+    # Get download URL from environment variable
+    model_url = os.getenv("MODEL_URL")
+    if not model_url:
+        raise ValueError(
+            "MODEL_URL environment variable not set. "
+            "Please provide a URL to download the model file."
+        )
+    
+    # Create Models directory if it doesn't exist
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    
+    print(f"📥 Downloading model from {model_url}")
+    print("⏳ This may take a few minutes for large files (250MB)...")
+    
+    try:
+        import urllib.request
+        import ssl
+        
+        # Create SSL context (some URLs may need this)
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        # Download with progress tracking
+        def show_progress(block_num, block_size, total_size):
+            if total_size > 0:
+                downloaded = block_num * block_size
+                percent = min(100, (downloaded / total_size) * 100)
+                mb_downloaded = downloaded / (1024 * 1024)
+                mb_total = total_size / (1024 * 1024)
+                if block_num % 100 == 0:  # Print every 100 blocks
+                    print(f"  Progress: {percent:.1f}% ({mb_downloaded:.1f}/{mb_total:.1f} MB)")
+        
+        # Download the file
+        urllib.request.urlretrieve(
+            model_url, 
+            model_path,
+            reporthook=show_progress
+        )
+        
+        file_size = os.path.getsize(model_path) / (1024 * 1024)
+        print(f"✅ Model downloaded successfully to {model_path} ({file_size:.1f} MB)")
+        return model_path
+        
+    except Exception as e:
+        # Clean up partial download
+        if os.path.exists(model_path):
+            os.remove(model_path)
+        raise Exception(f"Failed to download model: {str(e)}")
+
 def load_model():
     """Load the ML model on startup"""
     global inference_engine
@@ -233,6 +293,9 @@ def transaction_to_dataframe(transaction: TransactionInput) -> pd.DataFrame:
 async def startup_event():
     """Load model on startup"""
     try:
+        # Download model from Google Drive if needed
+        download_model_if_needed()
+        # Then load it
         load_model()
     except Exception as e:
         print(f"⚠️ Warning: Model not loaded: {str(e)}")
