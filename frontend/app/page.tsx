@@ -333,7 +333,7 @@ export default function Home() {
               {/* Logo */}
               <div className="flex-shrink-0">
                 <Image
-                  src="/logo.jpg"
+                  src="/logo.png"
                   alt="CloverShield Logo"
                   width={80}
                   height={80}

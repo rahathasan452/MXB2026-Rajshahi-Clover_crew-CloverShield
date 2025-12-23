@@ -84,11 +84,6 @@ export const DecisionZone: React.FC<DecisionZoneProps> = ({
       </div>
 
       <div className="text-center my-8">
-        <div
-          className={`text-6xl font-bold mb-4 ${getDecisionColor().split(' ')[1]}`}
-        >
-          {(fraud_probability * 100).toFixed(1)}%
-        </div>
         <h3 className={`text-2xl font-bold mb-2 ${getDecisionColor().split(' ')[1]}`}>
           {getDecisionText()}
         </h3>

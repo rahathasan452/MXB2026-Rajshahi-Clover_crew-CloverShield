@@ -17,7 +17,7 @@ export const FraudGauge: React.FC<FraudGaugeProps> = ({
   threshold = 0.0793,
   size = 200,
 }) => {
-  const percentage = Math.round(probability * 100)
+  const percentage = parseFloat((probability * 100).toFixed(1))
   const thresholdPercentage = Math.round(threshold * 100)
 
   // Create data for gauge (3 segments: safe, caution, danger)

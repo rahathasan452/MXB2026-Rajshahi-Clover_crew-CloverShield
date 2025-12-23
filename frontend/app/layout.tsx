@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   title: 'CloverShield - Fraud Detection System',
   description: 'Mobile Banking Fraud Detection System for Bangladesh',
   icons: {
-    icon: '/logo.jpg',
-    apple: '/logo.jpg',
+    icon: '/logo.png',
+    apple: '/logo.png',
   },
   other: {
     'material-symbols': 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200',
