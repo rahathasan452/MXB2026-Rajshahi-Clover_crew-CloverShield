@@ -130,18 +130,30 @@ class FraudInference:
             from feature_engineering import FraudFeatureEngineer
             self.feature_engineer = FraudFeatureEngineer(pagerank_limit=self.pagerank_limit)
             
+            # Find test dataset path - use script directory as base
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            
             # Find test dataset path
             test_paths = []
             if self.test_dataset_path:
                 test_paths.append(self.test_dataset_path)
+                # Also try as absolute path if relative
+                if not os.path.isabs(self.test_dataset_path):
+                    test_paths.append(os.path.join(script_dir, self.test_dataset_path))
             
-            # Try common locations
+            # Try common locations - prioritize dataset folder in ml-api
             test_paths.extend([
-                "assets/test_dataset_woIDX.csv",
-                "../assets/test_dataset_woIDX.csv",
+                os.path.join(script_dir, "dataset", "test_dataset.csv"),  # ml-api/dataset/test_dataset.csv
+                os.path.join(script_dir, "dataset", "test_dataset_woIDX.csv"),  # ml-api/dataset/test_dataset_woIDX.csv
+                "dataset/test_dataset.csv",  # Relative to current working directory
+                "dataset/test_dataset_woIDX.csv",
+                "../dataset/test_dataset.csv",  # Fallback
+                "../dataset/test_dataset_woIDX.csv",
+                "/app/dataset/test_dataset.csv",  # For Docker deployment
+                "/app/dataset/test_dataset_woIDX.csv",
+                # Legacy paths for backward compatibility
                 "assets/test_dataset.csv",
                 "../assets/test_dataset.csv",
-                "/app/assets/test_dataset_woIDX.csv",
                 "/app/assets/test_dataset.csv"
             ])
             
