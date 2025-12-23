@@ -22,6 +22,7 @@ import { DecisionZone } from '@/components/DecisionZone'
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
 import { RiskDrivers } from '@/components/RiskDrivers'
 import { LanguageToggle } from '@/components/LanguageToggle'
+import { Icon } from '@/components/Icon'
 import toast from 'react-hot-toast'
 
 export default function Home() {
@@ -360,7 +361,7 @@ export default function Home() {
           {/* Left Panel - Transaction Simulator */}
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-              <span>💳</span>
+              <Icon name="account_balance_wallet" size={28} className="text-primary" />
               {language === 'bn' ? 'লেনদেন সিমুলেটর' : 'Transaction Simulator'}
             </h2>
 
@@ -380,7 +381,7 @@ export default function Home() {
           {/* Right Panel - Guardian Command Center */}
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-              <span>🔒</span>
+              <Icon name="security" size={28} className="text-primary" />
               {language === 'bn'
                 ? 'গার্ডিয়ান কমান্ড সেন্টার'
                 : 'Guardian Command Center'}
@@ -407,7 +408,8 @@ export default function Home() {
                 {/* LLM Explanation */}
                 {currentPrediction.llm_explanation && (
                   <div className="bg-card-bg rounded-xl p-6 border border-white/10">
-                    <h3 className="text-xl font-bold text-text-primary mb-4">
+                    <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+                      <Icon name="psychology" size={24} className="text-primary" />
                       {language === 'bn' ? 'AI ব্যাখ্যা' : 'AI Explanation'}
                     </h3>
                     <p className="text-text-primary">
@@ -418,10 +420,11 @@ export default function Home() {
               </>
             ) : (
               <div className="bg-card-bg rounded-xl p-12 border border-white/10 text-center">
-                <p className="text-text-secondary text-lg">
+                <p className="text-text-secondary text-lg flex items-center justify-center gap-2">
+                  <Icon name="arrow_upward" size={24} className="text-text-secondary" />
                   {language === 'bn'
-                    ? '👆 উপরে লেনদেনের বিবরণ লিখুন এবং "লেনদেন বিশ্লেষণ করুন" ক্লিক করুন'
-                    : "👆 Enter transaction details above and click 'Analyze Transaction' to begin"}
+                    ? 'উপরে লেনদেনের বিবরণ লিখুন এবং "লেনদেন বিশ্লেষণ করুন" ক্লিক করুন'
+                    : "Enter transaction details above and click 'Analyze Transaction' to begin"}
                 </p>
               </div>
             )}

@@ -8,6 +8,7 @@ import React, { useState, useEffect } from 'react'
 import { User } from '@/lib/supabase'
 import { useAppStore } from '@/store/useAppStore'
 import toast from 'react-hot-toast'
+import { Icon } from './Icon'
 
 interface TransactionFormProps {
   users: User[]
@@ -270,7 +271,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     <div className="bg-card-bg rounded-2xl p-6 border border-white/10 shadow-lg">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <span className="text-3xl">💳</span>
+          <Icon name="account_balance_wallet" size={32} className="text-primary" />
           <h2 className="text-2xl font-bold text-text-primary">
             {language === 'bn' ? 'লেনদেন ইনপুট' : 'Transaction Input'}
           </h2>
@@ -307,10 +308,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
       {isTestDataMode && (
         <div className="mb-4 bg-primary/10 border border-primary/30 rounded-xl p-3">
-          <p className="text-sm text-primary font-medium">
+          <p className="text-sm text-primary font-medium flex items-center gap-2">
+            <Icon name="analytics" size={20} />
             {language === 'bn'
-              ? '📊 টেস্ট ডেটা মোড: টেস্ট ডেটাসেট থেকে সেন্ডার এবং রিসিভার নির্বাচন করুন'
-              : '📊 Test Data Mode: Select sender and receiver from test dataset'}
+              ? 'টেস্ট ডেটা মোড: টেস্ট ডেটাসেট থেকে সেন্ডার এবং রিসিভার নির্বাচন করুন'
+              : 'Test Data Mode: Select sender and receiver from test dataset'}
           </p>
         </div>
       )}
@@ -318,8 +320,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Sender Selection */}
         <div>
-          <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2">
-            👤 {language === 'bn' ? 'প্রেরক অ্যাকাউন্ট' : 'Sender Account'}
+          <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2 flex items-center gap-2">
+            <Icon name="person" size={20} className="text-text-secondary" />
+            {language === 'bn' ? 'প্রেরক অ্যাকাউন্ট' : 'Sender Account'}
           </label>
           {loadingTestData && isTestDataMode ? (
             <div className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-secondary text-center">
@@ -393,8 +396,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
         {/* Transaction Type */}
         <div>
-          <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2">
-            📋 {language === 'bn' ? 'লেনদেনের ধরন' : 'Transaction Type'}
+          <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2 flex items-center gap-2">
+            <Icon name="description" size={20} className="text-text-secondary" />
+            {language === 'bn' ? 'লেনদেনের ধরন' : 'Transaction Type'}
           </label>
           <div className="flex gap-2 bg-dark-bg/50 rounded-xl p-1">
             <button
@@ -424,8 +428,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
         {/* Receiver Selection */}
         <div>
-          <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2">
-            📥 {language === 'bn' ? 'গ্রহীতা অ্যাকাউন্ট' : 'Receiver Account'}
+          <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2 flex items-center gap-2">
+            <Icon name="inbox" size={20} className="text-text-secondary" />
+            {language === 'bn' ? 'গ্রহীতা অ্যাকাউন্ট' : 'Receiver Account'}
           </label>
 
           {/* Recent Receivers - Only in regular mode */}
@@ -527,8 +532,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
         {/* Amount */}
         <div>
-          <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2">
-            💰 {language === 'bn' ? 'পরিমাণ' : 'Amount'}
+          <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2 flex items-center gap-2">
+            <Icon name="payments" size={20} className="text-text-secondary" />
+            {language === 'bn' ? 'পরিমাণ' : 'Amount'}
           </label>
 
           {/* Amount Presets */}
@@ -548,7 +554,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           <input
             type="number"
             min="1"
-            max="100000"
+            max={sender && !isTestDataMode ? sender.balance : undefined}
             step="100"
             value={transactionForm.amount}
             onChange={(e) =>
@@ -563,8 +569,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
         {/* Optional Note */}
         <div>
-          <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2">
-            📝 {language === 'bn' ? 'নোট (ঐচ্ছিক)' : 'Note (Optional)'}
+          <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2 flex items-center gap-2">
+            <Icon name="edit_note" size={20} className="text-text-secondary" />
+            {language === 'bn' ? 'নোট (ঐচ্ছিক)' : 'Note (Optional)'}
           </label>
           <textarea
             value={transactionForm.note}
@@ -582,7 +589,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
         {/* Security Note */}
         <div className="flex items-center gap-3 bg-success/10 border border-success/30 rounded-xl p-4">
-          <span className="text-2xl">🔒</span>
+          <Icon name="lock" size={24} className="text-success" />
           <span className="text-sm text-success font-medium">
             {language === 'bn'
               ? 'আপনার লেনদেন নিরাপদ'

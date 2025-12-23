@@ -5,6 +5,7 @@
 
 import React from 'react'
 import { useAppStore } from '@/store/useAppStore'
+import { Icon } from './Icon'
 
 interface AnalyticsDashboardProps {
   language?: 'en' | 'bn'
@@ -23,26 +24,26 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     {
       label: language === 'bn' ? 'আজ সংরক্ষিত অর্থ' : 'Money Saved Today',
       value: formatCurrency(analytics.moneySaved),
-      icon: '💰',
+      icon: 'payments',
       color: 'text-success',
     },
     {
       label:
         language === 'bn' ? 'প্রক্রিয়াকৃত লেনদেন' : 'Transactions Processed',
       value: analytics.transactionsProcessed.toLocaleString(),
-      icon: '📊',
+      icon: 'analytics',
       color: 'text-primary',
     },
     {
       label: language === 'bn' ? 'জালিয়াতি সনাক্ত' : 'Fraud Detected',
       value: analytics.fraudDetected.toLocaleString(),
-      icon: '🚨',
+      icon: 'warning',
       color: 'text-danger',
     },
     {
       label: language === 'bn' ? 'সিস্টেম নির্ভুলতা' : 'System Accuracy',
       value: `${analytics.accuracyRate}%`,
-      icon: '✅',
+      icon: 'check_circle',
       color: 'text-success',
     },
   ]
@@ -55,7 +56,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           className="bg-card-bg rounded-xl p-6 border border-white/10 shadow-lg hover:shadow-xl transition-shadow"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-3xl">{metric.icon}</span>
+            <Icon name={metric.icon} size={32} className={metric.color} />
             <div className={`text-2xl font-bold ${metric.color}`}>
               {metric.value}
             </div>
