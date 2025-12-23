@@ -43,6 +43,7 @@ export default function Home() {
   } = useAppStore()
 
   const [receiver, setReceiver] = useState<any>(null)
+  const [showRiskDrivers, setShowRiskDrivers] = useState(false)
 
   // Initialize analytics on mount
   useEffect(() => {
@@ -422,10 +423,33 @@ export default function Home() {
                 {/* Risk Drivers */}
                 {currentPrediction.shap_explanations && (
                   <div className="bg-card-bg rounded-xl p-6 border border-white/10">
-                    <RiskDrivers
-                      shapExplanations={currentPrediction.shap_explanations}
-                      language={language}
-                    />
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-bold text-text-primary">
+                        {language === 'bn' ? 'শীর্ষ ঝুঁকি ড্রাইভার' : 'Top Risk Drivers'}
+                      </h3>
+                      <button
+                        onClick={() => setShowRiskDrivers(!showRiskDrivers)}
+                        className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
+                      >
+                        <Icon 
+                          name={showRiskDrivers ? "expand_less" : "expand_more"} 
+                          size={20} 
+                        />
+                        <span>
+                          {showRiskDrivers
+                            ? (language === 'bn' ? 'লুকান' : 'Hide')
+                            : (language === 'bn' ? 'দেখান' : 'Show')
+                          }
+                        </span>
+                      </button>
+                    </div>
+                    {showRiskDrivers && (
+                      <RiskDrivers
+                        shapExplanations={currentPrediction.shap_explanations}
+                        language={language}
+                        hideTitle={true}
+                      />
+                    )}
                   </div>
                 )}
               </>

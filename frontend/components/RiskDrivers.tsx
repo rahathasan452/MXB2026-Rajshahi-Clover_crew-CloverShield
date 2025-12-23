@@ -9,6 +9,7 @@ import { SHAPExplanation } from '@/lib/ml-api'
 interface RiskDriversProps {
   shapExplanations: SHAPExplanation[]
   language?: 'en' | 'bn'
+  hideTitle?: boolean
 }
 
 // Feature name mapping (from app.py)
@@ -42,6 +43,7 @@ const categorizeStrength = (shapAbs: number): 'strong' | 'moderate' | 'weak' => 
 export const RiskDrivers: React.FC<RiskDriversProps> = ({
   shapExplanations,
   language = 'en',
+  hideTitle = false,
 }) => {
   if (!shapExplanations || shapExplanations.length === 0) {
     return (
@@ -57,9 +59,11 @@ export const RiskDrivers: React.FC<RiskDriversProps> = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-bold text-text-primary">
-        {language === 'bn' ? 'শীর্ষ ঝুঁকি ড্রাইভার' : 'Top Risk Drivers'}
-      </h3>
+      {!hideTitle && (
+        <h3 className="text-xl font-bold text-text-primary">
+          {language === 'bn' ? 'শীর্ষ ঝুঁকি ড্রাইভার' : 'Top Risk Drivers'}
+        </h3>
+      )}
 
       {shapExplanations
         .filter((exp) => Math.abs(exp.shap) > 0.05)
