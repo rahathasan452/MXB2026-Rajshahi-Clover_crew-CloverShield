@@ -160,13 +160,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           oldBalanceDest: data.transaction.oldBalanceDest,
           step: data.transaction.step,
         })
-        // Auto-fill amount and type if not already set
+        // Auto-fill amount if not already set (but not type - user must choose)
         if (!transactionForm.amount || transactionForm.amount === 0) {
           setTransactionForm({ amount: data.transaction.amount })
         }
-        if (!transactionForm.type) {
-          setTransactionForm({ type: data.transaction.type })
-        }
+        // Removed auto-fill for type - user must manually select CASH_OUT or TRANSFER
       }
     } catch (error: any) {
       console.error('Failed to load transaction details:', error)
