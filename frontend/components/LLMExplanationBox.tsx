@@ -18,10 +18,12 @@ export const LLMExplanationBox: React.FC<LLMExplanationBoxProps> = ({
   const [isExpanded, setIsExpanded] = useState(false)
   
   // Determine if text should be truncated (more than 200 characters)
-  const shouldTruncate = explanation.length > 200
+  // Use Array.from to properly handle Unicode characters (including Bangla)
+  const explanationChars = Array.from(explanation)
+  const shouldTruncate = explanationChars.length > 200
   const displayText = isExpanded || !shouldTruncate 
     ? explanation 
-    : explanation.substring(0, 200) + '...'
+    : explanationChars.slice(0, 200).join('') + '...'
 
   return (
     <div className="bg-card-bg rounded-xl p-6 border border-white/10">
@@ -48,7 +50,7 @@ export const LLMExplanationBox: React.FC<LLMExplanationBoxProps> = ({
           </button>
         )}
       </div>
-      <div className="text-text-primary whitespace-pre-wrap leading-relaxed">
+      <div className="text-text-primary whitespace-pre-wrap leading-relaxed break-words">
         {displayText}
       </div>
     </div>
