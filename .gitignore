@@ -24,7 +24,8 @@ wheels/
 *.egg
 
 # Model files (too large for GitHub)
-*.pkl
+# Note: PKL files are now allowed since they've been optimized to 2MB
+
 *.h5
 *.hdf5
 *.pb
@@ -32,14 +33,12 @@ wheels/
 *.pt
 *.pth
 *.ckpt
-Models/*.pkl
 Models/*.h5
 Models/*.hdf5
 demo/*.pkl
 demo/*.h5
 
 # Keep model directory structure but ignore contents
-Models/fraud_pipeline_final.pkl
 !Models/modelDesc.md
 
 # Jupyter Notebook

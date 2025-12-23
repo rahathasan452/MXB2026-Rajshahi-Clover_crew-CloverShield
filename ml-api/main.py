@@ -150,120 +150,6 @@ RISK_THRESHOLDS = {
 # HELPER FUNCTIONS
 # ============================================================================
 
-def convert_google_drive_url(url: str) -> str:
-    """Convert Google Drive view link to direct download link"""
-    # Only process URLs from Google Drive domain
-    if 'drive.google.com' not in url:
-        return url  # Return as-is if not a Google Drive URL
-    
-    # Extract file ID from various Google Drive URL formats
-    file_id = None
-    
-    # Format: https://drive.google.com/file/d/FILE_ID/view?usp=drive_link
-    if '/file/d/' in url:
-        file_id = url.split('/file/d/')[1].split('/')[0]
-    # Format: https://drive.google.com/uc?id=FILE_ID
-    elif 'drive.google.com' in url and 'id=' in url:
-        file_id = url.split('id=')[1].split('&')[0]
-    
-    if file_id:
-        # Use direct download format that bypasses virus scan for large files
-        return f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t"
-    
-    return url  # Return as-is if we couldn't extract file ID
-
-def download_model_if_needed():
-    """Download model from cloud storage (Google Drive) if not present locally"""
-    model_path = os.getenv("MODEL_PATH", "Models/fraud_pipeline_final.pkl")
-    
-    # Check if model already exists and validate size
-    if os.path.exists(model_path):
-        file_size = os.path.getsize(model_path) / (1024 * 1024)  # Size in MB
-        # Validate it's actually a model file (should be > 50MB for a 250MB model)
-        if file_size > 50:
-            print(f"✅ Model already exists at {model_path} ({file_size:.1f} MB)")
-            return model_path
-        else:
-            print(f"⚠️ Existing file too small ({file_size:.1f} MB), re-downloading...")
-            os.remove(model_path)
-    
-    # Get download URL from environment variable
-    model_url = os.getenv("MODEL_URL")
-    if not model_url:
-        raise ValueError(
-            "MODEL_URL environment variable not set. "
-            "Please provide a URL to download the model file."
-        )
-    
-    # Convert Google Drive URL to direct download format
-    download_url = convert_google_drive_url(model_url)
-    if download_url != model_url:
-        print(f"🔗 Converted Google Drive URL to direct download format")
-    
-    # Create Models directory if it doesn't exist
-    os.makedirs(os.path.dirname(model_path), exist_ok=True)
-    
-    # Determine source for logging
-    source = "Google Drive" if 'drive.google.com' in download_url else "cloud storage"
-    print(f"📥 Downloading model from {source}")
-    print("⏳ This may take a few minutes for large files (250MB)...")
-    
-    try:
-        import urllib.request
-        
-        # Download with progress tracking
-        downloaded_bytes = 0
-        def show_progress(block_num, block_size, total_size):
-            nonlocal downloaded_bytes
-            if total_size > 0:
-                downloaded_bytes = block_num * block_size
-                percent = min(100, (downloaded_bytes / total_size) * 100)
-                mb_downloaded = downloaded_bytes / (1024 * 1024)
-                mb_total = total_size / (1024 * 1024)
-                if block_num % 100 == 0:  # Print every 100 blocks
-                    print(f"  Progress: {percent:.1f}% ({mb_downloaded:.1f}/{mb_total:.1f} MB)")
-        
-        # Download the file using default SSL verification (secure)
-        # This ensures SSL certificates are validated, preventing MITM attacks
-        urllib.request.urlretrieve(
-            download_url, 
-            model_path,
-            reporthook=show_progress
-        )
-        
-        # Validate downloaded file
-        file_size = os.path.getsize(model_path) / (1024 * 1024)
-        
-        # Check if it's actually a pickle file (not HTML)
-        with open(model_path, 'rb') as f:
-            first_bytes = f.read(100)
-            # Pickle files start with specific bytes, HTML starts with '<'
-            if first_bytes.startswith(b'<'):
-                raise ValueError(
-                    f"Downloaded file appears to be HTML (not a pickle file). "
-                    f"File size: {file_size:.1f} MB. "
-                    f"Please check your Google Drive link format. "
-                    f"Make sure the file is shared with 'Anyone with the link' and use direct download format."
-                )
-        
-        # Validate file size (should be close to 250MB)
-        if file_size < 50:
-            raise ValueError(
-                f"Downloaded file is too small ({file_size:.1f} MB). "
-                f"Expected ~250MB. The download may have failed or the URL is incorrect."
-            )
-        
-        print(f"✅ Model downloaded successfully to {model_path} ({file_size:.1f} MB)")
-        return model_path
-        
-    except Exception as e:
-        # Clean up partial download
-        if os.path.exists(model_path):
-            os.remove(model_path)
-        error_msg = f"Failed to download model: {str(e)}"
-        print(f"❌ {error_msg}")
-        raise Exception(error_msg)
-
 def load_model():
     """Load the ML model on startup"""
     global inference_engine
@@ -306,12 +192,12 @@ def load_model():
         if not os.path.exists(actual_path):
             raise FileNotFoundError(f"Model file not found at {actual_path}")
         
-        # Check file size
+        # Check file size (should be at least 1MB for a valid model)
         file_size = os.path.getsize(actual_path) / (1024 * 1024)
-        if file_size < 50:
+        if file_size < 1:
             raise ValueError(
                 f"Model file is too small ({file_size:.1f} MB). "
-                f"Expected ~250MB. The file may be corrupted or incomplete."
+                f"Expected at least 1MB. The file may be corrupted or incomplete."
             )
         
         # Try to load the model with test dataset for feature engineering
@@ -386,12 +272,9 @@ async def startup_event():
     # Log that server is starting
     port = os.getenv("PORT", "8000")
     print(f"🚀 Server starting on port {port}")
-    print("📦 Starting model download/load process...")
+    print("📦 Loading model...")
     
     try:
-        # Download model from Google Drive if needed
-        download_model_if_needed()
-        # Then load it
         load_model()
         print("✅ Model loaded successfully - API is ready!")
     except Exception as e:
