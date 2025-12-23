@@ -152,6 +152,10 @@ RISK_THRESHOLDS = {
 
 def convert_google_drive_url(url: str) -> str:
     """Convert Google Drive view link to direct download link"""
+    # Only process URLs from Google Drive domain
+    if 'drive.google.com' not in url:
+        return url  # Return as-is if not a Google Drive URL
+    
     # Extract file ID from various Google Drive URL formats
     file_id = None
     
@@ -159,14 +163,14 @@ def convert_google_drive_url(url: str) -> str:
     if '/file/d/' in url:
         file_id = url.split('/file/d/')[1].split('/')[0]
     # Format: https://drive.google.com/uc?id=FILE_ID
-    elif 'id=' in url:
+    elif 'drive.google.com' in url and 'id=' in url:
         file_id = url.split('id=')[1].split('&')[0]
     
     if file_id:
         # Use direct download format that bypasses virus scan for large files
         return f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t"
     
-    return url  # Return as-is if not a Google Drive URL
+    return url  # Return as-is if we couldn't extract file ID
 
 def download_model_if_needed():
     """Download model from cloud storage (Google Drive) if not present locally"""
@@ -199,23 +203,13 @@ def download_model_if_needed():
     # Create Models directory if it doesn't exist
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     
-    print(f"📥 Downloading model from Google Drive")
+    # Determine source for logging
+    source = "Google Drive" if 'drive.google.com' in download_url else "cloud storage"
+    print(f"📥 Downloading model from {source}")
     print("⏳ This may take a few minutes for large files (250MB)...")
     
     try:
         import urllib.request
-        import ssl
-        
-        # Create SSL context
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        
-        # Create opener with SSL context
-        opener = urllib.request.build_opener(
-            urllib.request.HTTPSHandler(context=ssl_context)
-        )
-        urllib.request.install_opener(opener)
         
         # Download with progress tracking
         downloaded_bytes = 0
@@ -229,7 +223,8 @@ def download_model_if_needed():
                 if block_num % 100 == 0:  # Print every 100 blocks
                     print(f"  Progress: {percent:.1f}% ({mb_downloaded:.1f}/{mb_total:.1f} MB)")
         
-        # Download the file
+        # Download the file using default SSL verification (secure)
+        # This ensures SSL certificates are validated, preventing MITM attacks
         urllib.request.urlretrieve(
             download_url, 
             model_path,
