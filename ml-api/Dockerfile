@@ -42,9 +42,9 @@ RUN chmod +x /entrypoint.sh
 # Expose port (Render will assign PORT dynamically)
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+# Health check (uses PORT env var, defaults to 8000)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import os, urllib.request; port=os.getenv('PORT', '8000'); urllib.request.urlopen(f'http://localhost:{port}/health')" || exit 1
 
 # Run the application using entrypoint script
 # This ensures PORT environment variable is properly read

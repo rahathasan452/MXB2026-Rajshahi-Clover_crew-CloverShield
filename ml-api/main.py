@@ -136,6 +136,7 @@ app.add_middleware(
 # ============================================================================
 
 inference_engine: Optional[FraudInference] = None
+model_loading_lock = False
 MODEL_VERSION = "1.0.0"
 MODEL_THRESHOLD = float(os.getenv("MODEL_THRESHOLD", "0.0793"))
 
@@ -152,7 +153,12 @@ RISK_THRESHOLDS = {
 
 def load_model():
     """Load the ML model on startup"""
-    global inference_engine
+    global inference_engine, model_loading_lock
+    
+    # Prevent concurrent loading attempts
+    if model_loading_lock:
+        return
+    model_loading_lock = True
     
     model_path = os.getenv("MODEL_PATH", "Models/fraud_pipeline_final.pkl")
     test_dataset_path = os.getenv("TEST_DATASET_PATH", None)
@@ -225,6 +231,26 @@ def load_model():
         if actual_path and os.path.exists(actual_path):
             print(f"   File size: {os.path.getsize(actual_path) / (1024 * 1024):.1f} MB")
         raise Exception(error_msg) from e
+    finally:
+        model_loading_lock = False
+
+def ensure_model_loaded():
+    """Ensure model is loaded, try to load if not loaded (lazy loading for serverless)"""
+    global inference_engine, model_loading_lock
+    
+    if inference_engine is not None:
+        return True
+    
+    # Try to load if not already loading
+    if not model_loading_lock:
+        try:
+            print("🔄 Model not loaded, attempting to load now...")
+            load_model()
+            return inference_engine is not None
+        except Exception as e:
+            print(f"⚠️ Failed to load model on demand: {str(e)}")
+            return False
+    return False
 
 def calculate_decision(probability: float) -> tuple[str, str]:
     """Calculate decision and risk level from probability"""
@@ -276,11 +302,15 @@ async def startup_event():
     
     try:
         load_model()
-        print("✅ Model loaded successfully - API is ready!")
+        if inference_engine is not None:
+            print("✅ Model loaded successfully - API is ready!")
+        else:
+            print("⚠️ Warning: Model loading completed but inference_engine is None")
+            print("⚠️ API will attempt lazy loading on first request")
     except Exception as e:
-        print(f"⚠️ Warning: Model not loaded: {str(e)}")
-        print("⚠️ API will return errors until model is available")
-        print("⚠️ Server is running but model predictions will fail")
+        print(f"⚠️ Warning: Model not loaded on startup: {str(e)}")
+        print("⚠️ API will attempt lazy loading on first request")
+        print("⚠️ This is normal for serverless environments (e.g., Vercel)")
 
 @app.get("/")
 async def root():
@@ -295,6 +325,10 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    # Try to load model if not loaded (for serverless)
+    if inference_engine is None:
+        ensure_model_loaded()
+    
     model_loaded = inference_engine is not None
     shap_available = model_loaded and inference_engine.shap_explainer is not None
     
@@ -303,7 +337,8 @@ async def health_check():
         "model_loaded": model_loaded,
         "model_version": MODEL_VERSION,
         "shap_available": shap_available,
-        "llm_available": os.getenv("GROQ_API_KEY") is not None
+        "llm_available": os.getenv("GROQ_API_KEY") is not None,
+        "message": "Model loaded and ready" if model_loaded else "Model is loading or unavailable"
     }
 
 @app.get("/model/info")
@@ -334,8 +369,13 @@ async def predict(request: PredictRequest):
     
     Returns fraud probability, decision, risk level, and SHAP explanations
     """
+    # Try to load model if not loaded (for serverless environments like Vercel)
     if inference_engine is None:
-        raise HTTPException(status_code=503, detail="Model not loaded. Please check /health endpoint.")
+        if not ensure_model_loaded():
+            raise HTTPException(
+                status_code=503, 
+                detail="Model not loaded. The model is still loading or failed to load. Please try again in a moment or check /health endpoint."
+            )
     
     start_time = time.time()
     transaction_id = str(uuid.uuid4())
@@ -413,8 +453,13 @@ async def predict_batch(request: BatchPredictRequest):
     
     Returns predictions for all transactions in batch
     """
+    # Try to load model if not loaded (for serverless environments like Vercel)
     if inference_engine is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+        if not ensure_model_loaded():
+            raise HTTPException(
+                status_code=503, 
+                detail="Model not loaded. The model is still loading or failed to load. Please try again in a moment."
+            )
     
     start_time = time.time()
     options = request.options or PredictionOptions()
@@ -469,14 +514,18 @@ async def http_exception_handler(request, exc):
 # ============================================================================
 
 if __name__ == "__main__":
+    # Get port from environment (required for Render, Railway, etc.)
     port = int(os.getenv("PORT", 8000))
     host = os.getenv("HOST", "0.0.0.0")
+    
+    print(f"🌐 Binding to {host}:{port}")
     
     uvicorn.run(
         "main:app",
         host=host,
         port=port,
         reload=False,
-        workers=1  # Single worker for ML model
+        workers=1,  # Single worker for ML model
+        log_level="info"
     )
 
