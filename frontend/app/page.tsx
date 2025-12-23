@@ -176,7 +176,7 @@ export default function Home() {
           },
           {
             include_shap: true,
-            include_llm_explanation: true,  // Change to true
+            include_llm_explanation: true,
             language,
             topk: 10,
           }
@@ -410,16 +410,6 @@ export default function Home() {
                   language={language}
                 />
 
-                {/* Risk Drivers */}
-                {currentPrediction.shap_explanations && (
-                  <div className="bg-card-bg rounded-xl p-6 border border-white/10">
-                    <RiskDrivers
-                      shapExplanations={currentPrediction.shap_explanations}
-                      language={language}
-                    />
-                  </div>
-                )}
-
                 {/* LLM Explanation */}
                 {currentPrediction.llm_explanation && (
                   <div className="bg-card-bg rounded-xl p-6 border border-white/10">
@@ -430,6 +420,16 @@ export default function Home() {
                     <p className="text-text-primary">
                       {currentPrediction.llm_explanation.text}
                     </p>
+                  </div>
+                )}
+
+                {/* Risk Drivers */}
+                {currentPrediction.shap_explanations && (
+                  <div className="bg-card-bg rounded-xl p-6 border border-white/10">
+                    <RiskDrivers
+                      shapExplanations={currentPrediction.shap_explanations}
+                      language={language}
+                    />
                   </div>
                 )}
               </>
