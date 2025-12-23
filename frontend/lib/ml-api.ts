@@ -7,6 +7,14 @@ import axios from 'axios'
 
 const ML_API_URL = process.env.NEXT_PUBLIC_ML_API_URL || 'http://localhost:8000'
 
+// Validate ML API URL configuration
+if (!process.env.NEXT_PUBLIC_ML_API_URL && typeof window !== 'undefined') {
+  console.warn(
+    '⚠️ NEXT_PUBLIC_ML_API_URL not configured. Using default:',
+    ML_API_URL
+  )
+}
+
 const apiClient = axios.create({
   baseURL: ML_API_URL,
   headers: {
@@ -14,6 +22,43 @@ const apiClient = axios.create({
   },
   timeout: 30000, // 30 seconds for ML prediction
 })
+
+// Helper function to get detailed error message
+const getErrorMessage = (error: any): string => {
+  if (error.response) {
+    // Server responded with error status
+    const status = error.response.status
+    const data = error.response.data
+    if (data?.error) {
+      return `ML API error (${status}): ${data.error}`
+    }
+    return `ML API error (${status}): ${error.response.statusText || 'Unknown error'}`
+  }
+
+  if (error.request) {
+    // Request made but no response received
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      return `ML API timeout: The request took too long. Please check if the ML API is running at ${ML_API_URL}`
+    }
+    if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+      return `ML API connection failed: Unable to reach the ML API at ${ML_API_URL}. Please verify:
+1. The ML API is deployed and running
+2. The URL is correct: ${ML_API_URL}
+3. CORS is properly configured on the ML API
+4. Check browser console for CORS errors`
+    }
+    if (error.code === 'ERR_CONNECTION_REFUSED') {
+      return `ML API connection refused: The ML API at ${ML_API_URL} is not accepting connections. Please ensure:
+1. The ML API service is running
+2. The URL and port are correct
+3. For local development, start the ML API with: cd ml-api && python -m uvicorn main:app --reload`
+    }
+    return `ML API connection error: Unable to connect to ${ML_API_URL}. Error: ${error.message || 'Unknown network error'}`
+  }
+
+  // Error in request setup
+  return `ML API request error: ${error.message || 'Unknown error'}`
+}
 
 // Types matching ML API
 export interface TransactionInput {
@@ -80,9 +125,16 @@ export const checkHealth = async (): Promise<HealthResponse> => {
   try {
     const response = await apiClient.get<HealthResponse>('/health')
     return response.data
-  } catch (error) {
-    console.error('ML API health check failed:', error)
-    throw error
+  } catch (error: any) {
+    console.error('ML API health check failed:', {
+      error,
+      url: ML_API_URL,
+      endpoint: '/health',
+      code: error.code,
+      message: error.message,
+    })
+    const errorMessage = getErrorMessage(error)
+    throw new Error(errorMessage)
   }
 }
 
@@ -106,11 +158,17 @@ export const predictFraud = async (
     })
     return response.data
   } catch (error: any) {
-    console.error('ML API prediction failed:', error)
-    if (error.response) {
-      throw new Error(error.response.data?.error || 'Prediction failed')
-    }
-    throw new Error('Failed to connect to ML API')
+    console.error('ML API prediction failed:', {
+      error,
+      url: ML_API_URL,
+      endpoint: '/predict',
+      code: error.code,
+      message: error.message,
+      response: error.response?.data,
+    })
+    
+    const errorMessage = getErrorMessage(error)
+    throw new Error(errorMessage)
   }
 }
 
@@ -130,8 +188,15 @@ export const batchPredict = async (
     })
     return response.data
   } catch (error: any) {
-    console.error('ML API batch prediction failed:', error)
-    throw error
+    console.error('ML API batch prediction failed:', {
+      error,
+      url: ML_API_URL,
+      endpoint: '/predict/batch',
+      code: error.code,
+      message: error.message,
+    })
+    const errorMessage = getErrorMessage(error)
+    throw new Error(errorMessage)
   }
 }
 
@@ -142,9 +207,46 @@ export const getModelInfo = async () => {
   try {
     const response = await apiClient.get('/model/info')
     return response.data
-  } catch (error) {
-    console.error('Failed to get model info:', error)
-    throw error
+  } catch (error: any) {
+    console.error('Failed to get model info:', {
+      error,
+      url: ML_API_URL,
+      endpoint: '/model/info',
+      code: error.code,
+      message: error.message,
+    })
+    const errorMessage = getErrorMessage(error)
+    throw new Error(errorMessage)
   }
+}
+
+/**
+ * Verify ML API configuration and connectivity
+ * Useful for debugging connection issues
+ */
+export const verifyMLAPIConfig = () => {
+  const config = {
+    url: ML_API_URL,
+    isConfigured: !!process.env.NEXT_PUBLIC_ML_API_URL,
+    isLocalhost: ML_API_URL.includes('localhost') || ML_API_URL.includes('127.0.0.1'),
+    isProduction: !ML_API_URL.includes('localhost') && !ML_API_URL.includes('127.0.0.1'),
+  }
+  
+  console.log('🔍 ML API Configuration:', config)
+  
+  if (!config.isConfigured) {
+    console.warn(
+      '⚠️ NEXT_PUBLIC_ML_API_URL is not set. Using default:', 
+      ML_API_URL,
+      '\nTo fix: Add NEXT_PUBLIC_ML_API_URL to your .env.local file'
+    )
+  }
+  
+  return config
+}
+
+// Log configuration on module load (client-side only)
+if (typeof window !== 'undefined') {
+  verifyMLAPIConfig()
 }
 
