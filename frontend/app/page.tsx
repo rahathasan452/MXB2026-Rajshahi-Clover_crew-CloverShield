@@ -456,10 +456,10 @@ export default function Home() {
             ) : (
               <div className="bg-card-bg rounded-xl p-12 border border-white/10 text-center">
                 <p className="text-text-secondary text-lg flex items-center justify-center gap-2">
-                  <Icon name="arrow_upward" size={24} className="text-text-secondary" />
+                  <Icon name="arrow_back" size={24} className="text-text-secondary" />
                   {language === 'bn'
-                    ? 'উপরে লেনদেনের বিবরণ লিখুন এবং "লেনদেন বিশ্লেষণ করুন" ক্লিক করুন'
-                    : "Enter transaction details above and click 'Analyze Transaction' to begin"}
+                    ? 'বামে লেনদেনের বিবরণ লিখুন এবং "লেনদেন বিশ্লেষণ করুন" ক্লিক করুন'
+                    : "Enter transaction details to the left and click 'Analyze Transaction' to begin"}
                 </p>
               </div>
             )}
