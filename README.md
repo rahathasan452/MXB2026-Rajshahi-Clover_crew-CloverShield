@@ -220,6 +220,61 @@ CloverShield/
 
 ---
 
+## 🔬 Model Training Process
+
+### Training Workflow
+
+The model is trained using an end-to-end pipeline optimized for fraud detection:
+
+1. **Data Preprocessing**
+   - Load PaySim synthetic financial transaction dataset
+   - Memory optimization (downcast data types, 50-70% reduction)
+   - Filter to TRANSFER and CASH_OUT transaction types
+
+2. **Feature Engineering**
+   - **Graph Features**: Build transaction network using NetworkX
+     - Weighted PageRank for account trust/importance
+     - In-degree/out-degree for transaction patterns
+   - **Frequency Features**: Transaction counts per account
+   - **Ratio Features**: Amount relative to user's historical patterns
+   - **Time Features**: Hour of day extraction
+   - **Type Encoding**: Categorical encoding for transaction types
+
+3. **Temporal Train/Test Split**
+   - Time-based split (95% train, 5% test) to prevent data leakage
+   - Test set contains chronologically later transactions
+   - Simulates real-world deployment scenario
+
+4. **Hyperparameter Tuning**
+   - RandomizedSearchCV with 3-fold cross-validation
+   - Scoring metric: Average Precision (optimized for imbalanced data)
+   - Search space: n_estimators, max_depth, learning_rate, subsample, colsample_bytree
+   - Class imbalance handled via `scale_pos_weight` (498:1 ratio)
+
+5. **Threshold Optimization**
+   - Precision-Recall curve on cross-validated predictions
+   - Optimize for 99% recall (minimize false negatives)
+   - Final threshold: 0.00754482
+
+6. **Model Training**
+   - Refit feature engineer on full training set
+   - Train XGBoost with optimized hyperparameters
+   - Export classifier only (feature engineer refit during inference)
+
+### Key Techniques
+
+- **Graph Neural Features**: PageRank and network analysis to detect suspicious transaction patterns
+- **Temporal Validation**: Time-based splits ensure realistic performance estimates
+- **Transform-Outside-Search**: Feature engineering done once before hyperparameter search (efficiency)
+- **Cross-Validated Threshold**: Uses out-of-fold predictions to prevent overfitting
+- **Memory Optimization**: PageRank limit (100k nodes) for large-scale deployment
+
+### Training Notebook
+
+See [`notebook/frd-dtct_model_train.ipynb`](notebook/frd-dtct_model_train.ipynb) for complete training code with detailed documentation.
+
+---
+
 ## 🌐 Bilingual Support
 
 Full translation in English and Bangla (বাংলা):
