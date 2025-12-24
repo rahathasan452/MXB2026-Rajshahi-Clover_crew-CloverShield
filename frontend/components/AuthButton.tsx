@@ -5,7 +5,7 @@
 
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
 import { signOut } from '@/lib/auth'
@@ -17,6 +17,18 @@ export const AuthButton: React.FC = () => {
   const router = useRouter()
   const { authUser, language, setAuthUser, setAuthSession } = useAppStore()
   const [showAuthForm, setShowAuthForm] = useState(false)
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showAuthForm) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showAuthForm])
 
   const handleSignOut = async () => {
     try {
@@ -57,8 +69,10 @@ export const AuthButton: React.FC = () => {
 
         {/* Auth Form Modal */}
         {showAuthForm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <AuthForm onClose={() => setShowAuthForm(false)} />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto min-h-screen">
+            <div className="flex items-center justify-center min-h-full w-full py-8">
+              <AuthForm onClose={() => setShowAuthForm(false)} />
+            </div>
           </div>
         )}
       </>
@@ -77,11 +91,13 @@ export const AuthButton: React.FC = () => {
 
       {/* Auth Form Modal */}
       {showAuthForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <AuthForm
-            onClose={() => setShowAuthForm(false)}
-            initialMode="signin"
-          />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto min-h-screen">
+          <div className="flex items-center justify-center min-h-full w-full py-8">
+            <AuthForm
+              onClose={() => setShowAuthForm(false)}
+              initialMode="signin"
+            />
+          </div>
         </div>
       )}
     </>
