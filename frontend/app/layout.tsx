@@ -8,6 +8,7 @@ import { Inter, Hind_Siliguri } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { AnalyticsProvider } from '@/components/AnalyticsProvider'
+import { AuthProvider } from '@/components/AuthProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 const hindSiliguri = Hind_Siliguri({ 
@@ -42,11 +43,13 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} ${hindSiliguri.variable}`}>
-        <AnalyticsProvider>
-          <div className="min-h-screen bg-gradient-dark">
-            {children}
-          </div>
-        </AnalyticsProvider>
+        <AuthProvider>
+          <AnalyticsProvider>
+            <div className="min-h-screen bg-gradient-dark">
+              {children}
+            </div>
+          </AnalyticsProvider>
+        </AuthProvider>
         <Toaster position="top-right" />
       </body>
     </html>

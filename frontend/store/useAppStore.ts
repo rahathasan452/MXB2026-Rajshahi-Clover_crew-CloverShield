@@ -12,6 +12,12 @@ interface AppState {
   language: 'en' | 'bn'
   setLanguage: (lang: 'en' | 'bn') => void
 
+  // Auth
+  authUser: any | null
+  authSession: any | null
+  setAuthUser: (user: any | null) => void
+  setAuthSession: (session: any | null) => void
+
   // Users
   users: User[]
   selectedUser: User | null
@@ -54,6 +60,8 @@ interface AppState {
 
 const initialState = {
   language: 'en' as const,
+  authUser: null,
+  authSession: null,
   users: [],
   selectedUser: null,
   transactionForm: {
@@ -78,6 +86,9 @@ export const useAppStore = create<AppState>((set) => ({
   ...initialState,
 
   setLanguage: (lang) => set({ language: lang }),
+
+  setAuthUser: (user) => set({ authUser: user }),
+  setAuthSession: (session) => set({ authSession: session }),
 
   setUsers: (users) => set({ users }),
   setSelectedUser: (user) => set({ selectedUser: user }),

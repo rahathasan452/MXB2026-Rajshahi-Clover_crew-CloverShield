@@ -24,6 +24,7 @@ import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
 import { RiskDrivers } from '@/components/RiskDrivers'
 import { LanguageToggle } from '@/components/LanguageToggle'
 import { LLMExplanationBox } from '@/components/LLMExplanationBox'
+import { AuthButton } from '@/components/AuthButton'
 import { Icon } from '@/components/Icon'
 import toast from 'react-hot-toast'
 
@@ -360,7 +361,8 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="flex-shrink-0">
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <AuthButton />
               <LanguageToggle />
             </div>
           </div>
