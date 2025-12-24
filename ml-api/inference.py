@@ -4,47 +4,37 @@ Adapted for FastAPI microservice
 """
 
 import os
-import sys
+import gc
 import numpy as np
 import pandas as pd
 import joblib
 import warnings
 from typing import Dict, Optional, Tuple
-import shap
-
-# Import FraudFeatureEngineer
-try:
-    from feature_engineering import FraudFeatureEngineer
-    if '__main__' not in sys.modules:
-        import types
-        sys.modules['__main__'] = types.ModuleType('__main__')
-    setattr(sys.modules['__main__'], 'FraudFeatureEngineer', FraudFeatureEngineer)
-except ImportError:
-    from sklearn.base import BaseEstimator, TransformerMixin
-    import types
-    
-    class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
-        def fit(self, X, y=None):
-            return self
-        def transform(self, X):
-            return X
-    
-    if '__main__' not in sys.modules:
-        sys.modules['__main__'] = types.ModuleType('__main__')
-    setattr(sys.modules['__main__'], 'FraudFeatureEngineer', FraudFeatureEngineer)
-
-# Load environment variables
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
 
 # Suppress warnings
 warnings.filterwarnings('ignore', message='.*is_sparse.*', category=FutureWarning)
 warnings.filterwarnings('ignore', message='is_sparse is deprecated')
 
+# Core imports
+try:
+    from feature_engineering import FraudFeatureEngineer
+except ImportError:
+    from sklearn.base import BaseEstimator, TransformerMixin
+    
+    class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
+        """Fallback feature engineer if import fails"""
+        def fit(self, X, y=None):
+            return self
+        def transform(self, X):
+            return X
+
 # Optional imports
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except ImportError:
+    SHAP_AVAILABLE = False
+
 try:
     from groq import Groq
     GROQ_AVAILABLE = True
@@ -56,6 +46,13 @@ try:
     XGBOOST_AVAILABLE = True
 except ImportError:
     XGBOOST_AVAILABLE = False
+
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 
 class FraudInference:
@@ -229,7 +226,6 @@ class FraudInference:
             
             # Clear the full dataset from memory
             del test_df
-            import gc
             gc.collect()
             print("🧹 Cleared dataset from memory")
             
@@ -248,11 +244,14 @@ class FraudInference:
             print(f"✅ SHAP background prepared ({len(self.shap_background)} samples)")
             
             # Initialize SHAP explainer
-            if XGBOOST_AVAILABLE and isinstance(self.model, xgb.XGBClassifier):
+            if SHAP_AVAILABLE and XGBOOST_AVAILABLE and isinstance(self.model, xgb.XGBClassifier):
                 self.shap_explainer = shap.TreeExplainer(self.model)
                 print("✅ SHAP explainer initialized")
             else:
-                print("⚠️ SHAP explainer not initialized (XGBoost not available or model type unknown)")
+                if not SHAP_AVAILABLE:
+                    print("⚠️ SHAP explainer not initialized (SHAP library not available)")
+                else:
+                    print("⚠️ SHAP explainer not initialized (XGBoost not available or model type unknown)")
                 
         except Exception as e:
             print(f"❌ Error fitting feature engineer: {str(e)}")
@@ -297,6 +296,9 @@ class FraudInference:
         Returns:
             DataFrame with feature contributions sorted by importance
         """
+        if not SHAP_AVAILABLE:
+            raise ValueError("SHAP library not available")
+        
         if self.model is None:
             raise ValueError("Model not loaded")
         
@@ -305,31 +307,20 @@ class FraudInference:
         
         # Transform transaction using fitted feature engineer
         X_trans = self.feature_engineer.transform(transaction_df)
-        
-        # Compute SHAP values
-        shap_values = None
         feature_names = X_trans.columns.tolist()
         
+        # Compute SHAP values
         try:
             if self.shap_explainer is not None:
-                if isinstance(self.shap_explainer, shap.TreeExplainer):
-                    shap_values = self.shap_explainer.shap_values(X_trans)
-                    if isinstance(shap_values, list):
-                        shap_values = shap_values[1]
-                else:
-                    shap_exp = self.shap_explainer(X_trans)
-                    shap_values = shap_exp.values[0] if shap_exp.values.ndim == 2 else shap_exp.values
-            else:
+                shap_values = self._compute_shap_values(self.shap_explainer, X_trans)
+            elif XGBOOST_AVAILABLE and isinstance(self.model, xgb.XGBClassifier):
                 # Fallback: create explainer on the fly
-                if XGBOOST_AVAILABLE and isinstance(self.model, xgb.XGBClassifier):
-                    explainer = shap.TreeExplainer(self.model)
-                    shap_values = explainer.shap_values(X_trans)
-                    if isinstance(shap_values, list):
-                        shap_values = shap_values[1]
-                else:
-                    explainer = shap.Explainer(self.model, X_trans.iloc[[0]], feature_names=feature_names)
-                    shap_exp = explainer(X_trans)
-                    shap_values = shap_exp.values[0] if shap_exp.values.ndim == 2 else shap_exp.values
+                explainer = shap.TreeExplainer(self.model)
+                shap_values = self._compute_shap_values(explainer, X_trans)
+            else:
+                explainer = shap.Explainer(self.model, X_trans.iloc[[0]], feature_names=feature_names)
+                shap_exp = explainer(X_trans)
+                shap_values = shap_exp.values[0] if shap_exp.values.ndim == 2 else shap_exp.values
         except Exception as e:
             print(f"⚠️ SHAP computation failed: {str(e)}")
             shap_values = np.zeros(X_trans.shape[1])
@@ -350,6 +341,17 @@ class FraudInference:
         feat_df = feat_df.sort_values('shap_abs', ascending=False).reset_index(drop=True)
         
         return feat_df.head(topk)
+    
+    def _compute_shap_values(self, explainer, X_trans: pd.DataFrame) -> np.ndarray:
+        """Helper method to compute SHAP values"""
+        if isinstance(explainer, shap.TreeExplainer):
+            shap_values = explainer.shap_values(X_trans)
+            if isinstance(shap_values, list):
+                shap_values = shap_values[1]  # Get positive class values
+        else:
+            shap_exp = explainer(X_trans)
+            shap_values = shap_exp.values[0] if shap_exp.values.ndim == 2 else shap_exp.values
+        return shap_values
     
     def explain_llm(self, probability: float, shap_table: pd.DataFrame, transaction_df: Optional[pd.DataFrame] = None, topk: int = 6, language: str = 'en') -> Optional[str]:
         """

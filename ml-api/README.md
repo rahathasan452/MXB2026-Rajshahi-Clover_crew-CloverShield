@@ -18,7 +18,7 @@ FastAPI microservice for fraud detection predictions. This service replaces the 
 
 3. **Set environment variables:**
    ```bash
-   cp .env.example .env
+   cp env.template .env
    # Edit .env with your values
    ```
 
@@ -172,10 +172,13 @@ docker push your-registry/clovershield-ml-api:latest
 ### Environment Variables
 
 - `MODEL_PATH` - Path to model file (default: `Models/fraud_pipeline_final.pkl`)
+- `TEST_DATASET_PATH` - Path to test dataset CSV for feature engineering (optional, auto-detected if not provided)
 - `MODEL_THRESHOLD` - Decision threshold (default: `0.0793`)
 - `PORT` - Server port (default: `8000`)
 - `HOST` - Server host (default: `0.0.0.0`)
 - `GROQ_API_KEY` - Optional Groq API key for LLM explanations
+- `PAGERANK_LIMIT` - Optional limit on nodes for PageRank computation (for memory optimization)
+- `MAX_FIT_ROWS` - Maximum rows to use for feature engineering fitting (default: `50000`)
 
 ### Model File
 
@@ -245,18 +248,24 @@ print(response.json())
 
 ## 🔒 Security
 
+**Production Recommendations:**
 - Add API key authentication for production
 - Use HTTPS in production
 - Implement rate limiting
 - Validate all inputs
 - Monitor for abuse
+- Restrict CORS origins (currently set to `["*"]` for development)
+- Use environment variables for sensitive data
 
 ## 📈 Performance
 
-- Model loads once on startup
+**Optimization Tips:**
+- Model loads once on startup (lazy loading supported for serverless)
 - Single worker recommended (ML models are not thread-safe)
 - Consider caching for frequently accessed data
 - Monitor memory usage (XGBoost models can be large)
+- Feature engineering uses sampled dataset (configurable via `MAX_FIT_ROWS`)
+- SHAP background uses minimal sample size (100 rows) for efficiency
 
 ## 🐛 Troubleshooting
 

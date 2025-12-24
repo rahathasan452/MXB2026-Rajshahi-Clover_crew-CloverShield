@@ -21,7 +21,7 @@ Next.js/React frontend replacing the Streamlit UI. Built with modern web standar
 
 2. **Set up environment variables:**
    ```bash
-   cp .env.example .env.local
+   cp env.template .env.local
    # Edit .env.local with your values
    ```
 

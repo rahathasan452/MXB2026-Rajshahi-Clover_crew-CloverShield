@@ -134,11 +134,11 @@ CloverShield/
 ├── Models/                   # ML models
 │   └── fraud_pipeline_final.pkl  # Trained model
 │
-├── notebook/                 # Training notebooks
-│   └── frd-dtct.ipynb       # Model training notebook
+├── notebook/                 # Training notebooks (optional)
 │
 ├── MODEL_SETUP.md           # Model setup guide
 ├── ENV_SETUP.md             # Environment variables guide
+├── TEST_DATASET_SETUP.md    # Test dataset setup guide
 └── README.md                 # This file
 ```
 
@@ -232,6 +232,7 @@ See [ml-api/README.md](ml-api/README.md) for detailed deployment instructions.
 |----------|---------|
 | [MODEL_SETUP.md](MODEL_SETUP.md) | **Model file setup guide** (IMPORTANT) |
 | [ENV_SETUP.md](ENV_SETUP.md) | **Environment variables & API keys** (IMPORTANT) |
+| [TEST_DATASET_SETUP.md](TEST_DATASET_SETUP.md) | Test dataset setup and usage guide |
 | [frontend/README.md](frontend/README.md) | Frontend documentation |
 | [ml-api/README.md](ml-api/README.md) | ML API documentation |
 | [supabase/README.md](supabase/README.md) | Supabase setup guide |
@@ -274,7 +275,7 @@ See [ml-api/README.md](ml-api/README.md) for detailed deployment instructions.
 Built with ❤️ for Bangladesh's digital financial ecosystem.
 
 **Contact:**
-- GitHub: @rahathasan452
+- GitHub: [@rahathasan452](https://github.com/rahathasan452)
 
 ---
 

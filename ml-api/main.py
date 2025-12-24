@@ -122,10 +122,10 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware
+# CORS middleware - configure allowed origins for production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure for production
+    allow_origins=["*"],  # TODO: Restrict to specific origins in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -295,7 +295,6 @@ def transaction_to_dataframe(transaction: TransactionInput) -> pd.DataFrame:
 @app.on_event("startup")
 async def startup_event():
     """Load model on startup"""
-    # Log that server is starting
     port = os.getenv("PORT", "8000")
     print(f"🚀 Server starting on port {port}")
     print("📦 Loading model...")
@@ -325,7 +324,7 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    # Try to load model if not loaded (for serverless)
+    # Lazy loading for serverless environments
     if inference_engine is None:
         ensure_model_loaded()
     
@@ -369,7 +368,7 @@ async def predict(request: PredictRequest):
     
     Returns fraud probability, decision, risk level, and SHAP explanations
     """
-    # Try to load model if not loaded (for serverless environments like Vercel)
+    # Lazy loading for serverless environments
     if inference_engine is None:
         if not ensure_model_loaded():
             raise HTTPException(
@@ -453,7 +452,7 @@ async def predict_batch(request: BatchPredictRequest):
     
     Returns predictions for all transactions in batch
     """
-    # Try to load model if not loaded (for serverless environments like Vercel)
+    # Lazy loading for serverless environments
     if inference_engine is None:
         if not ensure_model_loaded():
             raise HTTPException(
