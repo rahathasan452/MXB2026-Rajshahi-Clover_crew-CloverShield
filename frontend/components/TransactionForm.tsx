@@ -224,13 +224,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       return
     }
 
+    const senderId = transactionForm.senderId // Store in const for TypeScript
     const searchTimer = setTimeout(async () => {
       try {
         setLoadingReceiverSearch(true)
         const searchParam = receiverSearch.trim() ? `&search=${encodeURIComponent(receiverSearch)}` : ''
         const endpoint = isTestDataMode
-          ? `/api/test-dataset/receivers?senderId=${encodeURIComponent(transactionForm.senderId)}${searchParam}&limit=10`
-          : `/api/users/receivers?senderId=${encodeURIComponent(transactionForm.senderId)}${searchParam}&limit=10`
+          ? `/api/test-dataset/receivers?senderId=${encodeURIComponent(senderId)}${searchParam}&limit=10`
+          : `/api/users/receivers?senderId=${encodeURIComponent(senderId)}${searchParam}&limit=10`
         
         const response = await fetch(endpoint)
         if (!response.ok) {
