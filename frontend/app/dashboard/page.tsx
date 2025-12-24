@@ -390,7 +390,7 @@ export default function Home() {
           <AnalyticsDashboard language={language} />
         </div>
 
-        {/* Main Content - Vertical Layout */}
+        {/* Main Content */}
         <div className="space-y-8">
           {/* User Profile Card - At the top */}
           {selectedUser && (
@@ -399,89 +399,92 @@ export default function Home() {
             </div>
           )}
 
-          {/* Transaction Simulator Section */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-              <Icon name="account_balance_wallet" size={28} className="text-primary" />
-              {language === 'bn' ? 'লেনদেন সিমুলেটর' : 'Transaction Simulator'}
-            </h2>
+          {/* Twin View Layout - Transaction Simulator and Guardian Command Center */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Panel - Transaction Simulator */}
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+                <Icon name="account_balance_wallet" size={28} className="text-primary" />
+                {language === 'bn' ? 'লেনদেন সিমুলেটর' : 'Transaction Simulator'}
+              </h2>
 
-            {/* Transaction Form */}
-            <TransactionForm
-              users={users}
-              onSubmit={handleTransactionSubmit}
-              language={language}
-            />
-          </div>
+              {/* Transaction Form */}
+              <TransactionForm
+                users={users}
+                onSubmit={handleTransactionSubmit}
+                language={language}
+              />
+            </div>
 
-          {/* Guardian Command Center Section */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-              <Icon name="security" size={28} className="text-primary" />
-              {language === 'bn'
-                ? 'গার্ডিয়ান কমান্ড কেন্দ্র'
-                : 'Guardian Command Center'}
-            </h2>
+            {/* Right Panel - Guardian Command Center */}
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+                <Icon name="security" size={28} className="text-primary" />
+                {language === 'bn'
+                  ? 'গার্ডিয়ান কমান্ড কেন্দ্র'
+                  : 'Guardian Command Center'}
+              </h2>
 
-            {/* Decision Zone */}
-            {currentPrediction ? (
-              <>
-                <DecisionZone
-                  prediction={currentPrediction}
-                  language={language}
-                />
-
-                {/* LLM Explanation */}
-                {currentPrediction.llm_explanation && (
-                  <LLMExplanationBox
-                    explanation={currentPrediction.llm_explanation.text}
+              {/* Decision Zone */}
+              {currentPrediction ? (
+                <>
+                  <DecisionZone
+                    prediction={currentPrediction}
                     language={language}
                   />
-                )}
 
-                {/* Risk Drivers */}
-                {currentPrediction.shap_explanations && (
-                  <div className="bg-card-bg rounded-xl p-6 border border-white/10">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-bold text-text-primary">
-                        {language === 'bn' ? 'শীর্ষ ঝুঁকি প্রভাবক' : 'Top Risk Drivers'}
-                      </h3>
-                      <button
-                        onClick={() => setShowRiskDrivers(!showRiskDrivers)}
-                        className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
-                      >
-                        <Icon 
-                          name={showRiskDrivers ? "expand_less" : "expand_more"} 
-                          size={20} 
+                  {/* LLM Explanation */}
+                  {currentPrediction.llm_explanation && (
+                    <LLMExplanationBox
+                      explanation={currentPrediction.llm_explanation.text}
+                      language={language}
+                    />
+                  )}
+
+                  {/* Risk Drivers */}
+                  {currentPrediction.shap_explanations && (
+                    <div className="bg-card-bg rounded-xl p-6 border border-white/10">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-text-primary">
+                          {language === 'bn' ? 'শীর্ষ ঝুঁকি প্রভাবক' : 'Top Risk Drivers'}
+                        </h3>
+                        <button
+                          onClick={() => setShowRiskDrivers(!showRiskDrivers)}
+                          className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
+                        >
+                          <Icon 
+                            name={showRiskDrivers ? "expand_less" : "expand_more"} 
+                            size={20} 
+                          />
+                          <span>
+                            {showRiskDrivers
+                              ? (language === 'bn' ? 'লুকান' : 'Hide')
+                              : (language === 'bn' ? 'দেখান' : 'Show')
+                            }
+                          </span>
+                        </button>
+                      </div>
+                      {showRiskDrivers && (
+                        <RiskDrivers
+                          shapExplanations={currentPrediction.shap_explanations}
+                          language={language}
+                          hideTitle={true}
                         />
-                        <span>
-                          {showRiskDrivers
-                            ? (language === 'bn' ? 'লুকান' : 'Hide')
-                            : (language === 'bn' ? 'দেখান' : 'Show')
-                          }
-                        </span>
-                      </button>
+                      )}
                     </div>
-                    {showRiskDrivers && (
-                      <RiskDrivers
-                        shapExplanations={currentPrediction.shap_explanations}
-                        language={language}
-                        hideTitle={true}
-                      />
-                    )}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="bg-card-bg rounded-xl p-12 border border-white/10 text-center">
-                <p className="text-text-secondary text-lg flex items-center justify-center gap-2">
-                  <Icon name="arrow_back" size={24} className="text-text-secondary" />
-                  {language === 'bn'
-                    ? 'উপরে লেনদেনের বিবরণ লিখুন এবং "লেনদেন বিশ্লেষণ করুন" ক্লিক করুন'
-                    : "Enter transaction details above and click 'Analyze Transaction' to begin"}
-                </p>
-              </div>
-            )}
+                  )}
+                </>
+              ) : (
+                <div className="bg-card-bg rounded-xl p-12 border border-white/10 text-center">
+                  <p className="text-text-secondary text-lg flex items-center justify-center gap-2">
+                    <Icon name="arrow_back" size={24} className="text-text-secondary" />
+                    {language === 'bn'
+                      ? 'বামে লেনদেনের বিবরণ লিখুন এবং "লেনদেন বিশ্লেষণ করুন" ক্লিক করুন'
+                      : "Enter transaction details to the left and click 'Analyze Transaction' to begin"}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
