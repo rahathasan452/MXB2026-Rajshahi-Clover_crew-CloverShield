@@ -6,6 +6,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
 import { signOut } from '@/lib/auth'
 import { AuthForm } from './AuthForm'
@@ -13,6 +14,7 @@ import { Icon } from './Icon'
 import toast from 'react-hot-toast'
 
 export const AuthButton: React.FC = () => {
+  const router = useRouter()
   const { authUser, language, setAuthUser, setAuthSession } = useAppStore()
   const [showAuthForm, setShowAuthForm] = useState(false)
 
@@ -24,6 +26,8 @@ export const AuthButton: React.FC = () => {
       toast.success(
         language === 'bn' ? 'সফলভাবে সাইন আউট করা হয়েছে' : 'Signed out successfully'
       )
+      // Redirect to home page after sign out
+      window.location.href = '/'
     } catch (error: any) {
       console.error('Sign out error:', error)
       toast.error(

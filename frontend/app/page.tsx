@@ -1,488 +1,254 @@
 /**
- * Main Page - Transaction Simulator + Guardian Command Center
- * Replaces Streamlit app.py main() function
+ * Landing Page - CloverShield Public Entry Point
+ * Marketing landing page for fraud detection system
  */
 
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import Image from 'next/image'
-import { useAppStore } from '@/store/useAppStore'
-import {
-  getUsers,
-  createTransaction,
-  updateTransaction,
-  createTransactionHistory,
-} from '@/lib/supabase'
-import { predictFraud } from '@/lib/ml-api'
-import { initAnalytics, trackTransaction, trackMLAPICall } from '@/lib/analytics'
-import { sendTransactionAlertEmail } from '@/lib/email'
-import { TransactionForm } from '@/components/TransactionForm'
-import { UserProfileCard } from '@/components/UserProfileCard'
-import { DecisionZone } from '@/components/DecisionZone'
-import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
-import { RiskDrivers } from '@/components/RiskDrivers'
-import { LanguageToggle } from '@/components/LanguageToggle'
-import { LLMExplanationBox } from '@/components/LLMExplanationBox'
+import Link from 'next/link'
 import { AuthButton } from '@/components/AuthButton'
 import { Icon } from '@/components/Icon'
-import toast from 'react-hot-toast'
 
-export default function Home() {
-  const {
-    users,
-    setUsers,
-    selectedUser,
-    setSelectedUser,
-    transactionForm,
-    currentPrediction,
-    setCurrentPrediction,
-    setIsLoading,
-    incrementTransactions,
-    incrementFraudDetected,
-    language,
-  } = useAppStore()
-
-  const [receiver, setReceiver] = useState<any>(null)
-  const [showRiskDrivers, setShowRiskDrivers] = useState(false)
-
-  // Initialize analytics on mount
-  useEffect(() => {
-    initAnalytics()
-  }, [])
-
-  // Load users on mount
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        setIsLoading(true)
-        const usersData = await getUsers()
-        setUsers(usersData)
-        if (usersData.length > 0 && !selectedUser) {
-          setSelectedUser(usersData[0])
-          // Set default sender
-          useAppStore.getState().setTransactionForm({
-            senderId: usersData[0].user_id,
-          })
-        }
-      } catch (error: any) {
-        toast.error('Failed to load users: ' + error.message)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadUsers()
-  }, [])
-
-  // Update receiver when receiverId changes
-  useEffect(() => {
-    if (transactionForm.receiverId) {
-      const receiverUser = users.find(
-        (u) => u.user_id === transactionForm.receiverId
-      )
-      setReceiver(receiverUser)
-    }
-  }, [transactionForm.receiverId, users])
-
-  // Update selected user when sender changes
-  useEffect(() => {
-    if (transactionForm.senderId) {
-      const senderUser = users.find(
-        (u) => u.user_id === transactionForm.senderId
-      )
-      if (senderUser) {
-        setSelectedUser(senderUser)
-      }
-    }
-  }, [transactionForm.senderId, users])
-
-  const handleTransactionSubmit = async (data: {
-    senderId: string
-    receiverId: string
-    amount: number
-    type: 'CASH_OUT' | 'TRANSFER'
-    note?: string
-    // Test data mode fields
-    oldBalanceOrig?: number
-    newBalanceOrig?: number
-    oldBalanceDest?: number
-    newBalanceDest?: number
-    step?: number
-    isTestData?: boolean
-  }) => {
-    try {
-      setIsLoading(true)
-
-      const isTestData = data.isTestData || false
-
-      // For test data mode, use provided balances; otherwise calculate from users
-      let oldBalanceOrig: number
-      let newBalanceOrig: number
-      let oldBalanceDest: number
-      let newBalanceDest: number
-      let step: number
-
-      if (isTestData) {
-        // Use test data balances
-        if (
-          data.oldBalanceOrig === undefined ||
-          data.newBalanceOrig === undefined ||
-          data.oldBalanceDest === undefined ||
-          data.newBalanceDest === undefined
-        ) {
-          throw new Error('Test data balances are required in test data mode')
-        }
-        oldBalanceOrig = data.oldBalanceOrig
-        newBalanceOrig = data.newBalanceOrig
-        oldBalanceDest = data.oldBalanceDest
-        newBalanceDest = data.newBalanceDest
-        step = data.step || 1
-      } else {
-        // Regular mode - calculate from users
-        const sender = users.find((u) => u.user_id === data.senderId)
-        const receiverUser = users.find((u) => u.user_id === data.receiverId)
-
-        if (!sender || !receiverUser) {
-          throw new Error('Invalid sender or receiver')
-        }
-
-        oldBalanceOrig = sender.balance
-        newBalanceOrig =
-          data.type === 'CASH_OUT' || data.type === 'TRANSFER'
-            ? oldBalanceOrig - data.amount
-            : oldBalanceOrig
-
-        oldBalanceDest = receiverUser.balance
-        newBalanceDest =
-          data.type === 'TRANSFER'
-            ? oldBalanceDest + data.amount
-            : oldBalanceDest
-        step = 1
-      }
-
-      // Call ML API for prediction
-      const startTime = Date.now()
-      let prediction
-      try {
-        prediction = await predictFraud(
-          {
-            step: step,
-            type: data.type,
-            amount: data.amount,
-            nameOrig: data.senderId,
-            oldBalanceOrig,
-            newBalanceOrig,
-            nameDest: data.receiverId,
-            oldBalanceDest,
-            newBalanceDest,
-          },
-          {
-            include_shap: true,
-            include_llm_explanation: true,
-            language,
-            topk: 10,
-          }
-        )
-
-        // Track ML API call
-        trackMLAPICall({
-          success: true,
-          processingTimeMs: Date.now() - startTime,
-        })
-
-        setCurrentPrediction(prediction)
-      } catch (error: any) {
-        // Track failed ML API call
-        trackMLAPICall({
-          success: false,
-          processingTimeMs: Date.now() - startTime,
-          error: error.message,
-        })
-        throw error
-      }
-
-      // Determine transaction status based on prediction decision
-      const transactionStatus =
-        prediction.prediction.decision === 'block'
-          ? 'BLOCKED'
-          : prediction.prediction.decision === 'warn'
-          ? 'REVIEW'
-          : 'COMPLETED'
-
-      // Save transaction to appropriate table based on mode
-      let transaction
-      if (isTestData) {
-        // Save to transaction_history table for test data
-        transaction = await createTransactionHistory({
-          sender_id: data.senderId,
-          receiver_id: data.receiverId,
-          amount: data.amount,
-          transaction_type: data.type,
-          old_balance_orig: oldBalanceOrig,
-          new_balance_orig: newBalanceOrig,
-          old_balance_dest: oldBalanceDest,
-          new_balance_dest: newBalanceDest,
-          step: step,
-          hour: new Date().getHours(),
-          status: transactionStatus,
-          fraud_probability: prediction.prediction.fraud_probability,
-          fraud_decision: prediction.prediction.decision,
-          risk_level: prediction.prediction.risk_level,
-          model_confidence: prediction.prediction.confidence,
-          is_test_data: true,
-          note: data.note,
-        })
-      } else {
-        // Save to transactions table for regular transactions
-        transaction = await createTransaction({
-          sender_id: data.senderId,
-          receiver_id: data.receiverId,
-          amount: data.amount,
-          transaction_type: data.type,
-          old_balance_orig: oldBalanceOrig,
-          new_balance_orig: newBalanceOrig,
-          old_balance_dest: oldBalanceDest,
-          new_balance_dest: newBalanceDest,
-          step: step,
-          hour: new Date().getHours(),
-          status: 'PENDING',
-          fraud_probability: prediction.prediction.fraud_probability,
-          fraud_decision: prediction.prediction.decision,
-          risk_level: prediction.prediction.risk_level,
-          model_confidence: prediction.prediction.confidence,
-          note: data.note,
-        })
-
-        // Update transaction status based on prediction decision
-        await updateTransaction(transaction.transaction_id, {
-          status: transactionStatus,
-        })
-      }
-
-      // Track transaction event
-      trackTransaction({
-        transactionId: transaction.transaction_id,
-        senderId: data.senderId,
-        receiverId: data.receiverId,
-        amount: data.amount,
-        type: data.type,
-        fraudProbability: prediction.prediction.fraud_probability,
-        decision: prediction.prediction.decision,
-        riskLevel: prediction.prediction.risk_level,
-      })
-
-      // Send email alert for BLOCK or WARN decisions (only in regular mode)
-      if (
-        !isTestData &&
-        (prediction.prediction.decision === 'block' ||
-          prediction.prediction.decision === 'warn')
-      ) {
-        try {
-          const sender = users.find((u) => u.user_id === data.senderId)
-          const receiverUser = users.find((u) => u.user_id === data.receiverId)
-          if (sender && receiverUser) {
-            await sendTransactionAlertEmail({
-              transactionId: transaction.transaction_id,
-              senderId: data.senderId,
-              receiverId: data.receiverId,
-              senderName: sender.name_en,
-              receiverName: receiverUser.name_en,
-              amount: data.amount,
-              transactionType: data.type,
-              fraudProbability: prediction.prediction.fraud_probability,
-              decision: prediction.prediction.decision,
-              riskLevel: prediction.prediction.risk_level,
-              timestamp: transaction.transaction_timestamp,
-              shapExplanations: prediction.shap_explanations,
-            })
-          }
-        } catch (emailError: any) {
-          console.error('Failed to send email alert:', emailError)
-          // Don't fail the transaction if email fails
-        }
-      }
-
-      // Update analytics
-      incrementTransactions()
-      if (prediction.prediction.decision === 'block') {
-        incrementFraudDetected(data.amount)
-      }
-
-      toast.success(
-        language === 'bn'
-          ? 'লেনদেন বিশ্লেষণ সম্পন্ন'
-          : 'Transaction analyzed successfully'
-      )
-    } catch (error: any) {
-      console.error('Transaction error:', error)
-      toast.error(
-        language === 'bn'
-          ? 'লেনদেন প্রক্রিয়াকরণ ব্যর্থ'
-          : 'Failed to process transaction: ' + error.message
-      )
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+export default function LandingPage() {
   return (
-    <div className={`min-h-screen ${language === 'bn' ? 'font-bengali' : ''}`}>
-      {/* Header */}
-      <header className="bg-gradient-header border-b-4 border-success rounded-b-3xl shadow-2xl mb-8">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4 flex-1">
-              {/* Logo */}
-              <div className="flex-shrink-0">
-                <Image
-                  src="/logo.png"
-                  alt="CloverShield Logo"
-                  width={80}
-                  height={80}
-                  className="h-16 w-16 md:h-20 md:w-20 object-contain"
-                  priority
-                />
-              </div>
-              {/* Title and Subtitle */}
-              <div className="text-center flex-1">
-                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white to-success bg-clip-text text-transparent mb-2">
-                  {language === 'bn' ? 'ক্লোভারশিল্ড' : 'CloverShield'}
-                </h1>
-                <h2 className="text-xl md:text-2xl text-text-primary font-semibold">
-                  {language === 'bn'
-                    ? 'মোবাইল ব্যাংকিং জালিয়াতি শনাক্তকরণ ব্যবস্থা'
-                    : 'Mobile Banking Fraud Detection System'}
-                </h2>
-                <p className="text-success italic mt-2">
-                  {language === 'bn'
-                    ? 'বাংলাদেশের ডিজিটাল আর্থিক ইকোসিস্টেম রক্ষা করছি'
-                    : "Protecting Bangladesh's Digital Financial Ecosystem"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
+    <div className="min-h-screen bg-dark-bg text-text-primary">
+      {/* Navbar - Glassmorphism */}
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-dark-bg/80 border-b border-white/10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <Image
+                src="/logo.png"
+                alt="CloverShield Logo"
+                width={48}
+                height={48}
+                className="h-12 w-12 object-contain"
+                priority
+              />
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">
+                CloverShield
+              </span>
+            </Link>
+
+            {/* Sign In Button */}
+            <div className="flex items-center gap-4">
+              <Link
+                href="/dashboard"
+                className="px-4 py-2 text-text-primary hover:text-primary transition-colors text-sm font-medium"
+              >
+                Dashboard
+              </Link>
               <AuthButton />
-              <LanguageToggle />
             </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <div className="container mx-auto px-4 pb-8">
-        {/* Analytics Dashboard */}
-        <div className="mb-8">
-          <AnalyticsDashboard language={language} />
+      {/* Hero Section - Full Screen Height */}
+      <section className="relative min-h-screen flex items-center justify-center pt-20 px-4 overflow-hidden">
+        {/* Dark Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-dark-bg via-primary/5 to-dark-bg"></div>
+        
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-success/10 rounded-full blur-3xl"></div>
         </div>
 
-        {/* Main Content - Twin View Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Panel - Transaction Simulator */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-              <Icon name="account_balance_wallet" size={28} className="text-primary" />
-              {language === 'bn' ? 'লেনদেন সিমুলেটর' : 'Transaction Simulator'}
-            </h2>
+        {/* Hero Content */}
+        <div className="relative z-10 container mx-auto max-w-5xl text-center">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-text-primary via-primary to-success bg-clip-text text-transparent leading-tight">
+            Fraud Protection for Modern Banking
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-text-secondary mb-8 max-w-3xl mx-auto leading-relaxed">
+            Empowering financial institutions with real-time, AI-driven fraud detection to safeguard every transaction and protect Bangladesh&apos;s digital financial ecosystem.
+          </p>
 
-            {/* User Profile Card */}
-            {selectedUser && (
-              <UserProfileCard user={selectedUser} language={language} />
-            )}
+          <p className="text-lg text-text-secondary mb-10 max-w-2xl mx-auto">
+            CloverShield leverages advanced machine learning algorithms to detect fraudulent transactions in real-time, providing instant alerts and actionable insights to protect your customers and your business.
+          </p>
 
-            {/* Transaction Form */}
-            <TransactionForm
-              users={users}
-              onSubmit={handleTransactionSubmit}
-              language={language}
-            />
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/dashboard"
+              className="px-8 py-4 bg-primary text-dark-bg rounded-full text-lg font-semibold hover:bg-primary/80 transition-all transform hover:scale-105 flex items-center gap-2 shadow-lg shadow-primary/30"
+            >
+              <Icon name="shield" size={24} />
+              Start Shielding
+            </Link>
+            <Link
+              href="/dashboard"
+              className="px-8 py-4 bg-transparent border-2 border-primary text-primary rounded-full text-lg font-semibold hover:bg-primary/10 transition-all flex items-center gap-2"
+            >
+              <Icon name="play_circle" size={24} />
+              View Demo
+            </Link>
           </div>
+        </div>
+      </section>
 
-          {/* Right Panel - Guardian Command Center */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-              <Icon name="security" size={28} className="text-primary" />
-              {language === 'bn'
-                ? 'গার্ডিয়ান কমান্ড কেন্দ্র'
-                : 'Guardian Command Center'}
-            </h2>
+      {/* Trust Indicators Section */}
+      <section className="py-20 px-4 bg-card-bg/30">
+        <div className="container mx-auto max-w-6xl">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            Trusted by Financial Institutions
+          </h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {/* Metric 1 */}
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-primary mb-2">$1B+</div>
+              <div className="text-text-secondary text-sm md:text-base mb-2">Transactions Analyzed</div>
+              <p className="text-text-secondary text-xs md:text-sm">
+                Our system has processed over one billion transactions
+              </p>
+            </div>
 
-            {/* Decision Zone */}
-            {currentPrediction ? (
-              <>
-                <DecisionZone
-                  prediction={currentPrediction}
-                  language={language}
-                />
+            {/* Metric 2 */}
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-success mb-2">99.9%</div>
+              <div className="text-text-secondary text-sm md:text-base mb-2">Detection Accuracy Rate</div>
+              <p className="text-text-secondary text-xs md:text-sm">
+                Industry-leading accuracy with minimal false positives
+              </p>
+            </div>
 
-                {/* LLM Explanation */}
-                {currentPrediction.llm_explanation && (
-                  <LLMExplanationBox
-                    explanation={currentPrediction.llm_explanation.text}
-                    language={language}
-                  />
-                )}
+            {/* Metric 3 */}
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-primary mb-2">&lt;100ms</div>
+              <div className="text-text-secondary text-sm md:text-base mb-2">Average Response Time</div>
+              <p className="text-text-secondary text-xs md:text-sm">
+                Lightning-fast analysis in real-time
+              </p>
+            </div>
 
-                {/* Risk Drivers */}
-                {currentPrediction.shap_explanations && (
-                  <div className="bg-card-bg rounded-xl p-6 border border-white/10">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-bold text-text-primary">
-                        {language === 'bn' ? 'শীর্ষ ঝুঁকি প্রভাবক' : 'Top Risk Drivers'}
-                      </h3>
-                      <button
-                        onClick={() => setShowRiskDrivers(!showRiskDrivers)}
-                        className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
-                      >
-                        <Icon 
-                          name={showRiskDrivers ? "expand_less" : "expand_more"} 
-                          size={20} 
-                        />
-                        <span>
-                          {showRiskDrivers
-                            ? (language === 'bn' ? 'লুকান' : 'Hide')
-                            : (language === 'bn' ? 'দেখান' : 'Show')
-                          }
-                        </span>
-                      </button>
-                    </div>
-                    {showRiskDrivers && (
-                      <RiskDrivers
-                        shapExplanations={currentPrediction.shap_explanations}
-                        language={language}
-                        hideTitle={true}
-                      />
-                    )}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="bg-card-bg rounded-xl p-12 border border-white/10 text-center">
-                <p className="text-text-secondary text-lg flex items-center justify-center gap-2">
-                  <Icon name="arrow_back" size={24} className="text-text-secondary" />
-                  {language === 'bn'
-                    ? 'বামে লেনদেনের বিবরণ লিখুন এবং "লেনদেন বিশ্লেষণ করুন" ক্লিক করুন'
-                    : "Enter transaction details to the left and click 'Analyze Transaction' to begin"}
-                </p>
+            {/* Metric 4 */}
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-success mb-2">500+</div>
+              <div className="text-text-secondary text-sm md:text-base mb-2">Financial Institutions Protected</div>
+              <p className="text-text-secondary text-xs md:text-sm">
+                Trusted by banks and fintech companies
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
+            Why CloverShield?
+          </h2>
+          <p className="text-text-secondary text-center mb-12 max-w-2xl mx-auto">
+            Advanced fraud detection powered by machine learning and real-time analytics
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Feature 1: Real-time Detection */}
+            <div className="bg-card-bg rounded-2xl p-8 border border-white/10 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/20">
+              <div className="w-16 h-16 bg-primary/20 rounded-xl flex items-center justify-center mb-6">
+                <Icon name="speed" size={40} className="text-primary" />
               </div>
-            )}
+              <h3 className="text-2xl font-bold mb-4">Real-time Detection</h3>
+              <p className="text-text-secondary leading-relaxed">
+                Instantly identify and mitigate fraudulent activities as they occur, ensuring continuous protection with sub-second response times. Our system analyzes every transaction in real-time, blocking threats before they impact your business.
+              </p>
+            </div>
+
+            {/* Feature 2: ML-Powered Analysis */}
+            <div className="bg-card-bg rounded-2xl p-8 border border-white/10 hover:border-success/50 transition-all hover:shadow-lg hover:shadow-success/20">
+              <div className="w-16 h-16 bg-success/20 rounded-xl flex items-center justify-center mb-6">
+                <Icon name="psychology" size={40} className="text-success" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4">ML-Powered Analysis</h3>
+              <p className="text-text-secondary leading-relaxed">
+                Leverage advanced machine learning algorithms trained on vast datasets to detect even the most subtle fraud patterns. Powered by XGBoost and enhanced with SHAP explanations for transparent, explainable AI decisions.
+              </p>
+            </div>
+
+            {/* Feature 3: Instant Alerts */}
+            <div className="bg-card-bg rounded-2xl p-8 border border-white/10 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/20">
+              <div className="w-16 h-16 bg-primary/20 rounded-xl flex items-center justify-center mb-6">
+                <Icon name="notifications_active" size={40} className="text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4">Instant Alerts</h3>
+              <p className="text-text-secondary leading-relaxed">
+                Receive immediate notifications of suspicious activities through multiple channels, enabling swift response and minimizing potential losses. Get detailed risk assessments and actionable recommendations with every alert.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
-      <footer className="mt-12 py-8 border-t border-white/10 text-center text-text-secondary">
-        <p>
-          {language === 'bn'
-            ? 'টিম ক্লোভার ক্রু কর্তৃক নির্মিত MXB2026 রাজশাহীর জন্য'
-            : 'Built by Team Clover Crew for MXB2026 Rajshahi'}
-        </p>
-        <p className="text-sm mt-2">
-          {language === 'bn'
-            ? 'XGBoost ও SHAP দ্বারা চালিত'
-            : 'Powered by XGBoost & SHAP'}
-        </p>
+      <footer className="bg-card-bg border-t border-white/10 py-12 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+            {/* Company Links */}
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-text-secondary">
+                <li><Link href="#" className="hover:text-primary transition-colors">About Us</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Careers</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Press</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Contact</Link></li>
+              </ul>
+            </div>
+
+            {/* Product Links */}
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-sm text-text-secondary">
+                <li><Link href="#" className="hover:text-primary transition-colors">Features</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Pricing</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">API Documentation</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Integration Guide</Link></li>
+              </ul>
+            </div>
+
+            {/* Resources Links */}
+            <div>
+              <h4 className="font-semibold mb-4">Resources</h4>
+              <ul className="space-y-2 text-sm text-text-secondary">
+                <li><Link href="#" className="hover:text-primary transition-colors">Blog</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Case Studies</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">White Papers</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Support Center</Link></li>
+              </ul>
+            </div>
+
+            {/* Legal Links */}
+            <div>
+              <h4 className="font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-text-secondary">
+                <li><Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Security Policy</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Compliance</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Footer Bottom */}
+          <div className="border-t border-white/10 pt-8 text-center text-text-secondary text-sm">
+            <p className="mb-2">
+              Built by Team Clover Crew for MXB2026 Rajshahi
+            </p>
+            <p className="mb-2">
+              Powered by XGBoost & SHAP
+            </p>
+            <p>
+              © 2024 CloverShield. All rights reserved.
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   )
 }
-
