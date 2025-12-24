@@ -248,6 +248,53 @@ See [ENV_SETUP.md](ENV_SETUP.md) for detailed `.env` setup guide.
 
 ---
 
+## Model Performance Metrics
+
+### Latest Model Performance (Test Set)
+
+**Test Set Results:**
+- **Accuracy**: 100%
+- **Recall**: 100% (2,938/2,938 fraud cases detected)
+- **Precision**: 91% (2,938 true positives, 298 false positives)
+- **F1-Score**: 0.95
+- **False Positive Rate**: 0.22%
+
+**Test Set Composition:**
+- Total transactions: 137,779
+- Fraud cases: 2,938
+- Legitimate transactions: 134,841
+
+**Confusion Matrix:**
+```
+                Predicted
+              Legitimate  Fraud
+Actual Legitimate  134543    298
+       Fraud           0   2938
+```
+
+### Model Configuration
+
+- **Decision Threshold**: 0.00754482
+- **Target Recall**: 99% (achieved 100% on test set)
+- **Model Type**: XGBoost Classifier
+- **Hyperparameters**:
+  - `n_estimators`: 489
+  - `max_depth`: 7
+  - `learning_rate`: 0.0356
+  - `scale_pos_weight`: 498
+  - `subsample`: 0.727
+  - `colsample_bytree`: 0.760
+
+### Training Set Performance (Cross-Validation)
+
+- **Accuracy**: 100%
+- **Recall**: 99% (5,223/5,275 fraud cases detected)
+- **Precision**: 40%
+- **F1-Score**: 0.57
+- **Training Data**: 2.63M transactions, 5,275 fraud cases
+
+---
+
 ## Need Help?
 
 Contact: @rahathasan452 or create an issue on GitHub.

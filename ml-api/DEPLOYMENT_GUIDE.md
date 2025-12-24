@@ -83,7 +83,7 @@ docker-compose up -d
 3. **Configure Environment Variables**:
    ```
    MODEL_PATH=Models/fraud_pipeline_final.pkl
-   MODEL_THRESHOLD=0.0793
+   MODEL_THRESHOLD=0.00754482
    GROQ_API_KEY=your-key-here
    ```
 

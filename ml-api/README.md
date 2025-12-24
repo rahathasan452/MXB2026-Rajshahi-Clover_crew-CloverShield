@@ -173,7 +173,7 @@ docker push your-registry/clovershield-ml-api:latest
 
 - `MODEL_PATH` - Path to model file (default: `Models/fraud_pipeline_final.pkl`)
 - `TEST_DATASET_PATH` - Path to test dataset CSV for feature engineering (optional, auto-detected if not provided)
-- `MODEL_THRESHOLD` - Decision threshold (default: `0.0793`)
+- `MODEL_THRESHOLD` - Decision threshold (default: `0.00754482` - optimized for 99% recall)
 - `PORT` - Server port (default: `8000`)
 - `HOST` - Server host (default: `0.0.0.0`)
 - `GROQ_API_KEY` - Optional Groq API key for LLM explanations
