@@ -17,8 +17,18 @@ export const FraudGauge: React.FC<FraudGaugeProps> = ({
   threshold = 0.0793,
   size = 200,
 }) => {
-  const percentage = parseFloat((probability * 100).toFixed(1))
+  // Calculate fraud risk score based on threshold
+  // If probability >= threshold, risk score = 100%
+  // If probability < threshold, map it proportionally: (probability / threshold) * 100
+  const fraudRiskScore = probability >= threshold 
+    ? 100 
+    : (probability / threshold) * 100
+  
+  const percentage = parseFloat(fraudRiskScore.toFixed(1))
   const thresholdPercentage = Math.round(threshold * 100)
+  
+  // Use fraudRiskScore for visual display (0-100 scale)
+  const displayProbability = fraudRiskScore / 100 // Convert back to 0-1 for visual calculations
 
   // Create data for gauge (3 segments: safe, caution, danger)
   const data = [
@@ -27,12 +37,13 @@ export const FraudGauge: React.FC<FraudGaugeProps> = ({
     { name: 'Danger', value: 30, color: '#FF4444' },
   ]
 
-  // Calculate angle for current probability
-  const angle = 180 - (probability * 180) // 0-1 maps to 180-0 degrees
+  // Calculate angle for current fraud risk score
+  const angle = 180 - (displayProbability * 180) // 0-1 maps to 180-0 degrees
 
   const getColor = () => {
-    if (probability >= 0.7) return '#FF4444' // danger
-    if (probability >= 0.3) return '#FFD700' // caution
+    // Color based on fraud risk score (0-100%)
+    if (percentage >= 70) return '#FF4444' // danger
+    if (percentage >= 30) return '#FFD700' // caution
     return '#00FF88' // success
   }
 
@@ -80,7 +91,7 @@ export const FraudGauge: React.FC<FraudGaugeProps> = ({
           />
           {/* Current value indicator */}
           <path
-            d={`M 0 ${size / 2} A ${size / 2} ${size / 2} 0 ${probability > 0.5 ? 1 : 0} 1 ${size} ${size / 2}`}
+            d={`M 0 ${size / 2} A ${size / 2} ${size / 2} 0 ${displayProbability > 0.5 ? 1 : 0} 1 ${size} ${size / 2}`}
             fill="none"
             stroke={getColor()}
             strokeWidth="20"
@@ -88,11 +99,11 @@ export const FraudGauge: React.FC<FraudGaugeProps> = ({
             strokeLinecap="round"
             className="transition-all duration-500"
           />
-          {/* Threshold line */}
+          {/* Threshold line - shows at 100% position since threshold maps to 100% */}
           {threshold > 0 && (
             <line
-              x1={size / 2 - (size / 2) * Math.cos((threshold * Math.PI) / 2)}
-              y1={size / 2 - (size / 2) * Math.sin((threshold * Math.PI) / 2)}
+              x1={size}
+              y1={size / 2}
               x2={size / 2}
               y2={size / 2}
               stroke="red"
