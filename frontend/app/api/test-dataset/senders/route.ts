@@ -19,15 +19,23 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const limit = parseInt(searchParams.get('limit') || '50', 10)
+    const limit = parseInt(searchParams.get('limit') || '10', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
+    const search = searchParams.get('search') || ''
 
     // Fetch distinct senders using SQL DISTINCT
     // Note: Supabase doesn't support DISTINCT directly in select, so we'll fetch all and deduplicate
-    const { data, error } = await supabase
+    let query = supabase
       .from('test_dataset')
       .select('nameOrig')
       .order('nameOrig')
+
+    // Apply search filter if provided
+    if (search) {
+      query = query.ilike('nameOrig', `%${search}%`)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching senders:', error)
@@ -38,13 +46,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Get distinct senders and apply pagination
-    const distinctSenders = Array.from(
+    let distinctSenders = Array.from(
       new Set(data?.map((row) => row.nameOrig) || [])
     )
-      .slice(offset, offset + limit)
 
-    // Get total count of distinct senders
-    const totalDistinct = new Set(data?.map((row) => row.nameOrig) || []).size
+    const totalDistinct = distinctSenders.length
+    
+    // Apply pagination after deduplication
+    distinctSenders = distinctSenders.slice(offset, offset + limit)
 
     return NextResponse.json({
       senders: distinctSenders,

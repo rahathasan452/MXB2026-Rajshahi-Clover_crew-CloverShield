@@ -1,6 +1,6 @@
 /**
- * API Route: GET /api/test-dataset/receivers?senderId=...
- * Fetch distinct receivers (nameDest) for a specific sender from test_dataset
+ * API Route: GET /api/users/senders
+ * Fetch senders (users) from users table with search capability
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -19,55 +19,48 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const senderId = searchParams.get('senderId')
-
-    if (!senderId) {
-      return NextResponse.json(
-        { error: 'senderId query parameter is required' },
-        { status: 400 }
-      )
-    }
-
     const limit = parseInt(searchParams.get('limit') || '10', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
     const search = searchParams.get('search') || ''
 
-    // Fetch all receivers for this sender
+    // Build query
     let query = supabase
-      .from('test_dataset')
-      .select('nameDest')
-      .eq('nameOrig', senderId)
-      .order('nameDest')
+      .from('users')
+      .select('user_id, name_en, name_bn, provider, balance')
+      .order('name_en')
 
     // Apply search filter if provided
     if (search) {
-      query = query.ilike('nameDest', `%${search}%`)
+      query = query.or(
+        `user_id.ilike.%${search}%,name_en.ilike.%${search}%,name_bn.ilike.%${search}%,provider.ilike.%${search}%`
+      )
     }
 
-    const { data, error } = await query
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1)
+
+    const { data, error, count } = await query
 
     if (error) {
-      console.error('Error fetching receivers:', error)
+      console.error('Error fetching senders:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch receivers', details: error.message },
+        { error: 'Failed to fetch senders', details: error.message },
         { status: 500 }
       )
     }
 
-    // Get distinct receivers and apply pagination
-    let distinctReceivers = Array.from(
-      new Set(data?.map((row) => row.nameDest) || [])
-    )
-
-    const totalDistinct = distinctReceivers.length
-    
-    // Apply pagination after deduplication
-    distinctReceivers = distinctReceivers.slice(offset, offset + limit)
+    // Format response
+    const senders = (data || []).map((user) => ({
+      id: user.user_id,
+      name: user.name_en,
+      nameBn: user.name_bn,
+      provider: user.provider,
+      balance: user.balance,
+    }))
 
     return NextResponse.json({
-      receivers: distinctReceivers,
-      senderId,
-      total: totalDistinct,
+      senders,
+      total: count || senders.length,
       limit,
       offset,
     })

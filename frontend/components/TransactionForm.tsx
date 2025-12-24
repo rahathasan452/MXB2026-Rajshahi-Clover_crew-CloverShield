@@ -48,6 +48,17 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     step: number
   } | null>(null)
 
+  // Searchable input state
+  const [senderSearch, setSenderSearch] = useState('')
+  const [senderSuggestions, setSenderSuggestions] = useState<Array<{ id: string; name?: string; nameBn?: string; provider?: string }>>([])
+  const [showSenderSuggestions, setShowSenderSuggestions] = useState(false)
+  const [loadingSenderSearch, setLoadingSenderSearch] = useState(false)
+
+  const [receiverSearch, setReceiverSearch] = useState('')
+  const [receiverSuggestions, setReceiverSuggestions] = useState<Array<{ id: string; name?: string; nameBn?: string; provider?: string }>>([])
+  const [showReceiverSuggestions, setShowReceiverSuggestions] = useState(false)
+  const [loadingReceiverSearch, setLoadingReceiverSearch] = useState(false)
+
   const formatCurrency = (amount: number) => {
     return `৳ ${amount.toLocaleString('en-BD')}`
   }
@@ -70,14 +81,25 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     }
   }, [isTestDataMode])
 
-  // Load receivers when sender changes in test mode
+  // Load receivers when sender changes (both test mode and regular mode)
   useEffect(() => {
-    if (isTestDataMode && transactionForm.senderId) {
-      loadTestReceivers(transactionForm.senderId)
+    if (transactionForm.senderId) {
+      if (isTestDataMode) {
+        loadTestReceivers(transactionForm.senderId)
+      } else {
+        loadRegularReceivers(transactionForm.senderId)
+      }
       setTestTransactionDetails(null)
       setTransactionForm({ receiverId: null })
+      setReceiverSearch('')
+    } else {
+      setReceiverSuggestions([])
+      setTestReceivers([])
+      setReceiverSearch('')
+      setShowReceiverSuggestions(false)
     }
   }, [transactionForm.senderId, isTestDataMode])
+
 
   // Load transaction details when both sender and receiver are selected in test mode
   useEffect(() => {
@@ -115,7 +137,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
   const loadTestReceivers = async (senderId: string) => {
     try {
-      setLoadingTestData(true)
+      setLoadingReceiverSearch(true)
       const response = await fetch(
         `/api/test-dataset/receivers?senderId=${encodeURIComponent(senderId)}&limit=100`
       )
@@ -124,6 +146,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       }
       const data = await response.json()
       setTestReceivers(data.receivers || [])
+      // Convert to suggestions format
+      setReceiverSuggestions((data.receivers || []).map((id: string) => ({ id })))
     } catch (error: any) {
       toast.error(
         language === 'bn'
@@ -131,9 +155,122 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           : 'Failed to load receivers: ' + error.message
       )
     } finally {
-      setLoadingTestData(false)
+      setLoadingReceiverSearch(false)
     }
   }
+
+  const loadRegularReceivers = async (senderId: string) => {
+    try {
+      setLoadingReceiverSearch(true)
+      const response = await fetch(
+        `/api/users/receivers?senderId=${encodeURIComponent(senderId)}&limit=100`
+      )
+      if (!response.ok) {
+        throw new Error('Failed to load receivers')
+      }
+      const data = await response.json()
+      setReceiverSuggestions(data.receivers || [])
+    } catch (error: any) {
+      console.error('Failed to load receivers:', error)
+      setReceiverSuggestions([])
+    } finally {
+      setLoadingReceiverSearch(false)
+    }
+  }
+
+  // Search senders with debounce
+  useEffect(() => {
+    if (!senderSearch.trim()) {
+      setSenderSuggestions([])
+      setShowSenderSuggestions(false)
+      return
+    }
+
+    const searchTimer = setTimeout(async () => {
+      try {
+        setLoadingSenderSearch(true)
+        const endpoint = isTestDataMode 
+          ? `/api/test-dataset/senders?search=${encodeURIComponent(senderSearch)}&limit=10`
+          : `/api/users/senders?search=${encodeURIComponent(senderSearch)}&limit=10`
+        
+        const response = await fetch(endpoint)
+        if (!response.ok) {
+          throw new Error('Failed to search senders')
+        }
+        const data = await response.json()
+        
+        if (isTestDataMode) {
+          setSenderSuggestions((data.senders || []).map((id: string) => ({ id })))
+        } else {
+          setSenderSuggestions(data.senders || [])
+        }
+        setShowSenderSuggestions(true)
+      } catch (error: any) {
+        console.error('Search error:', error)
+        setSenderSuggestions([])
+      } finally {
+        setLoadingSenderSearch(false)
+      }
+    }, 300) // Debounce 300ms
+
+    return () => clearTimeout(searchTimer)
+  }, [senderSearch, isTestDataMode])
+
+  // Search receivers with debounce (only when sender is selected)
+  useEffect(() => {
+    if (!transactionForm.senderId) {
+      setReceiverSuggestions([])
+      setShowReceiverSuggestions(false)
+      return
+    }
+
+    const searchTimer = setTimeout(async () => {
+      try {
+        setLoadingReceiverSearch(true)
+        const searchParam = receiverSearch.trim() ? `&search=${encodeURIComponent(receiverSearch)}` : ''
+        const endpoint = isTestDataMode
+          ? `/api/test-dataset/receivers?senderId=${encodeURIComponent(transactionForm.senderId)}${searchParam}&limit=10`
+          : `/api/users/receivers?senderId=${encodeURIComponent(transactionForm.senderId)}${searchParam}&limit=10`
+        
+        const response = await fetch(endpoint)
+        if (!response.ok) {
+          throw new Error('Failed to search receivers')
+        }
+        const data = await response.json()
+        
+        if (isTestDataMode) {
+          setReceiverSuggestions((data.receivers || []).map((id: string) => ({ id })))
+        } else {
+          setReceiverSuggestions(data.receivers || [])
+        }
+        // Show suggestions when searching or when there are results
+        if (receiverSearch.trim() || data.receivers?.length > 0) {
+          setShowReceiverSuggestions(true)
+        }
+      } catch (error: any) {
+        console.error('Search error:', error)
+        setReceiverSuggestions([])
+      } finally {
+        setLoadingReceiverSearch(false)
+      }
+    }, receiverSearch.trim() ? 300 : 0) // No debounce if just loading initial list
+
+    return () => clearTimeout(searchTimer)
+  }, [receiverSearch, transactionForm.senderId, isTestDataMode])
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.sender-search-container') && !target.closest('.receiver-search-container')) {
+        setShowSenderSuggestions(false)
+        setShowReceiverSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const loadTestTransactionDetails = async (
     senderId: string,
@@ -282,7 +419,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           </span>
           <button
             type="button"
-            onClick={() => {
+              onClick={() => {
               setIsTestDataMode(!isTestDataMode)
               setTransactionForm({
                 senderId: null,
@@ -290,6 +427,10 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 amount: 0,
               })
               setTestTransactionDetails(null)
+              setSenderSearch('')
+              setReceiverSearch('')
+              setSenderSuggestions([])
+              setReceiverSuggestions([])
             }}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
               isTestDataMode ? 'bg-primary' : 'bg-gray-600'
@@ -317,38 +458,61 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Sender Selection */}
-        <div>
+        <div className="relative sender-search-container">
           <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2 flex items-center gap-2">
             <Icon name="person" size={20} className="text-text-secondary" />
             {language === 'bn' ? 'প্রেরক অ্যাকাউন্ট' : 'Sender Account'}
           </label>
-          {loadingTestData && isTestDataMode ? (
-            <div className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-secondary text-center">
-              {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
-            </div>
-          ) : (
-            <select
-              value={transactionForm.senderId || ''}
-              onChange={(e) => setTransactionForm({ senderId: e.target.value })}
+          <div className="relative">
+            <input
+              type="text"
+              value={senderSearch || (transactionForm.senderId ? (isTestDataMode ? transactionForm.senderId : (sender?.name_en || sender?.user_id || '')) : '')}
+              onChange={(e) => {
+                setSenderSearch(e.target.value)
+                if (!e.target.value) {
+                  setTransactionForm({ senderId: null })
+                  setShowSenderSuggestions(false)
+                }
+              }}
+              onFocus={() => {
+                if (senderSearch && senderSuggestions.length > 0) {
+                  setShowSenderSuggestions(true)
+                }
+              }}
+              placeholder={language === 'bn' ? 'প্রেরক খুঁজুন...' : 'Search sender...'}
               className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={loadingTestData}
-            >
-              <option value="">
-                {language === 'bn' ? 'প্রেরক নির্বাচন করুন' : 'Select sender'}
-              </option>
-              {isTestDataMode
-                ? testSenders.map((senderId) => (
-                    <option key={senderId} value={senderId}>
-                      {senderId}
-                    </option>
-                  ))
-                : users.map((user) => (
-                    <option key={user.user_id} value={user.user_id}>
-                      {user.user_id} - {user.name_en} ({user.provider})
-                    </option>
-                  ))}
-            </select>
-          )}
+            />
+            {loadingSenderSearch && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            )}
+            {showSenderSuggestions && senderSuggestions.length > 0 && (
+              <div className="absolute z-50 w-full mt-1 bg-dark-bg border border-white/20 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                {senderSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion.id}
+                    type="button"
+                    onClick={() => {
+                      setTransactionForm({ senderId: suggestion.id })
+                      setSenderSearch(isTestDataMode ? suggestion.id : (suggestion.name || suggestion.id))
+                      setShowSenderSuggestions(false)
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-primary/10 text-text-primary border-b border-white/10 last:border-b-0 transition-colors"
+                  >
+                    {isTestDataMode ? (
+                      <div className="font-mono">{suggestion.id}</div>
+                    ) : (
+                      <div>
+                        <div className="font-semibold">{suggestion.name || suggestion.id}</div>
+                        <div className="text-sm text-text-secondary">{suggestion.id} • {suggestion.provider}</div>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {errors.senderId && (
             <p className="text-danger text-sm mt-1">{errors.senderId}</p>
           )}
@@ -425,65 +589,97 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         </div>
 
         {/* Receiver Selection */}
-        <div>
+        <div className="relative receiver-search-container">
           <label className="block text-sm font-semibold text-text-secondary uppercase tracking-wide mb-2 flex items-center gap-2">
             <Icon name="inbox" size={20} className="text-text-secondary" />
             {language === 'bn' ? 'গ্রহীতা অ্যাকাউন্ট' : 'Receiver Account'}
           </label>
 
-          {/* Recent Receivers - Only in regular mode */}
-          {!isTestDataMode &&
-            recentReceivers.length > 0 &&
-            transactionForm.senderId && (
-              <div className="flex gap-2 mb-3 flex-wrap">
-                {recentReceivers.map((user) => (
-                  <button
-                    key={user.user_id}
-                    type="button"
-                    onClick={() =>
-                      setTransactionForm({ receiverId: user.user_id })
-                    }
-                    className="px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-                  >
-                    {maskAccountNumber(user.user_id)}
-                  </button>
-                ))}
-              </div>
-            )}
-
-          {loadingTestData && isTestDataMode ? (
-            <div className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-secondary text-center">
-              {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
+          {!transactionForm.senderId && (
+            <div className="w-full bg-dark-bg/50 border border-white/10 rounded-xl px-4 py-3 text-text-secondary text-center text-sm">
+              {language === 'bn' ? 'প্রথমে প্রেরক নির্বাচন করুন' : 'Please select sender first'}
             </div>
-          ) : (
-            <select
-              value={transactionForm.receiverId || ''}
-              onChange={(e) =>
-                setTransactionForm({ receiverId: e.target.value })
-              }
-              className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={
-                loadingTestData ||
-                (isTestDataMode && !transactionForm.senderId)
-              }
-            >
-              <option value="">
-                {language === 'bn' ? 'গ্রহীতা নির্বাচন করুন' : 'Select receiver'}
-              </option>
-              {isTestDataMode
-                ? testReceivers.map((receiverId) => (
-                    <option key={receiverId} value={receiverId}>
-                      {receiverId}
-                    </option>
-                  ))
-                : users
-                    .filter((u) => u.user_id !== transactionForm.senderId)
-                    .map((user) => (
-                      <option key={user.user_id} value={user.user_id}>
-                        {user.user_id} - {user.name_en}
-                      </option>
+          )}
+
+          {transactionForm.senderId && (
+            <>
+              {loadingReceiverSearch && receiverSuggestions.length === 0 && (
+                <div className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-secondary text-center">
+                  {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
+                </div>
+              )}
+              
+              {!loadingReceiverSearch && receiverSuggestions.length === 0 && !receiverSearch && (
+                <div className="w-full bg-dark-bg/50 border border-white/10 rounded-xl px-4 py-3 text-text-secondary text-center text-sm">
+                  {language === 'bn' ? 'এই প্রেরকের সাথে কোন লেনদেন নেই' : 'No transactions found with this sender'}
+                </div>
+              )}
+
+              <div className="relative">
+                <input
+                  type="text"
+                  value={receiverSearch || (transactionForm.receiverId ? (isTestDataMode ? transactionForm.receiverId : (receiver?.name_en || receiver?.user_id || '')) : '')}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setReceiverSearch(value)
+                    if (!value) {
+                      setTransactionForm({ receiverId: null })
+                      setShowReceiverSuggestions(false)
+                    } else {
+                      // Suggestions will be shown by the useEffect
+                    }
+                  }}
+                  onFocus={async () => {
+                    if (transactionForm.senderId) {
+                      // Load receivers if not already loaded
+                      if (receiverSuggestions.length === 0 && !loadingReceiverSearch) {
+                        if (isTestDataMode) {
+                          await loadTestReceivers(transactionForm.senderId)
+                        } else {
+                          await loadRegularReceivers(transactionForm.senderId)
+                        }
+                      }
+                      if (receiverSuggestions.length > 0) {
+                        setShowReceiverSuggestions(true)
+                      }
+                    }
+                  }}
+                  placeholder={language === 'bn' ? 'গ্রহীতা খুঁজুন...' : 'Search receiver...'}
+                  className="w-full bg-dark-bg border border-white/20 rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!transactionForm.senderId || loadingReceiverSearch}
+                />
+                {loadingReceiverSearch && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+                {showReceiverSuggestions && receiverSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-dark-bg border border-white/20 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                    {receiverSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion.id}
+                        type="button"
+                        onClick={() => {
+                          setTransactionForm({ receiverId: suggestion.id })
+                          setReceiverSearch(isTestDataMode ? suggestion.id : (suggestion.name || suggestion.id))
+                          setShowReceiverSuggestions(false)
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-primary/10 text-text-primary border-b border-white/10 last:border-b-0 transition-colors"
+                      >
+                        {isTestDataMode ? (
+                          <div className="font-mono">{suggestion.id}</div>
+                        ) : (
+                          <div>
+                            <div className="font-semibold">{suggestion.name || suggestion.id}</div>
+                            <div className="text-sm text-text-secondary">{suggestion.id} • {suggestion.provider}</div>
+                          </div>
+                        )}
+                      </button>
                     ))}
-            </select>
+                  </div>
+                )}
+              </div>
+            </>
           )}
           {errors.receiverId && (
             <p className="text-danger text-sm mt-1">{errors.receiverId}</p>
