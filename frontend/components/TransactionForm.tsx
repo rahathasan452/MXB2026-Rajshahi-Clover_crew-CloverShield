@@ -25,7 +25,7 @@ interface TransactionFormProps {
     newBalanceDest?: number
     step?: number
     isTestData?: boolean
-  }) => void
+  }) => void | Promise<void>
   language?: 'en' | 'bn'
 }
 
@@ -59,6 +59,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [showReceiverSuggestions, setShowReceiverSuggestions] = useState(false)
   const [loadingReceiverSearch, setLoadingReceiverSearch] = useState(false)
 
+  // Submit loading state
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   const formatCurrency = (amount: number) => {
     return `৳ ${amount.toLocaleString('en-BD')}`
   }
@@ -84,11 +87,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   // Load receivers when sender changes (both test mode and regular mode)
   useEffect(() => {
     if (transactionForm.senderId) {
-      if (isTestDataMode) {
-        loadTestReceivers(transactionForm.senderId)
-      } else {
-        loadRegularReceivers(transactionForm.senderId)
+      const loadReceivers = async () => {
+        if (isTestDataMode) {
+          await loadTestReceivers(transactionForm.senderId!)
+        } else {
+          await loadRegularReceivers(transactionForm.senderId!)
+        }
       }
+      loadReceivers()
       setTestTransactionDetails(null)
       setTransactionForm({ receiverId: null })
       setReceiverSearch('')
@@ -147,7 +153,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       const data = await response.json()
       setTestReceivers(data.receivers || [])
       // Convert to suggestions format
-      setReceiverSuggestions((data.receivers || []).map((id: string) => ({ id })))
+      const suggestions = (data.receivers || []).map((id: string) => ({ id }))
+      setReceiverSuggestions(suggestions)
+      // Automatically show suggestions if there are receivers
+      if (suggestions.length > 0) {
+        setShowReceiverSuggestions(true)
+      }
     } catch (error: any) {
       toast.error(
         language === 'bn'
@@ -169,7 +180,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         throw new Error('Failed to load receivers')
       }
       const data = await response.json()
-      setReceiverSuggestions(data.receivers || [])
+      const receivers = data.receivers || []
+      setReceiverSuggestions(receivers)
+      // Automatically show suggestions if there are receivers
+      if (receivers.length > 0) {
+        setShowReceiverSuggestions(true)
+      }
     } catch (error: any) {
       console.error('Failed to load receivers:', error)
       setReceiverSuggestions([])
@@ -229,9 +245,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       try {
         setLoadingReceiverSearch(true)
         const searchParam = receiverSearch.trim() ? `&search=${encodeURIComponent(receiverSearch)}` : ''
+        // Show at least 10, but more if available
+        const limit = receiverSearch.trim() ? 50 : 100 // More results when not searching
         const endpoint = isTestDataMode
-          ? `/api/test-dataset/receivers?senderId=${encodeURIComponent(senderId)}${searchParam}&limit=10`
-          : `/api/users/receivers?senderId=${encodeURIComponent(senderId)}${searchParam}&limit=10`
+          ? `/api/test-dataset/receivers?senderId=${encodeURIComponent(senderId)}${searchParam}&limit=${limit}`
+          : `/api/users/receivers?senderId=${encodeURIComponent(senderId)}${searchParam}&limit=${limit}`
         
         const response = await fetch(endpoint)
         if (!response.ok) {
@@ -244,8 +262,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         } else {
           setReceiverSuggestions(data.receivers || [])
         }
-        // Show suggestions when searching or when there are results
-        if (receiverSearch.trim() || data.receivers?.length > 0) {
+        // Always show suggestions if there are receivers (automatically show all receivers)
+        if (data.receivers?.length > 0) {
           setShowReceiverSuggestions(true)
         }
       } catch (error: any) {
@@ -349,7 +367,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!validate()) {
@@ -363,36 +381,52 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       return
     }
 
-    const submitData: any = {
-      senderId: transactionForm.senderId,
-      receiverId: transactionForm.receiverId,
-      amount: transactionForm.amount,
-      type: transactionForm.type,
-      note: transactionForm.note,
-      isTestData: isTestDataMode,
+    setIsSubmitting(true)
+
+    try {
+      const submitData: any = {
+        senderId: transactionForm.senderId,
+        receiverId: transactionForm.receiverId,
+        amount: transactionForm.amount,
+        type: transactionForm.type,
+        note: transactionForm.note,
+        isTestData: isTestDataMode,
+      }
+
+      // Include test data fields if in test mode
+      if (isTestDataMode && testTransactionDetails) {
+        // Calculate new balances based on amount and transaction type
+        const newBalanceOrig =
+          transactionForm.type === 'CASH_OUT' || transactionForm.type === 'TRANSFER'
+            ? testTransactionDetails.oldBalanceOrig - transactionForm.amount
+            : testTransactionDetails.oldBalanceOrig
+        
+        const newBalanceDest =
+          transactionForm.type === 'TRANSFER'
+            ? testTransactionDetails.oldBalanceDest + transactionForm.amount
+            : testTransactionDetails.oldBalanceDest
+
+        submitData.oldBalanceOrig = testTransactionDetails.oldBalanceOrig
+        submitData.newBalanceOrig = newBalanceOrig
+        submitData.oldBalanceDest = testTransactionDetails.oldBalanceDest
+        submitData.newBalanceDest = newBalanceDest
+        submitData.step = testTransactionDetails.step
+      }
+
+      const result = onSubmit(submitData)
+      if (result instanceof Promise) {
+        await result
+      }
+    } catch (error) {
+      console.error('Error submitting transaction:', error)
+      toast.error(
+        language === 'bn' 
+          ? 'লেনদেন প্রক্রিয়াকরণে ত্রুটি হয়েছে' 
+          : 'Error processing transaction'
+      )
+    } finally {
+      setIsSubmitting(false)
     }
-
-    // Include test data fields if in test mode
-    if (isTestDataMode && testTransactionDetails) {
-      // Calculate new balances based on amount and transaction type
-      const newBalanceOrig =
-        transactionForm.type === 'CASH_OUT' || transactionForm.type === 'TRANSFER'
-          ? testTransactionDetails.oldBalanceOrig - transactionForm.amount
-          : testTransactionDetails.oldBalanceOrig
-      
-      const newBalanceDest =
-        transactionForm.type === 'TRANSFER'
-          ? testTransactionDetails.oldBalanceDest + transactionForm.amount
-          : testTransactionDetails.oldBalanceDest
-
-      submitData.oldBalanceOrig = testTransactionDetails.oldBalanceOrig
-      submitData.newBalanceOrig = newBalanceOrig
-      submitData.oldBalanceDest = testTransactionDetails.oldBalanceDest
-      submitData.newBalanceDest = newBalanceDest
-      submitData.step = testTransactionDetails.step
-    }
-
-    onSubmit(submitData)
   }
 
   const sender = users.find((u) => u.user_id === transactionForm.senderId)
@@ -630,19 +664,10 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       // Suggestions will be shown by the useEffect
                     }
                   }}
-                  onFocus={async () => {
-                    if (transactionForm.senderId) {
-                      // Load receivers if not already loaded
-                      if (receiverSuggestions.length === 0 && !loadingReceiverSearch) {
-                        if (isTestDataMode) {
-                          await loadTestReceivers(transactionForm.senderId)
-                        } else {
-                          await loadRegularReceivers(transactionForm.senderId)
-                        }
-                      }
-                      if (receiverSuggestions.length > 0) {
-                        setShowReceiverSuggestions(true)
-                      }
+                  onFocus={() => {
+                    // Show suggestions if receivers are already loaded
+                    if (receiverSuggestions.length > 0) {
+                      setShowReceiverSuggestions(true)
                     }
                   }}
                   placeholder={language === 'bn' ? 'গ্রহীতা খুঁজুন...' : 'Search receiver...'}
@@ -795,10 +820,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-primary to-blue-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={Object.keys(errors).length > 0}
+          className="w-full bg-gradient-to-r from-primary to-blue-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          disabled={Object.keys(errors).length > 0 || isSubmitting}
         >
-          {language === 'bn' ? 'লেনদেন বিশ্লেষণ করুন' : 'Analyze Transaction'}
+          {isSubmitting && (
+            <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+          )}
+          {isSubmitting 
+            ? (language === 'bn' ? 'বিশ্লেষণ করা হচ্ছে...' : 'Analyzing...') 
+            : (language === 'bn' ? 'লেনদেন বিশ্লেষণ করুন' : 'Analyze Transaction')
+          }
         </button>
       </form>
     </div>
