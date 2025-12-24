@@ -24,6 +24,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+        'hind-siliguri': ['var(--font-hind-siliguri)', 'sans-serif'],
       },
       backgroundImage: {
         'gradient-dark': 'linear-gradient(135deg, #0A0E27 0%, #1a1a2e 100%)',

@@ -27,6 +27,17 @@
   body {
     @apply bg-dark-bg text-text-primary;
   }
+  /* Apply Hind Siliguri font for Bengali text */
+  [lang="bn"],
+  .font-bengali,
+  .bengali-text {
+    font-family: var(--font-hind-siliguri), sans-serif;
+  }
+  
+  /* When language is Bengali, apply Hind Siliguri to all text */
+  .font-bengali * {
+    font-family: var(--font-hind-siliguri), sans-serif;
+  }
 }
 
 @layer utilities {

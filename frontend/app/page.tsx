@@ -326,7 +326,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className={`min-h-screen ${language === 'bn' ? 'font-bengali' : ''}`}>
       {/* Header */}
       <header className="bg-gradient-header border-b-4 border-success rounded-b-3xl shadow-2xl mb-8">
         <div className="container mx-auto px-4 py-8">

@@ -4,12 +4,17 @@
  */
 
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Hind_Siliguri } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { AnalyticsProvider } from '@/components/AnalyticsProvider'
 
 const inter = Inter({ subsets: ['latin'] })
+const hindSiliguri = Hind_Siliguri({ 
+  subsets: ['bengali', 'latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-hind-siliguri',
+})
 
 export const metadata: Metadata = {
   title: 'CloverShield - Fraud Detection System',
@@ -36,7 +41,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
         />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} ${hindSiliguri.variable}`}>
         <AnalyticsProvider>
           <div className="min-h-screen bg-gradient-dark">
             {children}
