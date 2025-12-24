@@ -10,17 +10,20 @@ interface FraudGaugeProps {
   probability: number // 0-1
   threshold?: number
   size?: number
+  decision?: 'pass' | 'warn' | 'block' // Decision from ML model
 }
 
 export const FraudGauge: React.FC<FraudGaugeProps> = ({
   probability,
   threshold = 0.0793,
   size = 200,
+  decision,
 }) => {
-  // Calculate fraud risk score based on threshold
-  // If probability >= threshold, risk score = 100%
-  // If probability < threshold, map it proportionally: (probability / threshold) * 100
-  const fraudRiskScore = probability >= threshold 
+  // Calculate fraud risk score based on threshold and decision
+  // If decision is "block", probability >= threshold, so risk score = 100%
+  // If decision is not "block", map it proportionally: (probability / threshold) * 100
+  // Use decision if provided (more accurate), otherwise fall back to threshold comparison
+  const fraudRiskScore = decision === 'block' || probability >= threshold
     ? 100 
     : (probability / threshold) * 100
   

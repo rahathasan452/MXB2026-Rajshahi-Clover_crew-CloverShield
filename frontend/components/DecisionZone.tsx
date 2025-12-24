@@ -95,7 +95,7 @@ export const DecisionZone: React.FC<DecisionZoneProps> = ({
 
       {/* Gauge */}
       <div className="flex justify-center my-6">
-        <FraudGauge probability={fraud_probability} size={250} />
+        <FraudGauge probability={fraud_probability} size={250} decision={decision} />
       </div>
 
       {/* Processing Info */}
