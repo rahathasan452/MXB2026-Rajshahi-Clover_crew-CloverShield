@@ -61,7 +61,7 @@ export default function LandingPage() {
         {/* Hero Content */}
         <div className="relative z-10 container mx-auto max-w-5xl text-center">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-text-primary via-primary to-success bg-clip-text text-transparent leading-tight">
-            Fraud Protection for Modern Banking
+            Fraud Protection for Mobile Banking
           </h1>
           
           <p className="text-xl md:text-2xl text-text-secondary mb-8 max-w-3xl mx-auto leading-relaxed">

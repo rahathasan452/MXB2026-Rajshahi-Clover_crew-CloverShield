@@ -390,19 +390,21 @@ export default function Home() {
           <AnalyticsDashboard language={language} />
         </div>
 
-        {/* Main Content - Twin View Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Panel - Transaction Simulator */}
+        {/* Main Content - Vertical Layout */}
+        <div className="space-y-8">
+          {/* User Profile Card - At the top */}
+          {selectedUser && (
+            <div>
+              <UserProfileCard user={selectedUser} language={language} />
+            </div>
+          )}
+
+          {/* Transaction Simulator Section */}
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
               <Icon name="account_balance_wallet" size={28} className="text-primary" />
               {language === 'bn' ? 'লেনদেন সিমুলেটর' : 'Transaction Simulator'}
             </h2>
-
-            {/* User Profile Card */}
-            {selectedUser && (
-              <UserProfileCard user={selectedUser} language={language} />
-            )}
 
             {/* Transaction Form */}
             <TransactionForm
@@ -412,7 +414,7 @@ export default function Home() {
             />
           </div>
 
-          {/* Right Panel - Guardian Command Center */}
+          {/* Guardian Command Center Section */}
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
               <Icon name="security" size={28} className="text-primary" />
@@ -475,8 +477,8 @@ export default function Home() {
                 <p className="text-text-secondary text-lg flex items-center justify-center gap-2">
                   <Icon name="arrow_back" size={24} className="text-text-secondary" />
                   {language === 'bn'
-                    ? 'বামে লেনদেনের বিবরণ লিখুন এবং "লেনদেন বিশ্লেষণ করুন" ক্লিক করুন'
-                    : "Enter transaction details to the left and click 'Analyze Transaction' to begin"}
+                    ? 'উপরে লেনদেনের বিবরণ লিখুন এবং "লেনদেন বিশ্লেষণ করুন" ক্লিক করুন'
+                    : "Enter transaction details above and click 'Analyze Transaction' to begin"}
                 </p>
               </div>
             )}
