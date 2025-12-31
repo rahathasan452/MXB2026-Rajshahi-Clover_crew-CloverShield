@@ -157,7 +157,7 @@ class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
         X['type_encoded'] = X['type'].map(self.type_map).fillna(-1).astype(int)
 
         # Drop identifiers and non-numeric columns
-        for c in ['nameOrig', 'nameDest', 'type', 'isFlaggedFraud']:
+        for c in ['nameOrig', 'nameDest', 'type', 'isFlaggedFraud', 'isFraud']:
             if c in X.columns:
                 X.drop(columns=c, inplace=True)
 
