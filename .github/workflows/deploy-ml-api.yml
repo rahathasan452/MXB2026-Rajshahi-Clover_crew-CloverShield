@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "ml-api/**"  # Only trigger when files in ml-api change
+      - ".github/workflows/deploy-ml-api.yml" # Also trigger when this workflow changes
 
 jobs:
   sync-to-hub:
