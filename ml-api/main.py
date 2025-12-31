@@ -295,7 +295,7 @@ def transaction_to_dataframe(transaction: TransactionInput) -> pd.DataFrame:
 @app.on_event("startup")
 async def startup_event():
     """Load model on startup"""
-    port = os.getenv("PORT", "8000")
+    port = os.getenv("PORT", "7860")
     print(f"🚀 Server starting on port {port}")
     print("📦 Loading model...")
     
@@ -514,7 +514,8 @@ async def http_exception_handler(request, exc):
 
 if __name__ == "__main__":
     # Get port from environment (required for Render, Railway, etc.)
-    port = int(os.getenv("PORT", 8000))
+    # Default to 7860 for Hugging Face Spaces
+    port = int(os.getenv("PORT", 7860))
     host = os.getenv("HOST", "0.0.0.0")
     
     print(f"🌐 Binding to {host}:{port}")
