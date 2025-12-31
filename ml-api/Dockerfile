@@ -14,6 +14,8 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    MAX_FIT_ROWS=10000 \
     HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
 
@@ -21,6 +23,8 @@ ENV PYTHONUNBUFFERED=1 \
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
+    gfortran \
+    libopenblas-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (for better Docker layer caching)
@@ -28,7 +32,7 @@ COPY requirements.txt .
 
 # Install Python dependencies as the non-root user
 RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+    pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 # Copy application code
 COPY --chown=user . .
