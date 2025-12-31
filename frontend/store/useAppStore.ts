@@ -12,6 +12,16 @@ interface AppState {
   language: 'en' | 'bn'
   setLanguage: (lang: 'en' | 'bn') => void
 
+  // Brand Theme
+  brandTheme: 'bkash' | 'nagad'
+  setBrandTheme: (theme: 'bkash' | 'nagad') => void
+
+  // Simulation
+  isSimulating: boolean
+  simulationSpeed: number
+  setIsSimulating: (isSimulating: boolean) => void
+  setSimulationSpeed: (speed: number) => void
+
   // Auth
   authUser: any | null
   authSession: any | null
@@ -60,6 +70,9 @@ interface AppState {
 
 const initialState = {
   language: 'en' as const,
+  brandTheme: 'bkash' as const,
+  isSimulating: false,
+  simulationSpeed: 1,
   authUser: null,
   authSession: null,
   users: [],
@@ -86,6 +99,11 @@ export const useAppStore = create<AppState>((set) => ({
   ...initialState,
 
   setLanguage: (lang) => set({ language: lang }),
+
+  setBrandTheme: (theme) => set({ brandTheme: theme }),
+  
+  setIsSimulating: (isSimulating) => set({ isSimulating }),
+  setSimulationSpeed: (speed) => set({ simulationSpeed: speed }),
 
   setAuthUser: (user) => set({ authUser: user }),
   setAuthSession: (session) => set({ authSession: session }),

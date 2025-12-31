@@ -58,7 +58,7 @@ services:
 
 Run:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ## ☁️ Platform-Specific Deployment

@@ -122,23 +122,23 @@ export const RiskDrivers: React.FC<RiskDriversProps> = ({
           return (
             <div
               key={index}
-              className={`bg-card-bg rounded-lg p-4 border-l-4 ${getStrengthColor()} border border-white/10 hover:shadow-lg transition-shadow`}
+              className={`bg-white/5 backdrop-blur-sm rounded-lg p-3 border-l-4 ${getStrengthColor()} border border-white/5 hover:border-white/20 transition-all duration-300 group`}
             >
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-center">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xl">{direction}</span>
-                    <strong className="text-text-primary">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-lg font-bold ${isRiskIncreasing ? 'text-danger' : 'text-success'}`}>{direction}</span>
+                    <span className="text-xs uppercase tracking-widest font-bold text-text-primary/90 group-hover:text-white transition-colors">
                       {getHumanReadableName(explanation.feature)}
-                    </strong>
+                    </span>
                   </div>
-                  <div className="text-sm text-text-secondary">
-                    {language === 'bn' ? 'প্রভাব' : 'Impact'}:{' '}
-                    {Math.abs(explanation.shap).toFixed(3)}
+                  <div className="text-[10px] font-mono uppercase tracking-tighter text-text-secondary/60">
+                    {language === 'bn' ? 'প্রভাব সূচক' : 'Impact Vector'}:{' '}
+                    <span className="text-text-primary">{(explanation.shap).toFixed(4)}</span>
                   </div>
                 </div>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${getBadgeColor()}`}
+                  className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${getBadgeColor()}`}
                 >
                   {strength}
                 </span>

@@ -14,7 +14,7 @@ import pandas as pd
 import numpy as np
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, validator
 import uvicorn
 
@@ -22,6 +22,7 @@ import uvicorn
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from inference import FraudInference, load_inference_engine
+from simulation import simulation_manager, SimulationConfig
 import warnings
 
 # Suppress warnings
@@ -310,6 +311,26 @@ async def startup_event():
         print(f"⚠️ Warning: Model not loaded on startup: {str(e)}")
         print("⚠️ API will attempt lazy loading on first request")
         print("⚠️ This is normal for serverless environments (e.g., Vercel)")
+        
+    # Load simulation dataset
+    try:
+        print("📦 Loading simulation dataset...")
+        # Try to find the dataset
+        possible_paths = [
+            "dataset/test_dataset.csv.gz", 
+            "dataset/test_dataset.csv",
+            "../dataset/test_dataset.csv.gz"
+        ]
+        
+        path_to_use = "dataset/test_dataset.csv.gz" # Default
+        for p in possible_paths:
+            if os.path.exists(p):
+                path_to_use = p
+                break
+                
+        simulation_manager.load_dataset(path_to_use)
+    except Exception as e:
+        print(f"⚠️ Failed to load simulation dataset: {str(e)}")
 
 @app.get("/")
 async def root():
@@ -493,6 +514,42 @@ async def predict_batch(request: BatchPredictRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch prediction failed: {str(e)}")
+
+# ============================================================================
+# SIMULATION ENDPOINTS
+# ============================================================================
+
+@app.post("/simulate/start")
+async def start_simulation():
+    """Start the transaction simulation"""
+    try:
+        status = simulation_manager.start()
+        return status
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/simulate/stop")
+async def stop_simulation():
+    """Stop/Pause the transaction simulation"""
+    return simulation_manager.stop()
+
+@app.post("/simulate/reset")
+async def reset_simulation():
+    """Reset the simulation to the beginning"""
+    return simulation_manager.reset()
+
+@app.post("/simulate/config")
+async def configure_simulation(config: SimulationConfig):
+    """Configure simulation speed"""
+    return simulation_manager.set_speed(config.speed)
+
+@app.get("/simulate/stream")
+async def stream_simulation():
+    """Stream simulated transactions via SSE"""
+    return StreamingResponse(
+        simulation_manager.stream_generator(),
+        media_type="text/event-stream"
+    )
 
 # ============================================================================
 # ERROR HANDLERS

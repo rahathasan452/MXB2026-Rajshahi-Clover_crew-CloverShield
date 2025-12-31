@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  ml-api:
+    build:
+      context: ./ml-api
+      dockerfile: Dockerfile
+    container_name: clovershield-ml-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    volumes:
+      - ./ml-api/dataset:/app/dataset
+      - ./ml-api/Models:/app/Models
+    networks:
+      - clovershield-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_ML_API_URL: http://localhost:8000
+    container_name: clovershield-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_ML_API_URL=http://localhost:8000
+    depends_on:
+      - ml-api
+    networks:
+      - clovershield-network
+
+networks:
+  clovershield-network:
+    driver: bridge

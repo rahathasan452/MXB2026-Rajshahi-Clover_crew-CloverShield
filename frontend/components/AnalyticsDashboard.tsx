@@ -26,6 +26,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       value: formatCurrency(analytics.moneySaved),
       icon: 'payments',
       color: 'text-success',
+      glow: 'hud-glow-green',
     },
     {
       label:
@@ -33,18 +34,21 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       value: analytics.transactionsProcessed.toLocaleString(),
       icon: 'analytics',
       color: 'text-primary',
+      glow: 'hud-glow-blue',
     },
     {
       label: language === 'bn' ? 'জালিয়াতি সনাক্ত' : 'Fraud Detected',
       value: analytics.fraudDetected.toLocaleString(),
       icon: 'warning',
       color: 'text-danger',
+      glow: 'hud-glow-red',
     },
     {
       label: language === 'bn' ? 'সিস্টেম নির্ভুলতা' : 'System Accuracy',
       value: `${analytics.accuracyRate}%`,
       icon: 'check_circle',
       color: 'text-success',
+      glow: 'hud-glow-green',
     },
   ]
 
@@ -53,17 +57,19 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       {metrics.map((metric, index) => (
         <div
           key={index}
-          className="bg-card-bg rounded-xl p-6 border border-white/10 shadow-lg hover:shadow-xl transition-shadow"
+          className="hud-card group p-6 hover:border-white/20 transition-all duration-300"
         >
-          <div className="flex items-center justify-between mb-2">
-            <Icon name={metric.icon} size={32} className={metric.color} />
-            <div className={`text-2xl font-bold ${metric.color}`}>
+          <div className="scanline" />
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <Icon name={metric.icon} size={28} className={`${metric.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
+            <div className={`text-2xl font-mono font-bold ${metric.color} ${metric.glow}`}>
               {metric.value}
             </div>
           </div>
-          <p className="text-sm text-text-secondary font-medium">
+          <p className="text-xs text-text-secondary uppercase tracking-wider font-semibold relative z-10">
             {metric.label}
           </p>
+          <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
         </div>
       ))}
     </div>

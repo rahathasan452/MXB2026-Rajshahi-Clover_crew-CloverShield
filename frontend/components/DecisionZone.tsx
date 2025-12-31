@@ -67,46 +67,47 @@ export const DecisionZone: React.FC<DecisionZoneProps> = ({
 
   return (
     <div
-      className={`rounded-2xl p-8 border-2 shadow-2xl transition-all ${getDecisionColor()}`}
+      className={`hud-card p-8 border-2 shadow-2xl transition-all duration-500 ${getDecisionColor()}`}
     >
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-text-primary">
-          {language === 'bn' ? 'জালিয়াতি ঝুঁকি মূল্যায়ন' : 'Fraud Risk Assessment'}
+      <div className="scanline" />
+      <div className="flex justify-between items-center mb-6 relative z-10">
+        <h2 className="text-2xl font-bold text-text-primary tracking-tight">
+          {language === 'bn' ? 'জালিয়াতি ঝুঁকি মূল্যায়ন' : 'FRAUD RISK ASSESSMENT'}
         </h2>
-        <div className="flex items-center gap-2 bg-neutral/10 border border-neutral/30 rounded-full px-4 py-2">
-          <span className="text-sm text-text-secondary">
+        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 backdrop-blur-md">
+          <span className="text-xs uppercase tracking-wider text-text-secondary">
             {language === 'bn' ? 'আত্মবিশ্বাস' : 'Confidence'}:
           </span>
-          <span className="text-sm font-semibold text-neutral">
+          <span className="text-sm font-mono font-bold text-primary">
             {getConfidenceLevel()}
           </span>
         </div>
       </div>
 
-      <div className="text-center my-8">
-        <h3 className={`text-2xl font-bold mb-2 ${getDecisionColor().split(' ')[1]}`}>
+      <div className="text-center my-8 relative z-10">
+        <h3 className={`text-3xl font-black mb-2 tracking-tighter ${getDecisionColor().split(' ')[1]} ${decision === 'block' ? 'hud-glow-red' : decision === 'warn' ? 'hud-glow-yellow' : 'hud-glow-green'}`}>
           {getDecisionText()}
         </h3>
-        <p className="text-text-secondary">
+        <p className="text-xs uppercase tracking-[0.2em] text-text-secondary/60">
           {language === 'bn' ? 'ঝুঁকির স্তর' : 'Risk Level'}:{' '}
-          <span className="font-semibold uppercase">{risk_level}</span>
+          <span className="font-bold text-text-primary">{risk_level}</span>
         </p>
       </div>
 
       {/* Gauge */}
-      <div className="flex justify-center my-6">
+      <div className="flex justify-center my-6 relative z-10">
         <FraudGauge probability={fraud_probability} size={250} decision={decision} />
       </div>
 
       {/* Processing Info */}
-      <div className="mt-6 pt-6 border-t border-white/10 flex justify-between text-sm text-text-secondary">
+      <div className="mt-6 pt-6 border-t border-white/10 flex justify-between text-[10px] font-mono uppercase tracking-widest text-text-secondary/60 relative z-10">
         <span>
-          {language === 'bn' ? 'প্রক্রিয়াকরণ সময়' : 'Processing Time'}:{' '}
-          {prediction.processing_time_ms}ms
+          {language === 'bn' ? 'প্রক্রিয়াকরণ সময়' : 'Latency'}:{' '}
+          <span className="text-text-primary">{prediction.processing_time_ms}ms</span>
         </span>
         <span>
-          {language === 'bn' ? 'মডেল সংস্করণ' : 'Model Version'}:{' '}
-          {prediction.model_version}
+          {language === 'bn' ? 'মডেল সংস্করণ' : 'Engine'}:{' '}
+          <span className="text-text-primary">v{prediction.model_version}</span>
         </span>
       </div>
     </div>

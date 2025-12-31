@@ -13,10 +13,13 @@ module.exports = {
         success: '#00FF88',
         warning: '#FFD700',
         danger: '#FF4444',
-        'dark-bg': '#0A0E27',
-        'card-bg': '#1A1F3A',
+        'dark-bg': '#050714',
+        'card-bg': '#0F1229',
         'text-primary': '#FFFFFF',
         'text-secondary': '#A0AEC0',
+        // MFS Brand Colors
+        'bkash-pink': '#E2136E',
+        'nagad-orange': '#F7921E',
         // Semantic colors
         neutral: '#3B82F6',
         caution: '#F59E0B',
@@ -25,6 +28,7 @@ module.exports = {
       fontFamily: {
         sans: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
         'hind-siliguri': ['var(--font-hind-siliguri)', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       backgroundImage: {
         'gradient-dark': 'linear-gradient(135deg, #0A0E27 0%, #1a1a2e 100%)',

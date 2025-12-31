@@ -22,7 +22,9 @@ import { UserProfileCard } from '@/components/UserProfileCard'
 import { DecisionZone } from '@/components/DecisionZone'
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
 import { RiskDrivers } from '@/components/RiskDrivers'
-import { LanguageToggle } from '@/components/LanguageToggle'
+import { ThemeLanguageControls } from '@/components/ThemeLanguageControls'
+import { NetworkGraph } from '@/components/NetworkGraph'
+import { SimulationControls } from '@/components/SimulationControls'
 import { LLMExplanationBox } from '@/components/LLMExplanationBox'
 import { AuthButton } from '@/components/AuthButton'
 import { Icon } from '@/components/Icon'
@@ -43,11 +45,75 @@ export default function Home() {
     incrementTransactions,
     incrementFraudDetected,
     language,
+    brandTheme,
     authUser,
+    isSimulating
   } = useAppStore()
 
   const [receiver, setReceiver] = useState<any>(null)
   const [showRiskDrivers, setShowRiskDrivers] = useState(false)
+  const [latestTransaction, setLatestTransaction] = useState<any>(null)
+
+  const isBkash = brandTheme === 'bkash'
+  const brandColor = isBkash ? 'border-bkash-pink' : 'border-nagad-orange'
+  const brandGradient = isBkash ? 'from-bkash-pink' : 'from-nagad-orange'
+
+  // SSE Effect for Simulation
+  useEffect(() => {
+    let eventSource: EventSource | null = null
+
+    if (isSimulating) {
+      const API_URL = process.env.NEXT_PUBLIC_ML_API_URL || 'http://localhost:8000'
+      eventSource = new EventSource(`${API_URL}/simulate/stream`)
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          if (data.transaction) {
+            const tx = data.transaction
+            
+            handleTransactionSubmit({
+              senderId: tx.nameOrig,
+              receiverId: tx.nameDest,
+              amount: tx.amount,
+              type: tx.type,
+              oldBalanceOrig: tx.oldBalanceOrig,
+              newBalanceOrig: tx.newBalanceOrig,
+              oldBalanceDest: tx.oldBalanceDest,
+              newBalanceDest: tx.newBalanceDest,
+              step: tx.step,
+              isTestData: true,
+              isSimulation: true
+            }).then((prediction) => {
+               if (prediction) {
+                 // Update graph with transaction AND prediction info
+                 setLatestTransaction({
+                   ...tx,
+                   fraud_probability: prediction.prediction.fraud_probability,
+                   decision: prediction.prediction.decision
+                 })
+               }
+            })
+          }
+        } catch (e) {
+          console.error("Error parsing SSE data", e)
+        }
+      }
+
+      eventSource.onerror = (err) => {
+        console.error("SSE Error", err)
+        // Don't close immediately, EventSource retries automatically.
+        // But if connection is refused, maybe stop simulation?
+        // eventSource?.close()
+      }
+    }
+
+    return () => {
+      if (eventSource) {
+        eventSource.close()
+      }
+    }
+  }, [isSimulating])
 
   // Route protection: Redirect to landing page if not authenticated
   useEffect(() => {
@@ -125,9 +191,12 @@ export default function Home() {
     newBalanceDest?: number
     step?: number
     isTestData?: boolean
+    isSimulation?: boolean
   }) => {
     try {
-      setIsLoading(true)
+      if (!data.isSimulation) {
+        setIsLoading(true)
+      }
 
       const isTestData = data.isTestData || false
 
@@ -324,32 +393,42 @@ export default function Home() {
         incrementFraudDetected(data.amount)
       }
 
-      toast.success(
-        language === 'bn'
-          ? 'লেনদেন বিশ্লেষণ সম্পন্ন'
-          : 'Transaction analyzed successfully'
-      )
+      if (!data.isSimulation) {
+        toast.success(
+          language === 'bn'
+            ? 'লেনদেন বিশ্লেষণ সম্পন্ন'
+            : 'Transaction analyzed successfully'
+        )
+      }
+      
+      return prediction
     } catch (error: any) {
       console.error('Transaction error:', error)
-      toast.error(
-        language === 'bn'
-          ? 'লেনদেন প্রক্রিয়াকরণ ব্যর্থ'
-          : 'Failed to process transaction: ' + error.message
-      )
+      if (!data.isSimulation) {
+        toast.error(
+          language === 'bn'
+            ? 'লেনদেন প্রক্রিয়াকরণ ব্যর্থ'
+            : 'Failed to process transaction: ' + error.message
+        )
+      }
+      throw error
     } finally {
-      setIsLoading(false)
+      if (!data.isSimulation) {
+        setIsLoading(false)
+      }
     }
   }
 
   return (
-    <div className={`min-h-screen ${language === 'bn' ? 'font-bengali' : ''}`}>
+    <div className={`min-h-screen bg-[#050714] ${language === 'bn' ? 'font-bengali' : ''}`}>
       {/* Header */}
-      <header className="bg-gradient-header border-b-4 border-success rounded-b-3xl shadow-2xl mb-8">
-        <div className="container mx-auto px-4 py-8">
+      <header className={`bg-gradient-header border-b-4 ${brandColor} rounded-b-3xl shadow-2xl mb-8 relative overflow-hidden`}>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+        <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4 flex-1">
               {/* Logo */}
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 p-1 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20">
                 <Image
                   src="/logo.png"
                   alt="CloverShield Logo"
@@ -360,25 +439,22 @@ export default function Home() {
                 />
               </div>
               {/* Title and Subtitle */}
-              <div className="text-center flex-1">
-                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white to-success bg-clip-text text-transparent mb-2">
-                  {language === 'bn' ? 'ক্লোভারশিল্ড' : 'CloverShield'}
+              <div className="flex-1">
+                <h1 className={`text-4xl md:text-5xl font-black bg-gradient-to-r ${brandGradient} to-white bg-clip-text text-transparent mb-1 tracking-tight`}>
+                  {language === 'bn' ? 'ক্লোভারশিল্ড' : 'CLOVERSHIELD'}
                 </h1>
-                <h2 className="text-xl md:text-2xl text-text-primary font-semibold">
+                <h2 className="text-sm md:text-base text-text-primary/80 font-mono tracking-widest uppercase">
                   {language === 'bn'
                     ? 'মোবাইল ব্যাংকিং জালিয়াতি শনাক্তকরণ ব্যবস্থা'
                     : 'Mobile Banking Fraud Detection System'}
                 </h2>
-                <p className="text-success italic mt-2">
-                  {language === 'bn'
-                    ? 'বাংলাদেশের ডিজিটাল আর্থিক ইকোসিস্টেম রক্ষা করছি'
-                    : "Protecting Bangladesh's Digital Financial Ecosystem"}
-                </p>
+                <div className={`h-1 w-24 bg-gradient-to-r ${brandGradient} to-transparent mt-2 rounded-full`}></div>
               </div>
             </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-6 flex-shrink-0">
+              <ThemeLanguageControls />
+              <div className="h-10 w-px bg-white/10 hidden md:block"></div>
               <AuthButton />
-              <LanguageToggle />
             </div>
           </div>
         </div>
@@ -388,6 +464,11 @@ export default function Home() {
         {/* Analytics Dashboard */}
         <div className="mb-8">
           <AnalyticsDashboard language={language} />
+        </div>
+
+        {/* Simulation Controls */}
+        <div className="mb-8">
+           <SimulationControls language={language} />
         </div>
 
         {/* Main Content */}
@@ -485,6 +566,15 @@ export default function Home() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Network Graph Visualization */}
+          <div className="mt-8">
+             <NetworkGraph 
+               language={language} 
+               height={500} 
+               latestTransaction={latestTransaction}
+             />
           </div>
         </div>
       </div>

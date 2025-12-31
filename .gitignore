@@ -77,7 +77,7 @@ logs/
 # Temporary files
 *.tmp
 *.temp
-temp/
+temp.txt
 tmp/
 tmp.txt
 
