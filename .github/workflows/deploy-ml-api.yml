@@ -27,9 +27,13 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           
-          # Clone the HF Space
-          git clone https://$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_USERNAME/$HF_SPACE_NAME space_repo
+          # Clone the HF Space (Skip LFS download to avoid auth errors)
+          GIT_LFS_SKIP_SMUDGE=1 git clone https://$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_USERNAME/$HF_SPACE_NAME space_repo
           cd space_repo
+
+          # Setup credentials for LFS push
+          git config credential.helper store
+          echo "https://learner20011:$HF_TOKEN@huggingface.co" > ~/.git-credentials
           
           # Delete everything in the space repo to ensure a clean sync (except .git)
           # We use find to avoid errors if dir is empty
