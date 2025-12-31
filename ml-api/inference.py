@@ -140,6 +140,12 @@ class FraudInference:
             
             # Try common locations - prioritize dataset folder in ml-api
             test_paths.extend([
+                # Compressed versions (preferred for size)
+                os.path.join(script_dir, "dataset", "test_dataset.csv.gz"),
+                "dataset/test_dataset.csv.gz",
+                "../dataset/test_dataset.csv.gz",
+                "/app/dataset/test_dataset.csv.gz",
+                # Uncompressed versions
                 os.path.join(script_dir, "dataset", "test_dataset.csv"),  # ml-api/dataset/test_dataset.csv
                 os.path.join(script_dir, "dataset", "test_dataset_woIDX.csv"),  # ml-api/dataset/test_dataset_woIDX.csv
                 "dataset/test_dataset.csv",  # Relative to current working directory
