@@ -39,6 +39,15 @@ jobs:
           # We go back one level to access the checked out github repo
           cp -r ../ml-api/* .
           
+          # Configure Git LFS for binary files
+          git lfs install
+          git lfs track "*.pkl"
+          git lfs track "*.gz"
+          git lfs track "*.h5"
+          git lfs track "*.pt"
+          git lfs track "*.pth"
+          git lfs track "*.bin"
+          
           # Copy the README (which contains the metadata) if it exists
           # We already copied everything with cp -r, but just to be safe about hidden files if any
           
@@ -51,5 +60,6 @@ jobs:
           else
             git commit -m "Sync from GitHub: ${{ github.sha }}"
             # Explicitly set remote with token for push to avoid auth issues
-            git push https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_USERNAME/$HF_SPACE_NAME main
+            # Use force push to overwrite any history mismatches or large file errors
+            git push --force https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_USERNAME/$HF_SPACE_NAME main
           fi
