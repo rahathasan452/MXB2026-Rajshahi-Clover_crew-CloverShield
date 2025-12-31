@@ -79,4 +79,5 @@ logs/
 *.temp
 temp/
 tmp/
+tmp.txt
 

@@ -73,7 +73,7 @@ docker-compose up -d
 
 **Steps:**
 
-1. **Create Account**: Sign up at [render.com](https://render.com)
+1. **Create Account**: Sign up at  [render.com](https://render.com)
 
 2. **Create New Web Service**:
    - Connect GitHub repository
