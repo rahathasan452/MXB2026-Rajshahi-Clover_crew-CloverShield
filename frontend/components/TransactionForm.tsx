@@ -25,7 +25,7 @@ interface TransactionFormProps {
     newBalanceDest?: number
     step?: number
     isTestData?: boolean
-  }) => void | Promise<void>
+  }) => any
   language?: 'en' | 'bn'
 }
 
