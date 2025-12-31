@@ -43,33 +43,77 @@ export default function InvestigatePage() {
     if (authUser) fetchQueue()
   }, [authUser])
 
-  // Seed Queue
+  // Seed Queue (Client-side implementation to bypass missing RPC)
   const handleSeed = async () => {
     try {
       setSeeding(true)
-      const { error } = await supabase.rpc('seed_investigation_queue', { limit_count: 5 })
-      if (error) throw error
+      
+      // 1. Fetch source data
+      const { data: sourceData, error: fetchError } = await supabase
+        .from('test_dataset')
+        .select('*')
+        .or('isFlaggedFraud.eq.1,amount.gt.200000')
+        .order('step', { ascending: false })
+        .limit(5)
+      
+      if (fetchError) throw fetchError
+      
+      if (!sourceData || sourceData.length === 0) {
+        toast.error('Test dataset is empty!')
+        return
+      }
+
+      // 2. Transform and Insert
+      const newItems = sourceData.map(item => ({
+        sender_id: item.nameOrig,
+        receiver_id: item.nameDest,
+        amount: item.amount,
+        transaction_type: item.type,
+        old_balance_orig: item.oldBalanceOrig,
+        new_balance_orig: item.newBalanceOrig,
+        old_balance_dest: item.oldBalanceDest,
+        new_balance_dest: item.newBalanceDest,
+        step: item.step,
+        transaction_timestamp: new Date().toISOString(),
+        fraud_probability: 0.85,
+        fraud_decision: 'warn',
+        risk_level: 'high',
+        model_confidence: 0.90,
+        status: 'REVIEW',
+        is_test_data: true
+      }))
+
+      const { error: insertError } = await supabase
+        .from('transaction_history')
+        .insert(newItems)
+      
+      if (insertError) throw insertError
+
       toast.success(language === 'bn' ? 'নমুনা ডেটা তৈরি করা হয়েছে' : 'Sample cases generated')
       fetchQueue()
     } catch (err: any) {
       console.error('Seed error:', err)
-      toast.error('Failed to seed queue')
+      toast.error('Failed to seed queue: ' + err.message)
     } finally {
       setSeeding(false)
     }
   }
 
-  // Handle Decision
+  // Handle Decision (Client-side implementation)
   const handleDecision = async (id: string, decision: 'APPROVE' | 'BLOCK') => {
     // Optimistic Update
     const originalQueue = [...queue]
     setQueue(queue.filter(q => q.transaction_id !== id))
     
     try {
-      const { error } = await supabase.rpc('process_investigation_item', { 
-        p_transaction_id: id, 
-        p_decision: decision 
-      })
+      // Direct update instead of RPC
+      const { error } = await supabase
+        .from('transaction_history')
+        .update({
+          status: decision === 'APPROVE' ? 'COMPLETED' : 'BLOCKED',
+          note: decision === 'APPROVE' ? 'Approved by Analyst' : 'Blocked by Analyst'
+        })
+        .eq('transaction_id', id)
       
       if (error) throw error
       

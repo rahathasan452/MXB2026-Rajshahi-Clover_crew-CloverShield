@@ -77,6 +77,31 @@ export default function ProfilePage() {
 
   // Search Mode
   const [searchId, setSearchId] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  
+  // Debounced search
+  useEffect(() => {
+    if (!searchId) {
+      setSearchResults([])
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      // Only search if length > 1 to avoid too many matches
+      if (searchId.length < 2) return
+
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .or(`user_id.ilike.%${searchId}%,name_en.ilike.%${searchId}%`)
+        .limit(5)
+      
+      setSearchResults(data || [])
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchId])
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchId) {
@@ -87,20 +112,42 @@ export default function ProfilePage() {
   if (userId === 'search') {
     return (
       <div className={`min-h-screen bg-[#050714] text-white flex items-center justify-center ${language === 'bn' ? 'font-bengali' : ''}`}>
-        <div className="w-full max-w-md p-8 bg-card-bg border border-white/10 rounded-2xl text-center">
+        <div className="w-full max-w-md p-8 bg-card-bg border border-white/10 rounded-2xl text-center relative">
           <Icon name="person_search" size={64} className="mx-auto mb-6 text-purple-400" />
           <h1 className="text-2xl font-bold mb-2">Customer Search</h1>
           <p className="text-text-secondary mb-8">Enter a User ID (e.g. C12345) to view their 360° profile.</p>
           
-          <form onSubmit={handleSearch} className="space-y-4">
+          <form onSubmit={handleSearch} className="space-y-4 relative">
             <input 
               type="text" 
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
-              placeholder="User ID..."
+              placeholder="User ID or Name..."
               className="w-full bg-white/5 border border-white/10 rounded-lg p-4 text-center text-xl font-mono focus:border-primary focus:outline-none"
               autoFocus
             />
+            
+            {/* Autocomplete Results */}
+            {searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card-bg border border-white/20 rounded-xl shadow-2xl overflow-hidden z-50 text-left">
+                {searchResults.map((user) => (
+                  <Link 
+                    key={user.user_id} 
+                    href={`/dashboard/profile/${user.user_id}`}
+                    className="block p-4 hover:bg-white/10 border-b border-white/5 last:border-0 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-white">{user.name_en}</div>
+                        <div className="text-xs text-text-secondary font-mono">{user.user_id}</div>
+                      </div>
+                      <Icon name="chevron_right" size={16} className="text-text-secondary" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+
             <div className="flex gap-2">
               <Link href="/dashboard" className="flex-1 py-3 text-text-secondary hover:text-white transition-colors">
                 Cancel
