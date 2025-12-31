@@ -2,7 +2,7 @@
 # Entrypoint script for CloverShield ML API
 # Reads PORT from environment variable (required by Render)
 
-PORT=${PORT:-8000}
+PORT=${PORT:-7860}
 HOST=${HOST:-0.0.0.0}
 
 echo "🚀 Starting CloverShield ML API"
