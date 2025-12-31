@@ -1,0 +1,53 @@
+name: Sync ML API to Hugging Face Hub
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ml-api/**"  # Only trigger when files in ml-api change
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # REPLACE WITH YOUR HF USERNAME AND SPACE NAME
+          # Example: huggingface.co/spaces/rahat/clovershield-ml-api
+          HF_SPACE_USERNAME: "learner20011" 
+          HF_SPACE_NAME: "clovershield_ml_api" 
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          
+          # Clone the HF Space
+          git clone https://$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_USERNAME/$HF_SPACE_NAME space_repo
+          cd space_repo
+          
+          # Delete everything in the space repo to ensure a clean sync (except .git)
+          # We use find to avoid errors if dir is empty
+          find . -maxdepth 1 -not -name '.git' -not -name '.' -exec rm -rf {} +
+          
+          # Copy files from the ml-api directory in the source repo to the root of the space repo
+          # We go back one level to access the checked out github repo
+          cp -r ../ml-api/* .
+          
+          # Copy the README (which contains the metadata) if it exists
+          # We already copied everything with cp -r, but just to be safe about hidden files if any
+          
+          # Add all changes
+          git add .
+          
+          # Commit and push only if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Sync from GitHub: ${{ github.sha }}"
+            git push origin main
+          fi

@@ -1,3 +1,12 @@
+---
+title: CloverShield ML API
+emoji: 🛡️
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_port: 7860
+---
+
 # CloverShield ML Inference API
 
 FastAPI microservice for fraud detection predictions. This service replaces the local model loading mechanism in the Streamlit app.
@@ -38,7 +47,7 @@ FastAPI microservice for fraud detection predictions. This service replaces the 
 
 1. **Build the image:**
    ```bash
-   docker build -t clovershield-ml-api .
+   docker build -t clovershield-ml-api . 
    ```
 
 2. **Run the container:**
@@ -132,7 +141,7 @@ Predict fraud probability for multiple transactions
 
 ```bash
 # Build
-docker build -t clovershield-ml-api:latest .
+docker build -t clovershield-ml-api:latest . 
 
 # Tag for registry
 docker tag clovershield-ml-api:latest your-registry/clovershield-ml-api:latest
@@ -142,6 +151,14 @@ docker push your-registry/clovershield-ml-api:latest
 ```
 
 ## ☁️ Platform Deployment
+
+### Hugging Face Spaces (Recommended)
+
+1. Create a new Space on Hugging Face.
+2. Select "Docker" as the SDK.
+3. Upload the contents of this directory to the Space.
+4. Set the `GROQ_API_KEY` secret in the Space settings.
+
 
 ### Vercel
 
@@ -254,7 +271,7 @@ print(response.json())
 - Implement rate limiting
 - Validate all inputs
 - Monitor for abuse
-- Restrict CORS origins (currently set to `["*"]` for development)
+- Restrict CORS origins (currently set to `["*"` for development)
 - Use environment variables for sensitive data
 
 ## 📈 Performance
@@ -291,4 +308,3 @@ print(response.json())
 ## 📝 License
 
 See main project LICENSE file.
-

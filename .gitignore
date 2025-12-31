@@ -35,7 +35,7 @@ wheels/
 *.ckpt
 Models/*.h5
 Models/*.hdf5
-demo/*.pkl
+
 demo/*.h5
 
 # Keep model directory structure but ignore contents
