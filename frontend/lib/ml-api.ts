@@ -201,6 +201,23 @@ export const batchPredict = async (
 }
 
 /**
+ * Backtest a rule against historical data
+ */
+export const backtestRule = async (rule_logic: string, limit: number = 1000): Promise<any> => {
+  try {
+    const response = await apiClient.post('/backtest', {
+      rule_logic,
+      limit
+    })
+    return response.data
+  } catch (error: any) {
+    console.error('Backtest failed:', error)
+    const errorMessage = getErrorMessage(error)
+    throw new Error(errorMessage)
+  }
+}
+
+/**
  * Get model information
  */
 export const getModelInfo = async () => {

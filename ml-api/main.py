@@ -515,6 +515,107 @@ async def predict_batch(request: BatchPredictRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch prediction failed: {str(e)}")
 
+class BacktestRequest(BaseModel):
+    """Request model for rule backtesting"""
+    rule_logic: str = Field(..., description="SQL-like filter string (e.g. 'amount > 50000 and type == \"TRANSFER\"')")
+    limit: int = Field(default=1000, description="Number of recent transactions to test")
+
+class BacktestResponse(BaseModel):
+    """Response model for backtest results"""
+    total_matches: int
+    fraud_caught: int
+    false_positives: int
+    precision: float
+    total_tested: int
+    execution_time_ms: int
+
+# ============================================================================
+# BACKTEST ENDPOINTS
+# ============================================================================
+
+@app.post("/backtest", response_model=BacktestResponse)
+async def backtest_rule(request: BacktestRequest):
+    """
+    Backtest a fraud detection rule against historical data.
+    Uses in-memory dataset for high performance (no disk I/O).
+    """
+    start_time = time.time()
+    
+    # 1. Access the dataset from simulation manager (already loaded)
+    # If not loaded, try to load it
+    if simulation_manager.dataset is None:
+        try:
+            print("🔄 Loading dataset for backtest...")
+            # Try to find the dataset
+            possible_paths = [
+                "dataset/test_dataset.csv.gz", 
+                "dataset/test_dataset.csv",
+                "../dataset/test_dataset.csv.gz"
+            ]
+            path_to_use = None
+            for p in possible_paths:
+                if os.path.exists(p):
+                    path_to_use = p
+                    break
+            
+            if path_to_use:
+                simulation_manager.load_dataset(path_to_use)
+            else:
+                 raise HTTPException(status_code=503, detail="Dataset not found on server")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load dataset: {str(e)}")
+
+    if simulation_manager.dataset is None:
+        raise HTTPException(status_code=503, detail="Dataset not available")
+
+    try:
+        # 2. Slice the dataframe (last N rows)
+        df = simulation_manager.dataset
+        limit = min(request.limit, len(df))
+        # Get the *last* N transactions (most recent)
+        test_slice = df.tail(limit).copy()
+        
+        # 3. Apply the rule logic
+        # Safety check: basic sanitation to prevent arbitrary code execution
+        # Pandas query() is relatively safe but we should be careful
+        allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ ><=!&|().'\"")
+        clean_query = "".join(c for c in request.rule_logic if c in allowed_chars)
+        
+        # Run the query
+        matches = test_slice.query(clean_query)
+        
+        # 4. Calculate metrics
+        matches_count = len(matches)
+        
+        # Check if 'isFraud' or 'isFlaggedFraud' exists for ground truth
+        fraud_col = 'isFraud' if 'isFraud' in matches.columns else ('isFlaggedFraud' if 'isFlaggedFraud' in matches.columns else None)
+        
+        if fraud_col:
+            fraud_caught = matches[fraud_col].sum()
+            false_positives = matches_count - fraud_caught
+            precision = (fraud_caught / matches_count) if matches_count > 0 else 0.0
+        else:
+            # If no ground truth, we can't calculate precision
+            fraud_caught = 0
+            false_positives = matches_count
+            precision = 0.0
+
+        execution_time = int((time.time() - start_time) * 1000)
+        
+        return BacktestResponse(
+            total_matches=int(matches_count),
+            fraud_caught=int(fraud_caught),
+            false_positives=int(false_positives),
+            precision=float(precision),
+            total_tested=limit,
+            execution_time_ms=execution_time
+        )
+
+    except Exception as e:
+        # Catch query syntax errors
+        raise HTTPException(status_code=400, detail=f"Invalid rule logic: {str(e)}")
+
+
 # ============================================================================
 # SIMULATION ENDPOINTS
 # ============================================================================
