@@ -19,6 +19,7 @@ import { initAnalytics, trackTransaction, trackMLAPICall } from '@/lib/analytics
 import { sendTransactionAlertEmail } from '@/lib/email'
 import { TransactionForm } from '@/components/TransactionForm'
 import { UserProfileCard } from '@/components/UserProfileCard'
+import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
 import { DecisionZone } from '@/components/DecisionZone'
 import { RiskDrivers } from '@/components/RiskDrivers'
 import { NetworkGraph } from '@/components/NetworkGraph'
