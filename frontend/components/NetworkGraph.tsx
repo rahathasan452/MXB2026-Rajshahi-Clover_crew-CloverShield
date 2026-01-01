@@ -57,7 +57,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         if (!nodesMap.has(tx.sender_id)) {
           nodesMap.set(tx.sender_id, {
             id: tx.sender_id,
-            val: 6,
+            val: 4,
             color: '#60A5FA', // Blue
             type: 'sender'
           })
@@ -67,7 +67,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         if (!nodesMap.has(tx.receiver_id)) {
           nodesMap.set(tx.receiver_id, {
             id: tx.receiver_id,
-            val: 6,
+            val: 4,
             color: '#F472B6', // Pink
             type: 'receiver'
           })
@@ -81,7 +81,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           source: tx.sender_id,
           target: tx.receiver_id,
           color: isFraud ? '#EF4444' : isWarn ? '#F59E0B' : '#22D3EE',
-          width: isFraud ? 3 : 1,
+          width: isFraud ? 4 : 2,
           particles: isFraud ? 4 : 0
         })
       })
@@ -109,7 +109,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       if (!newNodes.find(n => n.id === tx.nameOrig)) {
         newNodes.push({
           id: tx.nameOrig,
-          val: 6,
+          val: 4,
           color: '#60A5FA', // Blue
           type: 'sender'
         })
@@ -119,7 +119,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       if (!newNodes.find(n => n.id === tx.nameDest)) {
         newNodes.push({
           id: tx.nameDest,
-          val: 6,
+          val: 4,
           color: '#F472B6', // Pink
           type: 'receiver'
         })
@@ -133,7 +133,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         source: tx.nameOrig,
         target: tx.nameDest,
         color: isFraud ? '#EF4444' : isWarn ? '#F59E0B' : '#22D3EE',
-        width: isFraud ? 3 : 1,
+        width: isFraud ? 4 : 2,
         particles: isFraud ? 4 : 0
       })
       

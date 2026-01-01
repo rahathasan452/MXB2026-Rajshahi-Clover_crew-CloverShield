@@ -63,13 +63,7 @@ export default function LandingPage() {
 
         <div className="relative z-10 container mx-auto max-w-7xl">
           <div className="flex flex-col items-center text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-950/50 border border-emerald-500/30 text-emerald-400 text-sm font-medium mb-8 animate-fade-in-up">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              National AI Build-a-thon 2026 Finalist
-            </div>
+
             
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6 animate-fade-in-up delay-100">
               <span className="block text-white mb-2">Secure Every</span>
