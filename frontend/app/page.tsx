@@ -13,10 +13,10 @@ import { Icon } from '@/components/Icon'
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#02040a] text-white font-sans selection:bg-emerald-500/30">
-      {/* Navbar - Glassmorphism */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[#02040a]/80 border-b border-emerald-900/30">
-        <div className="container mx-auto px-4 py-4">
+    <>
+      <div className="min-h-screen bg-[#02040a] text-white font-sans selection:bg-emerald-500/30">
+        <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[#02040a]/80 border-b border-emerald-900/30">
+          <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -352,6 +352,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   )
 }
