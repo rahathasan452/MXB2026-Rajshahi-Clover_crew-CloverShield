@@ -33,16 +33,62 @@ interface NetworkGraphProps {
   height?: number
   language?: 'en' | 'bn'
   latestTransaction?: any
+  history?: any[]
 }
 
 export const NetworkGraph: React.FC<NetworkGraphProps> = ({ 
   height = 400,
   language = 'en',
-  latestTransaction
+  latestTransaction,
+  history = []
 }) => {
   const fgRef = useRef<any>()
   const { brandTheme } = useAppStore()
   const [data, setData] = useState<GraphData>({ nodes: [], links: [] })
+
+  // Initialize from history
+  useEffect(() => {
+    if (history.length > 0) {
+      const nodesMap = new Map<string, GraphNode>()
+      const links: GraphLink[] = []
+
+      history.forEach(tx => {
+        // Add Sender
+        if (!nodesMap.has(tx.sender_id)) {
+          nodesMap.set(tx.sender_id, {
+            id: tx.sender_id,
+            val: 5,
+            color: '#ffffff',
+            type: 'sender'
+          })
+        }
+        
+        // Add Receiver
+        if (!nodesMap.has(tx.receiver_id)) {
+          nodesMap.set(tx.receiver_id, {
+            id: tx.receiver_id,
+            val: 5,
+            color: '#ffffff',
+            type: 'receiver'
+          })
+        }
+
+        // Add Link
+        links.push({
+          source: tx.sender_id,
+          target: tx.receiver_id,
+          color: tx.fraud_probability > 0.7 ? '#FF4444' : '#00FF88', // Simplified color logic
+          width: 1,
+          particles: 0
+        })
+      })
+
+      setData({
+        nodes: Array.from(nodesMap.values()),
+        links: links.slice(0, 200) // Limit to avoid performance issues
+      })
+    }
+  }, [history])
 
   // Listen for new transactions
   useEffect(() => {

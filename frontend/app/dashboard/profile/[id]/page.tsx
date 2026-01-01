@@ -33,46 +33,36 @@ export default function ProfilePage() {
         setLoading(true)
 
         // 1. Get User Details
-        // Try from store first, then DB
-        let userData = users.find(u => u.user_id === userId)
-        if (!userData) {
-          const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('user_id', userId)
-            .single()
-          
-          if (data) {
-            userData = data
-          } else {
-            // Check test_dataset for sender or receiver info
-            const { data: testData, error: testError } = await supabase
-              .from('test_dataset')
-              .select('*')
-              .or(`nameOrig.eq.${userId},nameDest.eq.${userId}`)
-              .limit(1)
-            
-            if (testData && testData.length > 0) {
-              const td = testData[0]
-              const isSender = td.nameOrig === userId
-              userData = {
-                user_id: userId,
-                name_en: isSender ? `Sender ${userId}` : `Receiver ${userId}`,
-                name_bn: isSender ? `প্রেরক ${userId}` : `প্রাপক ${userId}`,
-                phone: '+8801' + Math.floor(100000000 + Math.random() * 900000000).toString(),
-                provider: 'bKash',
-                balance: isSender ? td.oldBalanceOrig : td.oldBalanceDest,
-                account_age_days: Math.floor(Math.random() * 500),
-                total_transactions: 1,
-                avg_transaction_amount: td.amount,
-                verified: true,
-                kyc_complete: true,
-                risk_level: td.isFlaggedFraud ? 'high' : 'low',
-                is_from_test_dataset: true
-              }
-            }
+        // ONLY from test_dataset as per request (users table is dummy)
+        let userData = null
+        
+        // Check test_dataset for sender or receiver info
+        const { data: testData, error: testError } = await supabase
+          .from('test_dataset')
+          .select('*')
+          .or(`nameOrig.eq.${userId},nameDest.eq.${userId}`)
+          .limit(1)
+        
+        if (testData && testData.length > 0) {
+          const td = testData[0]
+          const isSender = td.nameOrig === userId
+          userData = {
+            user_id: userId,
+            name_en: isSender ? `Sender ${userId}` : `Receiver ${userId}`,
+            name_bn: isSender ? `প্রেরক ${userId}` : `প্রাপক ${userId}`,
+            phone: 'N/A', 
+            provider: 'Mobile Money',
+            balance: isSender ? td.oldBalanceOrig : td.oldBalanceDest,
+            account_age_days: 0, 
+            total_transactions: 1, 
+            avg_transaction_amount: td.amount,
+            verified: false,
+            kyc_complete: false,
+            risk_level: td.isFlaggedFraud ? 'high' : 'low',
+            is_from_test_dataset: true
           }
         }
+        
         setUser(userData)
 
         // 2. Get Transaction History
@@ -96,7 +86,7 @@ export default function ProfilePage() {
             .select('*')
             .or(`nameOrig.eq.${userId},nameDest.eq.${userId}`)
             .order('step', { ascending: false })
-            .limit(10)
+            .limit(20) // Increased limit for better graph
           
           if (rawTestData) {
             const mappedRaw = rawTestData.map(td => ({
@@ -107,7 +97,8 @@ export default function ProfilePage() {
               transaction_type: td.type,
               created_at: new Date(Date.now() - (td.step * 3600000)).toISOString(), // Mock time based on step
               status: 'COMPLETED',
-              is_test_data: true
+              is_test_data: true,
+              fraud_probability: td.isFlaggedFraud ? 1.0 : 0.0 // For graph coloring
             }))
             historyData.push(...mappedRaw)
           }
@@ -134,6 +125,25 @@ export default function ProfilePage() {
   // Search Mode
   const [searchId, setSearchId] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
+  const [showFrequent, setShowFrequent] = useState(false)
+  const [frequentAccounts, setFrequentAccounts] = useState<string[]>([])
+
+  // Fetch frequent accounts on mount
+  useEffect(() => {
+    const fetchFrequent = async () => {
+      // Fetch some distinct senders from test_dataset to use as examples
+      // Note: distinct() is computationally expensive on large tables, so we just take a few
+      const { data } = await supabase
+        .from('test_dataset')
+        .select('nameOrig')
+        .limit(5)
+      
+      if (data) {
+        setFrequentAccounts(Array.from(new Set(data.map(d => d.nameOrig))))
+      }
+    }
+    fetchFrequent()
+  }, [])
   
   // Debounced search
   useEffect(() => {
@@ -146,33 +156,24 @@ export default function ProfilePage() {
       // Only search if length > 1 to avoid too many matches
       if (searchId.length < 2) return
 
-      // Search real users
-      const { data: realUsers } = await supabase
-        .from('users')
-        .select('*')
-        .or(`user_id.ilike.%${searchId}%,name_en.ilike.%${searchId}%`)
+      const results: any[] = []
+
+      // Search ONLY test dataset
+      const { data: testUsers } = await supabase
+        .from('test_dataset')
+        .select('nameOrig, nameDest')
+        .or(`nameOrig.ilike.%${searchId}%,nameDest.ilike.%${searchId}%`)
         .limit(5)
       
-      const results = [...(realUsers || [])]
-
-      // Search test dataset if results are low
-      if (results.length < 5) {
-        const { data: testUsers } = await supabase
-          .from('test_dataset')
-          .select('nameOrig, nameDest')
-          .or(`nameOrig.ilike.%${searchId}%,nameDest.ilike.%${searchId}%`)
-          .limit(5)
-        
-        if (testUsers) {
-          testUsers.forEach(tu => {
-            if (tu.nameOrig.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameOrig)) {
-              results.push({ user_id: tu.nameOrig, name_en: `Sender ${tu.nameOrig}`, is_test: true })
-            }
-            if (tu.nameDest.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameDest)) {
-              results.push({ user_id: tu.nameDest, name_en: `Receiver ${tu.nameDest}`, is_test: true })
-            }
-          })
-        }
+      if (testUsers) {
+        testUsers.forEach(tu => {
+          if (tu.nameOrig.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameOrig)) {
+            results.push({ user_id: tu.nameOrig, name_en: `Sender ${tu.nameOrig}`, is_test: true })
+          }
+          if (tu.nameDest.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameDest)) {
+            results.push({ user_id: tu.nameDest, name_en: `Receiver ${tu.nameDest}`, is_test: true })
+          }
+        })
       }
       
       setSearchResults(results.slice(0, 10))
@@ -197,14 +198,36 @@ export default function ProfilePage() {
           <p className="text-text-secondary mb-8">Enter a User ID (e.g. C12345) to view their 360° profile.</p>
           
           <form onSubmit={handleSearch} className="space-y-4 relative">
-            <input 
-              type="text" 
-              value={searchId}
-              onChange={(e) => setSearchId(e.target.value)}
-              placeholder="User ID or Name..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg p-4 text-center text-xl font-mono focus:border-primary focus:outline-none"
-              autoFocus
-            />
+            <div className="relative">
+              <input 
+                type="text" 
+                value={searchId}
+                onChange={(e) => setSearchId(e.target.value)}
+                onFocus={() => setShowFrequent(true)}
+                onBlur={() => setTimeout(() => setShowFrequent(false), 200)}
+                placeholder="User ID or Name..."
+                className="w-full bg-white/5 border border-white/10 rounded-lg p-4 text-center text-xl font-mono focus:border-primary focus:outline-none"
+                autoFocus
+              />
+              
+              {/* Frequent Accounts Dropdown */}
+              {showFrequent && !searchId && frequentAccounts.length > 0 && (
+                 <div className="absolute top-full left-0 right-0 mt-2 bg-card-bg border border-white/20 rounded-xl shadow-2xl overflow-hidden z-50 text-left">
+                  <div className="p-2 text-xs text-text-secondary uppercase font-bold bg-white/5">Example Accounts</div>
+                  {frequentAccounts.map((acc) => (
+                    <button
+                      key={acc}
+                      type="button"
+                      onClick={() => router.push(`/dashboard/profile/${acc}`)}
+                      className="w-full text-left p-3 hover:bg-white/10 border-b border-white/5 last:border-0 transition-colors flex items-center justify-between"
+                    >
+                      <span className="font-mono text-sm">{acc}</span>
+                      <Icon name="arrow_forward" size={14} className="opacity-50" />
+                    </button>
+                  ))}
+                 </div>
+              )}
+            </div>
             
             {/* Autocomplete Results */}
             {searchResults.length > 0 && (
@@ -325,16 +348,10 @@ export default function ProfilePage() {
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <Icon name="hub" /> Relationship Graph
                 </h2>
-                {/* 
-                  Note: NetworkGraph usually takes a 'latestTransaction' to focus.
-                  We might need to adapt it to focus on a 'userId'.
-                  For now, we render it as-is, assuming it visualizes the general network 
-                  or we can pass a dummy tx to center on this user.
-                */}
                  <NetworkGraph 
                     language={language} 
                     height={400} 
-                    latestTransaction={{ nameOrig: userId, nameDest: history[0]?.receiver_id || 'Unknown', amount: 0, type: 'VIEW' }}
+                    history={history}
                  />
               </div>
             </div>
@@ -344,6 +361,9 @@ export default function ProfilePage() {
              <Icon name="person_off" size={64} className="mx-auto mb-4 text-text-secondary" />
              <h2 className="text-xl font-bold">User Not Found</h2>
              <p className="text-text-secondary">Could not locate user ID: {userId}</p>
+             <Link href="/dashboard/profile/search" className="inline-block mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg">
+                Try Another Search
+             </Link>
           </div>
         )}
       </div>
