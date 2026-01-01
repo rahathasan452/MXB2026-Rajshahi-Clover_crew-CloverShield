@@ -30,7 +30,7 @@ export default function LandingPage() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent leading-none">
+                <span className="text-3xl font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent leading-none">
                   CloverShield
                 </span>
                 <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold leading-tight mt-1 hidden sm:block">

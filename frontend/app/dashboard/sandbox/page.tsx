@@ -131,8 +131,15 @@ export default function SandboxPage() {
       name: 'Repeated Small Payments', 
       conditions: [
         { id: 't1', feature: 'amount', operator: '<', value: '500' },
-        { id: 't2', feature: 'type', operator: '==', value: 'TRANSFER' }, // Changed from PAYMENT to TRANSFER as per request only 2 types
+        { id: 't2', feature: 'type', operator: '==', value: 'TRANSFER' },
         { id: 't3', feature: 'orig_txn_count', operator: '>', value: '10' }
+      ]
+    },
+    {
+      name: 'New Account High Value',
+      conditions: [
+        { id: 't1', feature: 'orig_txn_count', operator: '<=', value: '1' },
+        { id: 't2', feature: 'amount', operator: '>', value: '50000' }
       ]
     },
     { 
@@ -147,6 +154,13 @@ export default function SandboxPage() {
       conditions: [
         { id: 't1', feature: 'in_degree', operator: '>', value: '5' },
         { id: 't2', feature: 'network_trust', operator: '<', value: '0.1' }
+      ]
+    },
+    {
+      name: 'Mule Account Cashout',
+      conditions: [
+        { id: 't1', feature: 'in_degree', operator: '>', value: '3' },
+        { id: 't2', feature: 'type', operator: '==', value: 'CASH_OUT' }
       ]
     }
   ]

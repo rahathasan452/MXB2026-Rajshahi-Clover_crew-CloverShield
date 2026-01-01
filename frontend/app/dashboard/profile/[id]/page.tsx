@@ -131,14 +131,18 @@ export default function ProfilePage() {
   // Fetch frequent accounts on mount
   useEffect(() => {
     const fetchFrequent = async () => {
-      // Fetch top transacting accounts from the view
+      // Fetch top receiving accounts from the engineered dataset
+      // Order by dest_txn_count descending to find high-activity destinations
       const { data } = await supabase
-        .from('view_top_transacting_accounts')
-        .select('account_id')
-        .limit(5)
+        .from('test_dataset_engineered')
+        .select('nameDest, dest_txn_count')
+        .order('dest_txn_count', { ascending: false })
+        .limit(100)
       
       if (data) {
-        setFrequentAccounts(data.map(d => d.account_id))
+        // Deduplicate by nameDest to get unique accounts
+        const uniqueReceivers = Array.from(new Set(data.map(d => d.nameDest)))
+        setFrequentAccounts(uniqueReceivers.slice(0, 10))
       }
     }
     fetchFrequent()
