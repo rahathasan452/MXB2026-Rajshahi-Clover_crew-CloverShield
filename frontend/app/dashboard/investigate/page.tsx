@@ -6,9 +6,6 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-'use client'
-
-import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -188,7 +185,7 @@ export default function InvestigatePage() {
             {language === 'bn' ? 'তদন্তের তালিকা' : 'Priority Inbox'}
           </h1>
           <button 
-            onClick={handleSeed} 
+            onClick={() => handleSeed(false)} 
             disabled={seeding}
             className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full transition-colors flex items-center gap-1"
           >
@@ -214,7 +211,7 @@ export default function InvestigatePage() {
               {language === 'bn' ? 'কোনো পেন্ডিং কেস নেই।' : 'No high-risk transactions pending review.'}
             </p>
             <button 
-              onClick={handleSeed}
+              onClick={() => handleSeed(false)}
               className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-bold transition-colors"
             >
               {language === 'bn' ? 'নতুন কেস তৈরি করুন' : 'Generate Test Cases'}
