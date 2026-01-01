@@ -77,7 +77,7 @@ export default function LandingPage() {
             </h1>
             
             <p className="text-xl md:text-2xl text-gray-400 max-w-3xl leading-relaxed mb-10 animate-fade-in-up delay-200">
-              The Sovereign AI Fraud Analyst Workstation for Bangladesh's Mobile Finance. 
+              The Sovereign AI Fraud Analyst Workstation for Bangladesh&apos;s Mobile Finance. 
               Deploy privately on your servers with <span className="text-emerald-400 font-semibold">one Docker command</span>.
             </p>
 
@@ -144,7 +144,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <strong className="text-white block">Class Imbalance Solved</strong>
-                    <span className="text-sm text-gray-500">Advanced `scale_pos_weight` tuning to detect the 0.1% of fraud hidden in millions of legit transfers.</span>
+                    <span className="text-sm text-gray-500">Advanced &quot;scale_pos_weight&quot; tuning to detect the 0.1% of fraud hidden in millions of legit transfers.</span>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
@@ -222,7 +222,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold mb-3">Policy Lab Sandbox</h3>
               <p className="text-gray-400 leading-relaxed text-sm">
-                Safely backtest new rules like "Block if amount > 50k AND location changed" against historical data before they go live. No more guessing.
+                Safely backtest new rules like "Block if amount &gt; 50k AND location changed" against historical data before they go live. No more guessing.
               </p>
             </div>
 
@@ -292,22 +292,22 @@ export default function LandingPage() {
                   <div className="w-3 h-3 rounded-full bg-red-500"></div>
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span className="ml-2 text-gray-500">bash — 80x24</span>
+                  <span className="ml-2 text-gray-500">bash &mdash; 80x24</span>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <span className="text-emerald-500">➜</span> <span className="text-blue-400">~</span> <span className="text-gray-400">git clone https://github.com/clovershield/deploy.git</span>
+                    <span className="text-emerald-500">-&gt;</span> <span className="text-blue-400">~</span> <span className="text-gray-400">git clone https://github.com/clovershield/deploy.git</span>
                   </div>
                   <div>
-                    <span className="text-emerald-500">➜</span> <span className="text-blue-400">~</span> <span className="text-gray-400">cd deploy && docker-compose up -d</span>
+                    <span className="text-emerald-500">-&gt;</span> <span className="text-blue-400">~</span> <span className="text-gray-400">cd deploy &amp;&amp; docker-compose up -d</span>
                   </div>
                   <div className="text-gray-500 animate-pulse">
                     [+] Running 3/3<br/>
-                    &nbsp;✔ Container clovershield-db &nbsp;&nbsp;&nbsp;&nbsp;Started<br/>
-                    &nbsp;✔ Container clovershield-ml-api &nbsp;Started<br/>
-                    &nbsp;✔ Container clovershield-web &nbsp;&nbsp;&nbsp;&nbsp;Started<br/>
+                    &nbsp;v Container clovershield-db &nbsp;&nbsp;&nbsp;&nbsp;Started<br/>
+                    &nbsp;v Container clovershield-ml-api &nbsp;Started<br/>
+                    &nbsp;v Container clovershield-web &nbsp;&nbsp;&nbsp;&nbsp;Started<br/>
                     <br/>
-                    <span className="text-emerald-400">✓ System Online at http://localhost:3000</span>
+                    <span className="text-emerald-400">v System Online at http://localhost:3000</span>
                   </div>
                 </div>
               </div>
@@ -322,7 +322,7 @@ export default function LandingPage() {
           <Icon name="visibility" size={48} className="mx-auto text-emerald-400 mb-6 opacity-80" />
           <h2 className="text-3xl md:text-5xl font-bold mb-8">Our Vision</h2>
           <p className="text-xl md:text-2xl text-gray-300 leading-relaxed italic opacity-90">
-            "To build the digital immune system for Bangladesh's financial economy. We envision a future where trust is automated, fraud is obsolete, and every transaction—from the tea stall to the bank vault—is secured by intelligent, sovereign AI."
+            &quot;To build the digital immune system for Bangladesh&apos;s financial economy. We envision a future where trust is automated, fraud is obsolete, and every transaction&mdash;from the tea stall to the bank vault&mdash;is secured by intelligent, sovereign AI.&quot;
           </p>
           <div className="mt-12 flex items-center justify-center gap-2 text-sm text-gray-500 uppercase tracking-widest">
             <span>Rajshahi</span>
