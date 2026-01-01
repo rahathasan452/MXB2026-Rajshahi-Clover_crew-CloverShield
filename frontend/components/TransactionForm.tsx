@@ -37,8 +37,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const { transactionForm, setTransactionForm, selectedUser } = useAppStore()
   const [errors, setErrors] = useState<Record<string, string>>({})
   
-  // Test Data Mode state
-  const [isTestDataMode, setIsTestDataMode] = useState(false)
+  // Always in Test Data Mode (using dataset)
+  const isTestDataMode = true
   const [testSenders, setTestSenders] = useState<string[]>([])
   const [testReceivers, setTestReceivers] = useState<string[]>([])
   const [loadingTestData, setLoadingTestData] = useState(false)
@@ -73,26 +73,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
   const amountPresets = [500, 1000, 5000, 10000]
 
-  // Load test dataset senders when test mode is enabled
+  // Load test dataset senders on mount
   useEffect(() => {
-    if (isTestDataMode) {
-      loadTestSenders()
-    } else {
-      setTestSenders([])
-      setTestReceivers([])
-      setTestTransactionDetails(null)
-    }
-  }, [isTestDataMode])
+    loadTestSenders()
+  }, [])
 
-  // Load receivers when sender changes (both test mode and regular mode)
+  // Load receivers when sender changes
   useEffect(() => {
     if (transactionForm.senderId) {
       const loadReceivers = async () => {
-        if (isTestDataMode) {
-          await loadTestReceivers(transactionForm.senderId!)
-        } else {
-          await loadRegularReceivers(transactionForm.senderId!)
-        }
+        await loadTestReceivers(transactionForm.senderId!)
       }
       loadReceivers()
       setTestTransactionDetails(null)
@@ -104,13 +94,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       setReceiverSearch('')
       setShowReceiverSuggestions(false)
     }
-  }, [transactionForm.senderId, isTestDataMode])
+  }, [transactionForm.senderId])
 
 
-  // Load transaction details when both sender and receiver are selected in test mode
+  // Load transaction details when both sender and receiver are selected
   useEffect(() => {
     if (
-      isTestDataMode &&
       transactionForm.senderId &&
       transactionForm.receiverId
     ) {
@@ -119,7 +108,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         transactionForm.receiverId
       )
     }
-  }, [transactionForm.senderId, transactionForm.receiverId, isTestDataMode])
+  }, [transactionForm.senderId, transactionForm.receiverId])
 
   const loadTestSenders = async () => {
     try {
@@ -170,30 +159,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     }
   }
 
-  const loadRegularReceivers = async (senderId: string) => {
-    try {
-      setLoadingReceiverSearch(true)
-      const response = await fetch(
-        `/api/users/receivers?senderId=${encodeURIComponent(senderId)}&limit=100`
-      )
-      if (!response.ok) {
-        throw new Error('Failed to load receivers')
-      }
-      const data = await response.json()
-      const receivers = data.receivers || []
-      setReceiverSuggestions(receivers)
-      // Automatically show suggestions if there are receivers
-      if (receivers.length > 0) {
-        setShowReceiverSuggestions(true)
-      }
-    } catch (error: any) {
-      console.error('Failed to load receivers:', error)
-      setReceiverSuggestions([])
-    } finally {
-      setLoadingReceiverSearch(false)
-    }
-  }
-
   // Search senders with debounce
   useEffect(() => {
     if (!senderSearch.trim()) {
@@ -205,9 +170,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     const searchTimer = setTimeout(async () => {
       try {
         setLoadingSenderSearch(true)
-        const endpoint = isTestDataMode 
-          ? `/api/test-dataset/senders?search=${encodeURIComponent(senderSearch)}&limit=10`
-          : `/api/users/senders?search=${encodeURIComponent(senderSearch)}&limit=10`
+        const endpoint = `/api/test-dataset/senders?search=${encodeURIComponent(senderSearch)}&limit=10`
         
         const response = await fetch(endpoint)
         if (!response.ok) {
@@ -215,11 +178,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         }
         const data = await response.json()
         
-        if (isTestDataMode) {
-          setSenderSuggestions((data.senders || []).map((id: string) => ({ id })))
-        } else {
-          setSenderSuggestions(data.senders || [])
-        }
+        setSenderSuggestions((data.senders || []).map((id: string) => ({ id })))
         setShowSenderSuggestions(true)
       } catch (error: any) {
         console.error('Search error:', error)
@@ -230,7 +189,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     }, 300) // Debounce 300ms
 
     return () => clearTimeout(searchTimer)
-  }, [senderSearch, isTestDataMode])
+  }, [senderSearch])
 
   // Search receivers with debounce (only when sender is selected)
   useEffect(() => {
@@ -247,9 +206,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         const searchParam = receiverSearch.trim() ? `&search=${encodeURIComponent(receiverSearch)}` : ''
         // Show at least 10, but more if available
         const limit = receiverSearch.trim() ? 50 : 100 // More results when not searching
-        const endpoint = isTestDataMode
-          ? `/api/test-dataset/receivers?senderId=${encodeURIComponent(senderId)}${searchParam}&limit=${limit}`
-          : `/api/users/receivers?senderId=${encodeURIComponent(senderId)}${searchParam}&limit=${limit}`
+        const endpoint = `/api/test-dataset/receivers?senderId=${encodeURIComponent(senderId)}${searchParam}&limit=${limit}`
         
         const response = await fetch(endpoint)
         if (!response.ok) {
@@ -257,11 +214,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         }
         const data = await response.json()
         
-        if (isTestDataMode) {
-          setReceiverSuggestions((data.receivers || []).map((id: string) => ({ id })))
-        } else {
-          setReceiverSuggestions(data.receivers || [])
-        }
+        setReceiverSuggestions((data.receivers || []).map((id: string) => ({ id })))
+        
         // Always show suggestions if there are receivers (automatically show all receivers)
         if (data.receivers?.length > 0) {
           setShowReceiverSuggestions(true)
@@ -275,7 +229,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     }, receiverSearch.trim() ? 300 : 0) // No debounce if just loading initial list
 
     return () => clearTimeout(searchTimer)
-  }, [receiverSearch, transactionForm.senderId, isTestDataMode])
+  }, [receiverSearch, transactionForm.senderId])
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -446,50 +400,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             {language === 'bn' ? 'লেনদেন ইনপুট' : 'Transaction Input'}
           </h2>
         </div>
-        
-        {/* Test Data Mode Toggle */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-text-secondary">
-            {language === 'bn' ? 'টেস্ট ডেটা' : 'Test Data'}
-          </span>
-          <button
-            type="button"
-              onClick={() => {
-              setIsTestDataMode(!isTestDataMode)
-              setTransactionForm({
-                senderId: null,
-                receiverId: null,
-                amount: 0,
-              })
-              setTestTransactionDetails(null)
-              setSenderSearch('')
-              setReceiverSearch('')
-              setSenderSuggestions([])
-              setReceiverSuggestions([])
-            }}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              isTestDataMode ? 'bg-primary' : 'bg-gray-600'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                isTestDataMode ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-        </div>
       </div>
-
-      {isTestDataMode && (
-        <div className="mb-4 bg-primary/10 border border-primary/30 rounded-xl p-3">
-          <p className="text-sm text-primary font-medium flex items-center gap-2">
-            <Icon name="analytics" size={20} />
-            {language === 'bn'
-              ? 'টেস্ট ডেটা মোড: টেস্ট ডেটাসেট থেকে সেন্ডার এবং রিসিভার নির্বাচন করুন'
-              : 'Test Data Mode: Select sender and receiver from test dataset'}
-          </p>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Sender Selection */}
@@ -530,19 +441,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     type="button"
                     onClick={() => {
                       setTransactionForm({ senderId: suggestion.id })
-                      setSenderSearch(isTestDataMode ? suggestion.id : (suggestion.name || suggestion.id))
+                      setSenderSearch(suggestion.id)
                       setShowSenderSuggestions(false)
                     }}
                     className="w-full text-left px-4 py-3 hover:bg-primary/10 text-text-primary border-b border-white/10 last:border-b-0 transition-colors"
                   >
-                    {isTestDataMode ? (
-                      <div className="font-mono">{suggestion.id}</div>
-                    ) : (
-                      <div>
-                        <div className="font-semibold">{suggestion.name || suggestion.id}</div>
-                        <div className="text-sm text-text-secondary">{suggestion.id} • {suggestion.provider}</div>
-                      </div>
-                    )}
+                    <div className="font-mono">{suggestion.id}</div>
                   </button>
                 ))}
               </div>
@@ -687,19 +591,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                         type="button"
                         onClick={() => {
                           setTransactionForm({ receiverId: suggestion.id })
-                          setReceiverSearch(isTestDataMode ? suggestion.id : (suggestion.name || suggestion.id))
+                          setReceiverSearch(suggestion.id)
                           setShowReceiverSuggestions(false)
                         }}
                         className="w-full text-left px-4 py-3 hover:bg-primary/10 text-text-primary border-b border-white/10 last:border-b-0 transition-colors"
                       >
-                        {isTestDataMode ? (
-                          <div className="font-mono">{suggestion.id}</div>
-                        ) : (
-                          <div>
-                            <div className="font-semibold">{suggestion.name || suggestion.id}</div>
-                            <div className="text-sm text-text-secondary">{suggestion.id} • {suggestion.provider}</div>
-                          </div>
-                        )}
+                        <div className="font-mono">{suggestion.id}</div>
                       </button>
                     ))}
                   </div>

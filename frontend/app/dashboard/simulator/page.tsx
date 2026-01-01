@@ -19,18 +19,20 @@ import { DecisionZone } from '@/components/DecisionZone'
 import { RiskDrivers } from '@/components/RiskDrivers'
 import { LLMExplanationBox } from '@/components/LLMExplanationBox'
 import { Icon } from '@/components/Icon'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 export default function SimulatorPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const {
     users,
     setUsers,
     selectedUser,
     setSelectedUser,
     transactionForm,
+    setTransactionForm,
     currentPrediction,
     setCurrentPrediction,
     setIsLoading,
@@ -43,6 +45,67 @@ export default function SimulatorPage() {
 
   const [receiver, setReceiver] = useState<any>(null)
   const [showRiskDrivers, setShowRiskDrivers] = useState(false)
+
+  // Handle Auto-Run from Query Params
+  useEffect(() => {
+    const senderId = searchParams.get('sender')
+    const receiverId = searchParams.get('receiver')
+    const amountStr = searchParams.get('amount')
+    const type = searchParams.get('type')
+    const autoRun = searchParams.get('autoRun')
+
+    if (senderId && receiverId && amountStr && type) {
+      const amount = parseFloat(amountStr)
+      
+      // Update form state
+      setTransactionForm({
+        senderId,
+        receiverId,
+        amount,
+        type: type as any
+      })
+
+      // Auto-run if requested
+      if (autoRun === 'true') {
+        const runAnalysis = async () => {
+          // Fetch extra details for test data mode if needed (balances)
+          // For simplicity, we'll try to fetch them or default to reasonable values
+          // Ideally, we fetch from API like the form does, but here we might just
+          // trigger the submit handler which handles test data logic if we pass the flag
+          
+          // We need to fetch balances to make a valid prediction request
+          try {
+            const response = await fetch(
+              `/api/test-dataset/transaction-details?senderId=${encodeURIComponent(senderId)}&receiverId=${encodeURIComponent(receiverId)}`
+            )
+            if (response.ok) {
+              const data = await response.json()
+              if (data.transaction) {
+                 const tx = data.transaction
+                 const submitData = {
+                    senderId,
+                    receiverId,
+                    amount,
+                    type,
+                    oldBalanceOrig: tx.oldBalanceOrig,
+                    newBalanceOrig: type === 'CASH_OUT' || type === 'TRANSFER' ? tx.oldBalanceOrig - amount : tx.oldBalanceOrig,
+                    oldBalanceDest: tx.oldBalanceDest,
+                    newBalanceDest: type === 'TRANSFER' ? tx.oldBalanceDest + amount : tx.oldBalanceDest,
+                    step: tx.step,
+                    isTestData: true,
+                    isSimulation: false
+                 }
+                 handleTransactionSubmit(submitData)
+              }
+            }
+          } catch (e) {
+            console.error("Auto-run failed", e)
+          }
+        }
+        runAnalysis()
+      }
+    }
+  }, [searchParams])
 
   // Route protection
   useEffect(() => {

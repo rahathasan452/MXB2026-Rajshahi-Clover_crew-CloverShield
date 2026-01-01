@@ -7,12 +7,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { supabase } from '@/lib/supabase' // Direct import for custom view queries
-import { useAppStore } from '@/store/useAppStore'
-import { Icon } from '@/components/Icon'
-import toast from 'react-hot-toast'
-import { formatDistanceToNow } from 'date-fns'
+import { predictFraud } from '@/lib/ml-api'
 
 export default function InvestigatePage() {
   const router = useRouter()
@@ -20,15 +15,17 @@ export default function InvestigatePage() {
   const [queue, setQueue] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [seeding, setSeeding] = useState(false)
+  const [offset, setOffset] = useState(0)
 
   // Fetch Queue
   const fetchQueue = async () => {
     try {
       setLoading(true)
       const { data, error } = await supabase
-        .from('view_investigation_queue')
+        .from('transaction_history')
         .select('*')
-        .order('created_at', { ascending: false })
+        .eq('status', 'REVIEW')
+        .order('transaction_timestamp', { ascending: false })
         .limit(20)
       
       if (error) throw error
@@ -45,70 +42,95 @@ export default function InvestigatePage() {
     if (authUser) fetchQueue()
   }, [authUser])
 
-  // Seed Queue (Client-side implementation to bypass missing RPC)
-  const handleSeed = async () => {
+  // Enhanced Seed Queue with Background Inference
+  const handleSeed = async (isRefill = false) => {
     try {
       setSeeding(true)
+      const countToFetch = isRefill ? 1 : 10
       
-      // 1. Fetch source data
+      // 1. Fetch fraud sources from Engineered Dataset
       const { data: sourceData, error: fetchError } = await supabase
-        .from('test_dataset')
+        .from('test_dataset_engineered')
         .select('*')
-        .or('isFlaggedFraud.eq.1,amount.gt.200000')
-        .order('step', { ascending: false })
-        .limit(5)
+        .eq('isFraud', 1)
+        .order('dest_txn_count', { ascending: false })
+        .range(offset, offset + countToFetch - 1)
       
       if (fetchError) throw fetchError
-      
       if (!sourceData || sourceData.length === 0) {
-        toast.error('Test dataset is empty!')
+        if (!isRefill) toast.error('No more fraud records found')
         return
       }
 
-      // 2. Transform and Insert
-      const newItems = sourceData.map(item => ({
-        sender_id: item.nameOrig,
-        receiver_id: item.nameDest,
-        amount: item.amount,
-        transaction_type: item.type,
-        old_balance_orig: item.oldBalanceOrig,
-        new_balance_orig: item.newBalanceOrig,
-        old_balance_dest: item.oldBalanceDest,
-        new_balance_dest: item.newBalanceDest,
-        step: item.step,
-        transaction_timestamp: new Date().toISOString(),
-        fraud_probability: 0.85,
-        fraud_decision: 'warn',
-        risk_level: 'high',
-        model_confidence: 0.90,
-        status: 'REVIEW',
-        is_test_data: true
+      // 2. Perform Background Inference for each record
+      const analyzedItems = await Promise.all(sourceData.map(async (item) => {
+        try {
+          const prediction = await predictFraud({
+            step: item.step,
+            type: item.type_encoded === 1 ? 'CASH_OUT' : 'TRANSFER',
+            amount: item.amount,
+            nameOrig: item.nameOrig,
+            oldBalanceOrig: item.oldBalanceOrig,
+            newBalanceOrig: item.newBalanceOrig,
+            nameDest: item.nameDest,
+            oldBalanceDest: item.oldBalanceDest,
+            newBalanceDest: item.newBalanceDest,
+          })
+
+          return {
+            sender_id: item.nameOrig,
+            receiver_id: item.nameDest,
+            amount: item.amount,
+            transaction_type: item.type_encoded === 1 ? 'CASH_OUT' : 'TRANSFER',
+            old_balance_orig: item.oldBalanceOrig,
+            new_balance_orig: item.newBalanceOrig,
+            old_balance_dest: item.oldBalanceDest,
+            new_balance_dest: item.newBalanceDest,
+            step: item.step,
+            transaction_timestamp: new Date().toISOString(),
+            fraud_probability: prediction.prediction.fraud_probability,
+            fraud_decision: prediction.prediction.decision,
+            risk_level: prediction.prediction.risk_level,
+            model_confidence: prediction.prediction.confidence,
+            status: 'REVIEW',
+            is_test_data: true,
+            note: 'Top fraud ring candidate (High dest txn count)'
+          }
+        } catch (e) {
+          console.error("Inference failed for item", item.nameOrig, e)
+          return null
+        }
       }))
 
-      const { error: insertError } = await supabase
-        .from('transaction_history')
-        .insert(newItems)
-      
-      if (insertError) throw insertError
+      const validItems = analyzedItems.filter(i => i !== null)
 
-      toast.success(language === 'bn' ? 'নমুনা ডেটা তৈরি করা হয়েছে' : 'Sample cases generated')
+      // 3. Save to History
+      if (validItems.length > 0) {
+        const { error: insertError } = await supabase
+          .from('transaction_history')
+          .insert(validItems)
+        
+        if (insertError) throw insertError
+        setOffset(prev => prev + countToFetch)
+      }
+
+      if (!isRefill) toast.success(language === 'bn' ? 'স্মার্ট ফিল্টার সম্পন্ন' : 'Cases generated with AI inference')
       fetchQueue()
     } catch (err: any) {
       console.error('Seed error:', err)
-      toast.error('Failed to seed queue: ' + err.message)
+      if (!isRefill) toast.error('Failed to seed queue: ' + err.message)
     } finally {
       setSeeding(false)
     }
   }
 
-  // Handle Decision (Client-side implementation)
+  // Handle Decision with Auto-Refill
   const handleDecision = async (id: string, decision: 'APPROVE' | 'BLOCK') => {
-    // Optimistic Update
     const originalQueue = [...queue]
-    setQueue(queue.filter(q => q.transaction_id !== id))
+    const updatedQueue = queue.filter(q => q.transaction_id !== id)
+    setQueue(updatedQueue)
     
     try {
-      // Direct update instead of RPC
       const { error } = await supabase
         .from('transaction_history')
         .update({
@@ -119,16 +141,15 @@ export default function InvestigatePage() {
       
       if (error) throw error
       
-      toast.success(
-        decision === 'APPROVE' 
-          ? (language === 'bn' ? 'অনুমোদিত' : 'Transaction Approved')
-          : (language === 'bn' ? 'ব্লক করা হয়েছে' : 'Transaction Blocked')
-      )
+      toast.success(decision === 'APPROVE' ? 'Approved' : 'Blocked')
+
+      // Auto-Refill Logic: If queue is getting low, fetch the next one
+      if (updatedQueue.length < 5) {
+        handleSeed(true) // Refill in background
+      }
     } catch (err) {
-      // Revert on error
       setQueue(originalQueue)
       toast.error('Action failed')
-      console.error(err)
     }
   }
 
