@@ -1,6 +1,11 @@
+/**
+ * Simulator Page - Fraud Scanner
+ * Manually inspect transactions and analyze risk scores.
+ */
+
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import Image from 'next/image'
 import { useAppStore } from '@/store/useAppStore'
 import {
@@ -23,7 +28,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
-export default function SimulatorPage() {
+function SimulatorContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const {
@@ -46,125 +51,7 @@ export default function SimulatorPage() {
   const [receiver, setReceiver] = useState<any>(null)
   const [showRiskDrivers, setShowRiskDrivers] = useState(false)
 
-  // Handle Auto-Run from Query Params
-  useEffect(() => {
-    const senderId = searchParams.get('sender')
-    const receiverId = searchParams.get('receiver')
-    const amountStr = searchParams.get('amount')
-    const type = searchParams.get('type')
-    const autoRun = searchParams.get('autoRun')
-
-    if (senderId && receiverId && amountStr && type) {
-      const amount = parseFloat(amountStr)
-      
-      // Update form state
-      setTransactionForm({
-        senderId,
-        receiverId,
-        amount,
-        type: type as any
-      })
-
-      // Auto-run if requested
-      if (autoRun === 'true') {
-        const runAnalysis = async () => {
-          // Fetch extra details for test data mode if needed (balances)
-          // For simplicity, we'll try to fetch them or default to reasonable values
-          // Ideally, we fetch from API like the form does, but here we might just
-          // trigger the submit handler which handles test data logic if we pass the flag
-          
-          // We need to fetch balances to make a valid prediction request
-          try {
-            const response = await fetch(
-              `/api/test-dataset/transaction-details?senderId=${encodeURIComponent(senderId)}&receiverId=${encodeURIComponent(receiverId)}`
-            )
-            if (response.ok) {
-              const data = await response.json()
-              if (data.transaction) {
-                 const tx = data.transaction
-                 const submitData = {
-                    senderId,
-                    receiverId,
-                    amount,
-                    type,
-                    oldBalanceOrig: tx.oldBalanceOrig,
-                    newBalanceOrig: type === 'CASH_OUT' || type === 'TRANSFER' ? tx.oldBalanceOrig - amount : tx.oldBalanceOrig,
-                    oldBalanceDest: tx.oldBalanceDest,
-                    newBalanceDest: type === 'TRANSFER' ? tx.oldBalanceDest + amount : tx.oldBalanceDest,
-                    step: tx.step,
-                    isTestData: true,
-                    isSimulation: false
-                 }
-                 handleTransactionSubmit(submitData)
-              }
-            }
-          } catch (e) {
-            console.error("Auto-run failed", e)
-          }
-        }
-        runAnalysis()
-      }
-    }
-  }, [searchParams])
-
-  // Route protection
-  useEffect(() => {
-    if (!authUser) {
-      router.push('/')
-    }
-  }, [authUser, router])
-
-  if (!authUser) return null
-
-  // Initialize analytics on mount
-  useEffect(() => {
-    initAnalytics()
-  }, [])
-
-  // Load users on mount
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        setIsLoading(true)
-        const usersData = await getUsers()
-        setUsers(usersData)
-        if (usersData.length > 0 && !selectedUser) {
-          setSelectedUser(usersData[0])
-          useAppStore.getState().setTransactionForm({
-            senderId: usersData[0].user_id,
-          })
-        }
-      } catch (error: any) {
-        toast.error('Failed to load users: ' + error.message)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    loadUsers()
-  }, [])
-
-  // Update receiver when receiverId changes
-  useEffect(() => {
-    if (transactionForm.receiverId) {
-      const receiverUser = users.find(
-        (u) => u.user_id === transactionForm.receiverId
-      )
-      setReceiver(receiverUser)
-    }
-  }, [transactionForm.receiverId, users])
-
-  // Update selected user when sender changes
-  useEffect(() => {
-    if (transactionForm.senderId) {
-      const senderUser = users.find(
-        (u) => u.user_id === transactionForm.senderId
-      )
-      if (senderUser) {
-        setSelectedUser(senderUser)
-      }
-    }
-  }, [transactionForm.senderId, users])
-
+  // Handle Transaction Submission
   const handleTransactionSubmit = async (data: any) => {
     try {
       setIsLoading(true)
@@ -276,29 +163,6 @@ export default function SimulatorPage() {
         riskLevel: prediction.prediction.risk_level,
       })
 
-      if (!isTestData && (prediction.prediction.decision === 'block' || prediction.prediction.decision === 'warn')) {
-        try {
-          const sender = users.find((u: any) => u.user_id === data.senderId)
-          const receiverUser = users.find((u: any) => u.user_id === data.receiverId)
-          if (sender && receiverUser) {
-            await sendTransactionAlertEmail({
-              transactionId: transaction.transaction_id,
-              senderId: data.senderId,
-              receiverId: data.receiverId,
-              senderName: sender.name_en,
-              receiverName: receiverUser.name_en,
-              amount: data.amount,
-              transactionType: data.type,
-              fraudProbability: prediction.prediction.fraud_probability,
-              decision: prediction.prediction.decision,
-              riskLevel: prediction.prediction.risk_level,
-              timestamp: transaction.transaction_timestamp,
-              shapExplanations: prediction.shap_explanations,
-            })
-          }
-        } catch (emailError) { console.error(emailError) }
-      }
-
       incrementTransactions()
       if (prediction.prediction.decision === 'block') incrementFraudDetected(data.amount)
 
@@ -313,9 +177,100 @@ export default function SimulatorPage() {
     }
   }
 
+  // Handle Auto-Run from Query Params
+  useEffect(() => {
+    const senderId = searchParams.get('sender')
+    const receiverId = searchParams.get('receiver')
+    const amountStr = searchParams.get('amount')
+    const type = searchParams.get('type')
+    const autoRun = searchParams.get('autoRun')
+
+    if (senderId && receiverId && amountStr && type) {
+      const amount = parseFloat(amountStr)
+      
+      // Update form state
+      setTransactionForm({
+        senderId,
+        receiverId,
+        amount,
+        type: type as any
+      })
+
+      // Auto-run if requested
+      if (autoRun === 'true') {
+        const runAnalysis = async () => {
+          try {
+            const response = await fetch(
+              `/api/test-dataset/transaction-details?senderId=${encodeURIComponent(senderId)}&receiverId=${encodeURIComponent(receiverId)}`
+            )
+            if (response.ok) {
+              const data = await response.json()
+              if (data.transaction) {
+                 const tx = data.transaction
+                 const submitData = {
+                    senderId,
+                    receiverId,
+                    amount,
+                    type,
+                    oldBalanceOrig: tx.oldBalanceOrig,
+                    newBalanceOrig: type === 'CASH_OUT' || type === 'TRANSFER' ? tx.oldBalanceOrig - amount : tx.oldBalanceOrig,
+                    oldBalanceDest: tx.oldBalanceDest,
+                    newBalanceDest: type === 'TRANSFER' ? tx.oldBalanceDest + amount : tx.oldBalanceDest,
+                    step: tx.step,
+                    isTestData: true,
+                    isSimulation: false
+                 }
+                 handleTransactionSubmit(submitData)
+              }
+            }
+          } catch (e) {
+            console.error("Auto-run failed", e)
+          }
+        }
+        runAnalysis()
+      }
+    }
+  }, [searchParams])
+
+  // Route protection
+  useEffect(() => {
+    if (!authUser) {
+      router.push('/')
+    }
+  }, [authUser, router])
+
+  if (!authUser) return null
+
+  // Initialize analytics on mount
+  useEffect(() => {
+    initAnalytics()
+  }, [])
+
+  // Load users on mount
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setIsLoading(true)
+        const usersData = await getUsers()
+        setUsers(usersData)
+        if (usersData.length > 0 && !selectedUser) {
+          setSelectedUser(usersData[0])
+          useAppStore.getState().setTransactionForm({
+            senderId: usersData[0].user_id,
+          })
+        }
+      } catch (error: any) {
+        // Suppress toast for users fetch if we are using dataset IDs
+        console.warn('Failed to load users:', error.message)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadUsers()
+  }, [])
+
   return (
     <div className={`min-h-screen bg-[#050714] ${language === 'bn' ? 'font-bengali' : ''}`}>
-      {/* Navbar Placeholder for Consistency */}
       <div className="bg-gradient-header border-b border-white/10 p-4 mb-6">
           <div className="container mx-auto flex items-center gap-4">
                <Link href="/dashboard" className="flex items-center gap-2 text-primary hover:text-white transition-colors">
@@ -329,7 +284,6 @@ export default function SimulatorPage() {
         <AnalyticsDashboard language={language} />
         
         <div className="space-y-8 mt-8">
-          {selectedUser && <UserProfileCard user={selectedUser} language={language} />}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
@@ -372,5 +326,13 @@ export default function SimulatorPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SimulatorPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#050714] flex items-center justify-center text-primary">Loading Workstation...</div>}>
+      <SimulatorContent />
+    </Suspense>
   )
 }
