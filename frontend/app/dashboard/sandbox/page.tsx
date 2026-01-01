@@ -296,11 +296,11 @@ export default function SandboxPage() {
                     onChange={(e) => setLimit(Number(e.target.value))}
                     className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-primary focus:outline-none"
                   >
-                    <option value={100}>Last 100</option>
-                    <option value={1000}>Last 1,000</option>
-                    <option value={5000}>Last 5,000</option>
-                    <option value={10000}>Last 10,000</option>
-                    <option value={50000}>Last 50,000 (Slow)</option>
+                    <option value={100} className="bg-[#050714] text-white">Last 100</option>
+                    <option value={1000} className="bg-[#050714] text-white">Last 1,000</option>
+                    <option value={5000} className="bg-[#050714] text-white">Last 5,000</option>
+                    <option value={10000} className="bg-[#050714] text-white">Last 10,000</option>
+                    <option value={50000} className="bg-[#050714] text-white">Last 50,000 (Slow)</option>
                   </select>
                 </div>
 

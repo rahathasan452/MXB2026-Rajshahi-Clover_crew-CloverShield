@@ -57,8 +57,8 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         if (!nodesMap.has(tx.sender_id)) {
           nodesMap.set(tx.sender_id, {
             id: tx.sender_id,
-            val: 5,
-            color: '#ffffff',
+            val: 6,
+            color: '#60A5FA', // Blue
             type: 'sender'
           })
         }
@@ -67,19 +67,22 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         if (!nodesMap.has(tx.receiver_id)) {
           nodesMap.set(tx.receiver_id, {
             id: tx.receiver_id,
-            val: 5,
-            color: '#ffffff',
+            val: 6,
+            color: '#F472B6', // Pink
             type: 'receiver'
           })
         }
 
         // Add Link
+        const isFraud = tx.fraud_probability > 0.7
+        const isWarn = tx.fraud_probability > 0.3
+        
         links.push({
           source: tx.sender_id,
           target: tx.receiver_id,
-          color: tx.fraud_probability > 0.7 ? '#FF4444' : '#00FF88', // Simplified color logic
-          width: 1,
-          particles: 0
+          color: isFraud ? '#EF4444' : isWarn ? '#F59E0B' : '#22D3EE',
+          width: isFraud ? 3 : 1,
+          particles: isFraud ? 4 : 0
         })
       })
 
@@ -106,8 +109,8 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       if (!newNodes.find(n => n.id === tx.nameOrig)) {
         newNodes.push({
           id: tx.nameOrig,
-          val: 5,
-          color: '#ffffff',
+          val: 6,
+          color: '#60A5FA', // Blue
           type: 'sender'
         })
       }
@@ -116,8 +119,8 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       if (!newNodes.find(n => n.id === tx.nameDest)) {
         newNodes.push({
           id: tx.nameDest,
-          val: 5,
-          color: '#ffffff',
+          val: 6,
+          color: '#F472B6', // Pink
           type: 'receiver'
         })
       }
@@ -129,7 +132,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       newLinks.push({
         source: tx.nameOrig,
         target: tx.nameDest,
-        color: isFraud ? '#FF4444' : isWarn ? '#FFD700' : '#00FF88',
+        color: isFraud ? '#EF4444' : isWarn ? '#F59E0B' : '#22D3EE',
         width: isFraud ? 3 : 1,
         particles: isFraud ? 4 : 0
       })
@@ -177,8 +180,10 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         linkDirectionalParticleSpeed={0.005}
         linkDirectionalParticleWidth={4}
         backgroundColor="#00000000" // Transparent
+        d3AlphaDecay={0.05}
+        d3VelocityDecay={0.3}
+        warmupTicks={100}
         cooldownTicks={100}
-        onEngineStop={() => fgRef.current.zoomToFit(400)}
       />
       
       {data.nodes.length === 0 && (
