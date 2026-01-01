@@ -1,10 +1,3 @@
-/**
- * Simulator Page - Transaction Simulator + Guardian Command Center
- * Moved from /dashboard/page.tsx
- */
-
-'use client'
-
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useAppStore } from '@/store/useAppStore'
@@ -22,8 +15,6 @@ import { UserProfileCard } from '@/components/UserProfileCard'
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
 import { DecisionZone } from '@/components/DecisionZone'
 import { RiskDrivers } from '@/components/RiskDrivers'
-import { NetworkGraph } from '@/components/NetworkGraph'
-import { SimulationControls } from '@/components/SimulationControls'
 import { LLMExplanationBox } from '@/components/LLMExplanationBox'
 import { Icon } from '@/components/Icon'
 import { useRouter } from 'next/navigation'
@@ -46,66 +37,10 @@ export default function SimulatorPage() {
     language,
     brandTheme,
     authUser,
-    isSimulating
   } = useAppStore()
 
   const [receiver, setReceiver] = useState<any>(null)
   const [showRiskDrivers, setShowRiskDrivers] = useState(false)
-  const [latestTransaction, setLatestTransaction] = useState<any>(null)
-
-  // SSE Effect for Simulation
-  useEffect(() => {
-    let eventSource: EventSource | null = null
-
-    if (isSimulating) {
-      const API_URL = process.env.NEXT_PUBLIC_ML_API_URL || 'http://localhost:8000'
-      eventSource = new EventSource(`${API_URL}/simulate/stream`)
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          if (data.transaction) {
-            const tx = data.transaction
-            
-            handleTransactionSubmit({
-              senderId: tx.nameOrig,
-              receiverId: tx.nameDest,
-              amount: tx.amount,
-              type: tx.type,
-              oldBalanceOrig: tx.oldBalanceOrig,
-              newBalanceOrig: tx.newBalanceOrig,
-              oldBalanceDest: tx.oldBalanceDest,
-              newBalanceDest: tx.newBalanceDest,
-              step: tx.step,
-              isTestData: true,
-              isSimulation: true
-            }).then((prediction) => {
-               if (prediction) {
-                 // Update graph with transaction AND prediction info
-                 setLatestTransaction({
-                   ...tx,
-                   fraud_probability: prediction.prediction.fraud_probability,
-                   decision: prediction.prediction.decision
-                 })
-               }
-            })
-          }
-        } catch (e) {
-          console.error("Error parsing SSE data", e)
-        }
-      }
-
-      eventSource.onerror = (err) => {
-        console.error("SSE Error", err)
-      }
-    }
-
-    return () => {
-      if (eventSource) {
-        eventSource.close()
-      }
-    }
-  }, [isSimulating])
 
   // Route protection
   useEffect(() => {
@@ -167,9 +102,7 @@ export default function SimulatorPage() {
 
   const handleTransactionSubmit = async (data: any) => {
     try {
-      if (!data.isSimulation) {
-        setIsLoading(true)
-      }
+      setIsLoading(true)
 
       const isTestData = data.isTestData || false
       let oldBalanceOrig, newBalanceOrig, oldBalanceDest, newBalanceDest, step
@@ -304,18 +237,14 @@ export default function SimulatorPage() {
       incrementTransactions()
       if (prediction.prediction.decision === 'block') incrementFraudDetected(data.amount)
 
-      if (!data.isSimulation) {
-        toast.success(language === 'bn' ? 'লেনদেন বিশ্লেষণ সম্পন্ন' : 'Transaction analyzed successfully')
-      }
+      toast.success(language === 'bn' ? 'লেনদেন বিশ্লেষণ সম্পন্ন' : 'Transaction analyzed successfully')
       return prediction
     } catch (error: any) {
       console.error('Transaction error:', error)
-      if (!data.isSimulation) {
-        toast.error(language === 'bn' ? 'লেনদেন প্রক্রিয়াকরণ ব্যর্থ' : 'Failed to process transaction: ' + error.message)
-      }
+      toast.error(language === 'bn' ? 'লেনদেন প্রক্রিয়াকরণ ব্যর্থ' : 'Failed to process transaction: ' + error.message)
       throw error
     } finally {
-      if (!data.isSimulation) setIsLoading(false)
+      setIsLoading(false)
     }
   }
 
@@ -333,15 +262,14 @@ export default function SimulatorPage() {
 
       <div className="container mx-auto px-4 pb-8">
         <AnalyticsDashboard language={language} />
-        <div className="my-8"><SimulationControls language={language} /></div>
-
-        <div className="space-y-8">
+        
+        <div className="space-y-8 mt-8">
           {selectedUser && <UserProfileCard user={selectedUser} language={language} />}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                 <Icon name="account_balance_wallet" size={28} className="text-primary" />
-                {language === 'bn' ? 'লেনদেন সিমুলেটর' : 'Transaction Simulator'}
+                {language === 'bn' ? 'রিয়েল-টাইম ফ্রড স্ক্যানার' : 'Real-time Fraud Scanner'}
               </h2>
               <TransactionForm users={users} onSubmit={handleTransactionSubmit} language={language} />
             </div>
@@ -376,7 +304,6 @@ export default function SimulatorPage() {
               )}
             </div>
           </div>
-          <div className="mt-8"><NetworkGraph language={language} height={500} latestTransaction={latestTransaction} /></div>
         </div>
       </div>
     </div>

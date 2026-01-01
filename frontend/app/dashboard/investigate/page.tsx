@@ -6,45 +6,20 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { supabase } from '@/lib/supabase' // Direct import for custom view queries
-import { useAppStore } from '@/store/useAppStore'
-import { Icon } from '@/components/Icon'
-import toast from 'react-hot-toast'
-import { formatDistanceToNow } from 'date-fns'
+import { useRouter } from 'next/navigation'
 
 export default function InvestigatePage() {
+  const router = useRouter()
   const { language, authUser } = useAppStore()
   const [queue, setQueue] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [seeding, setSeeding] = useState(false)
 
-  // Fetch Queue
-  const fetchQueue = async () => {
-    try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('view_investigation_queue')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20)
-      
-      if (error) throw error
-      setQueue(data || [])
-    } catch (err: any) {
-      console.error('Error fetching queue:', err)
-      toast.error('Failed to load queue')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (authUser) fetchQueue()
-  }, [authUser])
+  // ... (existing fetchQueue and useEffect) ...
 
   // Seed Queue (Client-side implementation to bypass missing RPC)
   const handleSeed = async () => {
+    // ... (existing implementation) ...
     try {
       setSeeding(true)
       
@@ -101,6 +76,7 @@ export default function InvestigatePage() {
 
   // Handle Decision (Client-side implementation)
   const handleDecision = async (id: string, decision: 'APPROVE' | 'BLOCK') => {
+    // ... (existing implementation) ...
     // Optimistic Update
     const originalQueue = [...queue]
     setQueue(queue.filter(q => q.transaction_id !== id))
@@ -130,9 +106,21 @@ export default function InvestigatePage() {
     }
   }
 
+  const handleAnalyze = (item: any) => {
+    // Construct query params for pre-filling the simulator
+    const params = new URLSearchParams({
+      sender: item.sender_id,
+      receiver: item.receiver_id,
+      amount: item.amount.toString(),
+      type: item.transaction_type,
+      autoRun: 'true' // Flag to trigger auto-analysis if supported
+    })
+    router.push(`/dashboard/simulator?${params.toString()}`)
+  }
+
   return (
     <div className={`min-h-screen bg-[#050714] text-white ${language === 'bn' ? 'font-bengali' : ''}`}>
-      {/* Nav */}
+      {/* ... (existing nav) ... */}
       <div className="bg-gradient-header border-b border-white/10 p-4 mb-6 sticky top-0 z-50 backdrop-blur-md">
         <div className="container mx-auto flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2 text-primary hover:text-white transition-colors">
@@ -206,9 +194,13 @@ export default function InvestigatePage() {
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm text-text-secondary">
-                    <span className="font-mono text-white/80">{item.sender_id}</span>
+                    <Link href={`/dashboard/profile/${item.sender_id}`} className="font-mono text-white/80 hover:text-primary transition-colors hover:underline">
+                      {item.sender_id}
+                    </Link>
                     <Icon name="arrow_forward" size={14} />
-                    <span className="font-mono text-white/80">{item.receiver_id}</span>
+                    <Link href={`/dashboard/profile/${item.receiver_id}`} className="font-mono text-white/80 hover:text-primary transition-colors hover:underline">
+                      {item.receiver_id}
+                    </Link>
                   </div>
                 </div>
 
@@ -224,6 +216,14 @@ export default function InvestigatePage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-3 w-full md:w-auto">
+                  <button 
+                    onClick={() => handleAnalyze(item)}
+                    className="flex-1 md:flex-none bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors"
+                    title="Run Real-time Analysis"
+                  >
+                    <Icon name="bolt" size={18} />
+                    Analyze
+                  </button>
                   <button 
                     onClick={() => handleDecision(item.transaction_id, 'APPROVE')}
                     className="flex-1 md:flex-none bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors"

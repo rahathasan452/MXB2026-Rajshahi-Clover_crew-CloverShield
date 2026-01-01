@@ -131,15 +131,14 @@ export default function ProfilePage() {
   // Fetch frequent accounts on mount
   useEffect(() => {
     const fetchFrequent = async () => {
-      // Fetch some distinct senders from test_dataset to use as examples
-      // Note: distinct() is computationally expensive on large tables, so we just take a few
+      // Fetch top transacting accounts from the view
       const { data } = await supabase
-        .from('test_dataset')
-        .select('nameOrig')
+        .from('view_top_transacting_accounts')
+        .select('account_id')
         .limit(5)
       
       if (data) {
-        setFrequentAccounts(Array.from(new Set(data.map(d => d.nameOrig))))
+        setFrequentAccounts(data.map(d => d.account_id))
       }
     }
     fetchFrequent()

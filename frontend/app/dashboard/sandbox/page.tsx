@@ -353,14 +353,15 @@ export default function SandboxPage() {
                 </div>
 
                 {/* Chart */}
-                <div className="bg-card-bg border border-white/10 rounded-xl p-6 h-[400px]">
+                <div className="bg-card-bg border border-white/10 rounded-xl p-6 h-[500px]">
                   <h3 className="text-lg font-bold mb-6">Impact Analysis</h3>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={[
-                        { name: 'Matches', value: results.total_matches, color: '#60a5fa' },
+                        { name: 'Total Tested', value: results.total_tested, color: '#94a3b8' },
+                        { name: 'Rule Matches', value: results.total_matches, color: '#60a5fa' },
                         { name: 'Fraud Caught', value: results.fraud_caught, color: '#4ade80' },
-                        { name: 'False Positives', value: results.false_positives, color: '#f87171' },
+                        { name: 'Legit Blocked', value: results.false_positives, color: '#f87171' },
                       ]}
                       layout="vertical"
                       margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
@@ -373,10 +374,10 @@ export default function SandboxPage() {
                         itemStyle={{ color: '#fff' }}
                         cursor={{fill: 'rgba(255,255,255,0.05)'}}
                       />
-                      <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={40}>
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={30}>
                         {
-                          [0, 1, 2].map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={['#60a5fa', '#4ade80', '#f87171'][index]} />
+                          [0, 1, 2, 3].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={['#94a3b8', '#60a5fa', '#4ade80', '#f87171'][index]} />
                           ))
                         }
                       </Bar>

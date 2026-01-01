@@ -29,12 +29,14 @@ export default function LandingPage() {
                   priority
                 />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent hidden sm:inline-block">
-                CloverShield Fraud Analyst Workstation
-              </span>
-              <span className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent sm:hidden">
-                CloverShield
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent leading-none">
+                  CloverShield
+                </span>
+                <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold leading-tight mt-1 hidden sm:block">
+                  Fraud Analyst Workstation
+                </span>
+              </div>
             </Link>
 
             {/* Sign In Button */}

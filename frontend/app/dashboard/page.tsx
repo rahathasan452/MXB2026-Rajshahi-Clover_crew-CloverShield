@@ -32,8 +32,8 @@ export default function DashboardLanding() {
 
   const missions = [
     {
-      title: language === 'bn' ? 'লাইভ সিমুলেটর' : 'Live Simulator',
-      description: language === 'bn' ? 'নকল লেনদেন তৈরি করে মডেল যাচাই করুন।' : 'Inject synthetic data to test detection models in real-time.',
+      title: language === 'bn' ? 'ফ্রড স্ক্যানার' : 'Fraud Scanner',
+      description: language === 'bn' ? 'ম্যানুয়াল লেনদেন পরীক্ষা করুন।' : 'Manually inspect transactions and analyze risk scores.',
       icon: 'bolt',
       link: '/dashboard/simulator',
       color: 'text-yellow-400',
@@ -88,8 +88,8 @@ export default function DashboardLanding() {
                 <h1 className={`text-4xl md:text-5xl font-black bg-gradient-to-r ${brandGradient} to-white bg-clip-text text-transparent mb-1 tracking-tight`}>
                   {language === 'bn' ? 'ক্লোভারশিল্ড' : 'CLOVERSHIELD'}
                 </h1>
-                <h2 className="text-sm md:text-base text-text-primary/80 font-mono tracking-widest uppercase">
-                  {language === 'bn' ? 'অ্যানালিস্ট ওয়ার্কস্টেশন' : 'Analyst Workstation'}
+                <h2 className="text-xs md:text-sm text-text-primary/60 font-mono tracking-[0.3em] uppercase">
+                  {language === 'bn' ? 'ফ্রড অ্যানালিস্ট ওয়ার্কস্টেশন' : 'Fraud Analyst Workstation'}
                 </h2>
               </div>
             </div>
