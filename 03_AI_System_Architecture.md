@@ -12,21 +12,21 @@ CloverShield is built on a **Sovereign AI Architecture**. Most AI solutions requ
 ```mermaid
 graph TB
     subgraph "Development Zone (Clover Crew)"
-        SYN[Synthetic Dataset<br/>PaySim] --> NB[Training Notebook]
-        NB --> BASE[Base Model v1.0]
+        SYN["Synthetic Dataset<br/>PaySim"] --> NB["Training Notebook"]
+        NB --> BASE["Base Model v1.0"]
     end
 
     subgraph "Sovereign Zone (On-Premise Bank Server)"
         subgraph "Docker Orchestration"
-            API[ML Inference API<br/>FastAPI]
-            UI[Analyst Workstation<br/>Next.js]
-            DB[(Local DB)<br/>Postgres]
+            API["ML Inference API<br/>FastAPI"]
+            UI["Analyst Workstation<br/>Next.js"]
+            DB[("Local DB<br/>Postgres")]
             
             UI <--> API
             API <--> DB
         end
         
-        PRIV[Private Bank Data] -->|Retrain Trigger| API
+        PRIV["Private Bank Data"] -->|Retrain Trigger| API
         BASE -->|Fine-tuned with| PRIV
     end
     

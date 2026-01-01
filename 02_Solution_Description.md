@@ -97,9 +97,9 @@ To ensure **Data Sovereignty**, the architecture is strictly containerized.
 graph TB
     subgraph "Client Infrastructure (On-Premise)"
         subgraph "Docker Container: CloverShield"
-            UI[Next.js Dashboard<br/>(The Workstation)]
-            API[FastAPI Inference Engine<br/>(The Brain)]
-            DB[(Supabase/Postgres)<br/>(The Vault)]
+            UI["Next.js Dashboard<br/>(The Workstation)"]
+            API["FastAPI Inference Engine<br/>(The Brain)"]
+            DB[("Supabase/Postgres)<br/>(The Vault")]
             
             UI -->|Internal Network| API
             UI -->|Internal Network| DB

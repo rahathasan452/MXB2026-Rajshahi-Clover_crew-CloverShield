@@ -28,9 +28,9 @@ We analyzed the current landscape. Solutions either offer high AI capability (bu
 
 ```mermaid
 quadrantChart
-    title Privacy vs. AI Capability
-    x-axis Low Privacy (Cloud) --> High Privacy (On-Prem)
-    y-axis Low AI (Rules) --> High AI (Deep Learning)
+    title "Privacy vs. AI Capability"
+    x-axis "Low Privacy (Cloud)" --> "High Privacy (On-Prem)"
+    y-axis "Low AI (Rules)" --> "High AI (Deep Learning)"
     quadrant-1 "CloverShield"
     quadrant-2 "Legacy On-Prem Systems"
     quadrant-3 "Spreadsheet Analysis"
