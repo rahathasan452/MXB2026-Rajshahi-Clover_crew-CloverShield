@@ -21,11 +21,32 @@ export default function InvestigatePage() {
   const [loading, setLoading] = useState(true)
   const [seeding, setSeeding] = useState(false)
 
-  // ... (existing fetchQueue and useEffect) ...
+  // Fetch Queue
+  const fetchQueue = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('view_investigation_queue')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20)
+      
+      if (error) throw error
+      setQueue(data || [])
+    } catch (err: any) {
+      console.error('Error fetching queue:', err)
+      toast.error('Failed to load queue')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (authUser) fetchQueue()
+  }, [authUser])
 
   // Seed Queue (Client-side implementation to bypass missing RPC)
   const handleSeed = async () => {
-    // ... (existing implementation) ...
     try {
       setSeeding(true)
       
@@ -82,7 +103,6 @@ export default function InvestigatePage() {
 
   // Handle Decision (Client-side implementation)
   const handleDecision = async (id: string, decision: 'APPROVE' | 'BLOCK') => {
-    // ... (existing implementation) ...
     // Optimistic Update
     const originalQueue = [...queue]
     setQueue(queue.filter(q => q.transaction_id !== id))
@@ -126,7 +146,7 @@ export default function InvestigatePage() {
 
   return (
     <div className={`min-h-screen bg-[#050714] text-white ${language === 'bn' ? 'font-bengali' : ''}`}>
-      {/* ... (existing nav) ... */}
+      {/* Nav */}
       <div className="bg-gradient-header border-b border-white/10 p-4 mb-6 sticky top-0 z-50 backdrop-blur-md">
         <div className="container mx-auto flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2 text-primary hover:text-white transition-colors">
