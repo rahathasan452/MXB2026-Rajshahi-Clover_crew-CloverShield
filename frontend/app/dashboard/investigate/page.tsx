@@ -6,8 +6,17 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+'use client'
+
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { useAppStore } from '@/store/useAppStore'
 import { predictFraud } from '@/lib/ml-api'
+import { Icon } from '@/components/Icon'
+import toast from 'react-hot-toast'
+import { formatDistanceToNow } from 'date-fns'
 
 export default function InvestigatePage() {
   const router = useRouter()
