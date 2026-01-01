@@ -42,22 +42,78 @@ export default function ProfilePage() {
             .eq('user_id', userId)
             .single()
           
-          if (error) throw error
-          userData = data
+          if (data) {
+            userData = data
+          } else {
+            // Check test_dataset for sender or receiver info
+            const { data: testData, error: testError } = await supabase
+              .from('test_dataset')
+              .select('*')
+              .or(`nameOrig.eq.${userId},nameDest.eq.${userId}`)
+              .limit(1)
+            
+            if (testData && testData.length > 0) {
+              const td = testData[0]
+              const isSender = td.nameOrig === userId
+              userData = {
+                user_id: userId,
+                name_en: isSender ? `Sender ${userId}` : `Receiver ${userId}`,
+                name_bn: isSender ? `প্রেরক ${userId}` : `প্রাপক ${userId}`,
+                phone: '+8801' + Math.floor(100000000 + Math.random() * 900000000).toString(),
+                provider: 'bKash',
+                balance: isSender ? td.oldBalanceOrig : td.oldBalanceDest,
+                account_age_days: Math.floor(Math.random() * 500),
+                total_transactions: 1,
+                avg_transaction_amount: td.amount,
+                verified: true,
+                kyc_complete: true,
+                risk_level: td.isFlaggedFraud ? 'high' : 'low',
+                is_from_test_dataset: true
+              }
+            }
+          }
         }
         setUser(userData)
 
         // 2. Get Transaction History
-        // Union of live transactions and test history
-        const { data: txData, error: txError } = await supabase
+        // Union of live transactions, simulated history, and raw test dataset
+        const historyData: any[] = []
+
+        // A. Real/Simulated History
+        const { data: txData } = await supabase
           .from('transaction_history')
           .select('*')
           .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
           .order('transaction_timestamp', { ascending: false })
           .limit(10)
         
-        if (txError) throw txError
-        setHistory(txData || [])
+        if (txData) historyData.push(...txData)
+
+        // B. Raw Test Dataset (if we need more or if user is only in test_dataset)
+        if (historyData.length < 5) {
+          const { data: rawTestData } = await supabase
+            .from('test_dataset')
+            .select('*')
+            .or(`nameOrig.eq.${userId},nameDest.eq.${userId}`)
+            .order('step', { ascending: false })
+            .limit(10)
+          
+          if (rawTestData) {
+            const mappedRaw = rawTestData.map(td => ({
+              transaction_id: `test-${td.id}`,
+              sender_id: td.nameOrig,
+              receiver_id: td.nameDest,
+              amount: td.amount,
+              transaction_type: td.type,
+              created_at: new Date(Date.now() - (td.step * 3600000)).toISOString(), // Mock time based on step
+              status: 'COMPLETED',
+              is_test_data: true
+            }))
+            historyData.push(...mappedRaw)
+          }
+        }
+
+        setHistory(historyData.sort((a, b) => new Date(b.created_at || b.transaction_timestamp).getTime() - new Date(a.created_at || a.transaction_timestamp).getTime()))
 
       } catch (err: any) {
         console.error('Profile load error:', err)
@@ -90,13 +146,36 @@ export default function ProfilePage() {
       // Only search if length > 1 to avoid too many matches
       if (searchId.length < 2) return
 
-      const { data } = await supabase
+      // Search real users
+      const { data: realUsers } = await supabase
         .from('users')
         .select('*')
         .or(`user_id.ilike.%${searchId}%,name_en.ilike.%${searchId}%`)
         .limit(5)
       
-      setSearchResults(data || [])
+      const results = [...(realUsers || [])]
+
+      // Search test dataset if results are low
+      if (results.length < 5) {
+        const { data: testUsers } = await supabase
+          .from('test_dataset')
+          .select('nameOrig, nameDest')
+          .or(`nameOrig.ilike.%${searchId}%,nameDest.ilike.%${searchId}%`)
+          .limit(5)
+        
+        if (testUsers) {
+          testUsers.forEach(tu => {
+            if (tu.nameOrig.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameOrig)) {
+              results.push({ user_id: tu.nameOrig, name_en: `Sender ${tu.nameOrig}`, is_test: true })
+            }
+            if (tu.nameDest.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameDest)) {
+              results.push({ user_id: tu.nameDest, name_en: `Receiver ${tu.nameDest}`, is_test: true })
+            }
+          })
+        }
+      }
+      
+      setSearchResults(results.slice(0, 10))
     }, 300)
 
     return () => clearTimeout(timer)
@@ -138,7 +217,14 @@ export default function ProfilePage() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-bold text-white">{user.name_en}</div>
+                        <div className="font-bold text-white flex items-center gap-2">
+                          {user.name_en}
+                          {user.is_test && (
+                            <span className="text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded border border-purple-500/30 uppercase">
+                              Test Dataset
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-text-secondary font-mono">{user.user_id}</div>
                       </div>
                       <Icon name="chevron_right" size={16} className="text-text-secondary" />

@@ -31,6 +31,8 @@ export interface User {
   created_at?: string
   updated_at?: string
   last_transaction_at?: string
+  is_from_test_dataset?: boolean
+  is_test?: boolean
 }
 
 export interface Transaction {

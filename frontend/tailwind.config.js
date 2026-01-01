@@ -9,7 +9,7 @@ module.exports = {
     extend: {
       colors: {
         // CloverShield Theme Colors (matching Streamlit app)
-        primary: '#00D9FF',
+        primary: '#009E60',
         success: '#00FF88',
         warning: '#FFD700',
         danger: '#FF4444',
@@ -20,6 +20,7 @@ module.exports = {
         // MFS Brand Colors
         'bkash-pink': '#E2136E',
         'nagad-orange': '#F7921E',
+        'clover': '#009E60',
         // Semantic colors
         neutral: '#3B82F6',
         caution: '#F59E0B',

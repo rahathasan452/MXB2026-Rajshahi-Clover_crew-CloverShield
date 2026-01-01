@@ -577,12 +577,51 @@ async def backtest_rule(request: BacktestRequest):
         
         # 3. Apply the rule logic
         # Safety check: basic sanitation to prevent arbitrary code execution
-        # Pandas query() is relatively safe but we should be careful
-        allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ ><=!&|().'\"")
+        allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ ><=!&|().'\"-,")
         clean_query = "".join(c for c in request.rule_logic if c in allowed_chars)
         
+        # Check if we need feature engineering
+        complex_features = [
+            'orig_txn_count', 'dest_txn_count', 'in_degree', 'out_degree', 
+            'network_trust', 'hour', 'amt_ratio_to_user_median', 
+            'amount_over_oldBalanceOrig', 'amt_ratio_to_user_mean', 'amount_log1p',
+            'is_new_origin', 'is_new_dest'
+        ]
+        
+        needs_engineering = any(feat in clean_query for feat in complex_features)
+        
+        df_to_query = test_slice
+        
+        if needs_engineering:
+            try:
+                from feature_engineering import FraudFeatureEngineer
+                # We fit on the FULL dataset to get accurate history/graph stats
+                # This ensures orig_txn_count reflects the full history, not just the slice
+                fe = FraudFeatureEngineer(pagerank_limit=10000) # Limit pagerank for speed
+                fe.fit(simulation_manager.dataset)
+                
+                # Transform the slice to get the features
+                df_eng = fe.transform(test_slice)
+                
+                # FraudFeatureEngineer drops string columns like 'type', 'nameOrig'
+                # We need 'type' back for filtering if the rule uses it
+                if 'type' not in df_eng.columns and 'type' in test_slice.columns:
+                    # Align by index
+                    df_eng['type'] = test_slice['type']
+                
+                # Ensure ground truth columns are present for precision calc
+                for col in ['isFraud', 'isFlaggedFraud']:
+                    if col in test_slice.columns and col not in df_eng.columns:
+                        df_eng[col] = test_slice[col]
+                        
+                df_to_query = df_eng
+            except ImportError:
+                print("⚠️ Feature engineering module not found, proceeding with raw data")
+            except Exception as e:
+                print(f"⚠️ Feature engineering failed: {e}, proceeding with raw data")
+        
         # Run the query
-        matches = test_slice.query(clean_query)
+        matches = df_to_query.query(clean_query)
         
         # 4. Calculate metrics
         matches_count = len(matches)

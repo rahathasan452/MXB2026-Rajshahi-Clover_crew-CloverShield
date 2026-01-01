@@ -19,8 +19,9 @@ export default function DashboardLanding() {
   const { language, brandTheme, authUser } = useAppStore()
 
   const isBkash = brandTheme === 'bkash'
-  const brandColor = isBkash ? 'border-bkash-pink' : 'border-nagad-orange'
-  const brandGradient = isBkash ? 'from-bkash-pink' : 'from-nagad-orange'
+  // Updated to Clover Green as requested for top UI
+  const brandColor = 'border-clover' 
+  const brandGradient = 'from-clover'
 
   // Route protection handled by layout or middleware ideally, but here for safety
   if (!authUser) {
