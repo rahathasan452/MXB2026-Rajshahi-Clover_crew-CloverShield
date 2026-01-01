@@ -18,7 +18,7 @@ const hindSiliguri = Hind_Siliguri({
 })
 
 export const metadata: Metadata = {
-  title: 'CloverShield - Fraud Detection System',
+  title: 'CloverShield Fraud Analyst Workstation',
   description: 'Mobile Banking Fraud Detection System for Bangladesh',
   icons: {
     icon: '/logo.png',

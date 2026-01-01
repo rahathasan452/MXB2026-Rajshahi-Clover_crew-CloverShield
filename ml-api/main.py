@@ -137,6 +137,7 @@ app.add_middleware(
 # ============================================================================
 
 inference_engine: Optional[FraudInference] = None
+cached_feature_engineer = None
 model_loading_lock = False
 MODEL_VERSION = "1.0.0"
 MODEL_THRESHOLD = float(os.getenv("MODEL_THRESHOLD", "0.0793"))
@@ -329,6 +330,19 @@ async def startup_event():
                 break
                 
         simulation_manager.load_dataset(path_to_use)
+        
+        # Pre-fit feature engineer to avoid timeout on first request
+        try:
+            print("⚙️ Pre-fitting feature engineer (background)...")
+            global cached_feature_engineer
+            from feature_engineering import FraudFeatureEngineer
+            fe = FraudFeatureEngineer(pagerank_limit=10000)
+            fe.fit(simulation_manager.dataset)
+            cached_feature_engineer = fe
+            print("✅ Feature engineer pre-fitted and cached")
+        except Exception as e:
+            print(f"⚠️ Failed to pre-fit feature engineer: {str(e)}")
+            
     except Exception as e:
         print(f"⚠️ Failed to load simulation dataset: {str(e)}")
 
@@ -594,14 +608,24 @@ async def backtest_rule(request: BacktestRequest):
         
         if needs_engineering:
             try:
-                from feature_engineering import FraudFeatureEngineer
-                # We fit on the FULL dataset to get accurate history/graph stats
-                # This ensures orig_txn_count reflects the full history, not just the slice
-                fe = FraudFeatureEngineer(pagerank_limit=10000) # Limit pagerank for speed
-                fe.fit(simulation_manager.dataset)
+                # Use cached feature engineer if available
+                global cached_feature_engineer
+                
+                if cached_feature_engineer is None:
+                    print("⚙️ Fitting feature engineer for the first time...")
+                    from feature_engineering import FraudFeatureEngineer
+                    # We fit on the FULL dataset to get accurate history/graph stats
+                    # This ensures orig_txn_count reflects the full history, not just the slice
+                    fe = FraudFeatureEngineer(pagerank_limit=10000) # Limit pagerank for speed
+                    fe.fit(simulation_manager.dataset)
+                    cached_feature_engineer = fe
+                    print("✅ Feature engineer fitted and cached")
+                else:
+                    print("⚡ Using cached feature engineer")
                 
                 # Transform the slice to get the features
-                df_eng = fe.transform(test_slice)
+                # Use the cached instance
+                df_eng = cached_feature_engineer.transform(test_slice)
                 
                 # FraudFeatureEngineer drops string columns like 'type', 'nameOrig'
                 # We need 'type' back for filtering if the rule uses it

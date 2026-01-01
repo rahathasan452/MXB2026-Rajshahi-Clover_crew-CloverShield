@@ -20,7 +20,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds for ML prediction
+  timeout: 300000, // 300 seconds (5 mins) for ML prediction and heavy backtests
 })
 
 // Helper function to get detailed error message
