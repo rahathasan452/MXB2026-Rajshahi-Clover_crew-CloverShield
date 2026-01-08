@@ -45,6 +45,19 @@ export default function ReceiverPage() {
         setDebugStats({ scans: 0, lastFrame: '' })
     }
 
+    const handleExport = () => {
+        if (!data) return
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `secure_payload_${new Date().getTime()}.json`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+    }
+
     return (
         <div className="min-h-screen bg-black text-green-500 font-mono flex flex-col">
             {/* Header */}
@@ -123,12 +136,20 @@ export default function ReceiverPage() {
                                     <h2 className="text-xl font-bold text-green-400">PAYLOAD RECEIVED</h2>
                                     <p className="text-xs text-green-700 mt-1">INTEGRITY CHECK: PASSED</p>
                                 </div>
-                                <button
-                                    onClick={handleReset}
-                                    className="text-xs bg-green-900/20 hover:bg-green-900/40 text-green-400 px-3 py-2 rounded border border-green-800 transition-colors"
-                                >
-                                    SCAN NEW
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleExport}
+                                        className="text-xs bg-green-900/20 hover:bg-green-900/40 text-green-400 px-3 py-2 rounded border border-green-800 transition-colors flex items-center gap-2"
+                                    >
+                                        <Icon name="download" /> SAVE
+                                    </button>
+                                    <button
+                                        onClick={handleReset}
+                                        className="text-xs bg-green-900/20 hover:bg-green-900/40 text-green-400 px-3 py-2 rounded border border-green-800 transition-colors"
+                                    >
+                                        SCAN NEW
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Determine Data Type and Render */}
@@ -186,6 +207,6 @@ export default function ReceiverPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     )
 }

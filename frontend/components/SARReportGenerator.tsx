@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     margin: 'auto',
     marginTop: 5,
     fontSize: 9
-  }, 
+  },
   footer: {
     position: 'absolute',
     bottom: 30,
@@ -187,13 +187,14 @@ export const SARReportGenerator: React.FC<SARReportProps> = ({ caseId, transacti
   const [narrative, setNarrative] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
+  const [reportTransactions, setReportTransactions] = useState<any[]>([])
 
   const prepareReport = async () => {
     setLoading(true)
     try {
       // Map transactions to fit API requirement if needed
       const validTransactions = transactions.map(t => ({
-        step: t.step || 1,
+        step: t.timestamp || t.step || 'N/A', // Map timestamp to step/time column
         type: t.transaction_type || t.type || 'TRANSFER',
         amount: parseFloat(t.amount),
         nameOrig: t.sender_id || t.nameOrig || 'Unknown',
@@ -204,13 +205,31 @@ export const SARReportGenerator: React.FC<SARReportProps> = ({ caseId, transacti
         newBalanceDest: parseFloat(t.new_balance_dest || t.newBalanceDest || 0)
       })) as TransactionInput[]
 
+      setReportTransactions(validTransactions)
+
       const result = await generateSARNarrative(caseId, validTransactions, analystNotes)
       setNarrative(result.narrative)
       setReady(true)
     } catch (error) {
       console.error("Failed to generate narrative", error)
       setNarrative("Narrative generation failed. Please fill manually.")
-      setReady(true) // Still allow download without AI text
+      // Even if AI fails, we still want to allow PDF download with mapped data
+      if (reportTransactions.length === 0) {
+        // Re-run mapping if it wasn't set yet (though it should be above)
+        const validTransactions = transactions.map(t => ({
+          step: t.timestamp || t.step || 'N/A',
+          type: t.transaction_type || t.type || 'TRANSFER',
+          amount: parseFloat(t.amount),
+          nameOrig: t.sender_id || t.nameOrig || 'Unknown',
+          oldBalanceOrig: parseFloat(t.old_balance_orig || t.oldBalanceOrig || 0),
+          newBalanceOrig: parseFloat(t.new_balance_orig || t.newBalanceOrig || 0),
+          nameDest: t.receiver_id || t.nameDest || 'Unknown',
+          oldBalanceDest: parseFloat(t.old_balance_dest || t.oldBalanceDest || 0),
+          newBalanceDest: parseFloat(t.new_balance_dest || t.newBalanceDest || 0)
+        })) as TransactionInput[]
+        setReportTransactions(validTransactions)
+      }
+      setReady(true)
     } finally {
       setLoading(false)
     }
@@ -219,8 +238,8 @@ export const SARReportGenerator: React.FC<SARReportProps> = ({ caseId, transacti
   return (
     <div className="flex flex-col gap-4">
       {!ready ? (
-        <button 
-          onClick={prepareReport} 
+        <button
+          onClick={prepareReport}
           disabled={loading}
           className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded flex items-center justify-center gap-2 font-mono text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -236,21 +255,21 @@ export const SARReportGenerator: React.FC<SARReportProps> = ({ caseId, transacti
         </button>
       ) : (
         <PDFDownloadLink
-          document={<SARDocument caseId={caseId} transactions={transactions} narrative={narrative} analystName={analystName} />}
+          document={<SARDocument caseId={caseId} transactions={reportTransactions} narrative={narrative} analystName={analystName} />}
           fileName={`SAR_${caseId}.pdf`}
-          className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded flex items-center justify-center gap-2 font-mono text-sm transition-all shadow-[0_0_15px_rgba(220,38,38,0.4)]"
+          className="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded flex items-center justify-center gap-2 font-mono text-sm transition-all shadow-[0_0_15px_rgba(13,148,136,0.4)]"
         >
           {({ blob, url, loading, error }) =>
             loading ? 'Preparing PDF...' : <><Icon name="download" /> Download Official SAR PDF</>
           }
         </PDFDownloadLink>
       )}
-      
+
       {ready && (
-         <div className="mt-2 p-3 bg-slate-900/50 border border-slate-700 rounded text-xs text-slate-400 font-mono">
-            <strong>AI Narrative Preview:</strong>
-            <p className="mt-1 italic opacity-80 line-clamp-3">{narrative}</p>
-         </div>
+        <div className="mt-2 p-3 bg-slate-900/50 border border-slate-700 rounded text-xs text-slate-400 font-mono">
+          <strong>AI Narrative Preview:</strong>
+          <p className="mt-1 italic opacity-80 line-clamp-3">{narrative}</p>
+        </div>
       )}
     </div>
   )
