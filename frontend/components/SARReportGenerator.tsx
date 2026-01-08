@@ -192,9 +192,11 @@ export const SARReportGenerator: React.FC<SARReportProps> = ({ caseId, transacti
   const prepareReport = async () => {
     setLoading(true)
     try {
-      // Map transactions to fit API requirement if needed
-      const validTransactions = transactions.map(t => ({
-        step: t.timestamp || t.step || 'N/A', // Map timestamp to step/time column
+      // 1. Prepare data for PDF Report (Display-friendly strings)
+      // We map timestamp to 'step' or a new 'time' field if we updated SARDocument, 
+      // but for now re-using 'step' as the visual column for Time.
+      const reportData = transactions.map(t => ({
+        step: t.timestamp || t.step || 'N/A',
         type: t.transaction_type || t.type || 'TRANSFER',
         amount: parseFloat(t.amount),
         nameOrig: t.sender_id || t.nameOrig || 'Unknown',
@@ -205,18 +207,35 @@ export const SARReportGenerator: React.FC<SARReportProps> = ({ caseId, transacti
         newBalanceDest: parseFloat(t.new_balance_dest || t.newBalanceDest || 0)
       })) as TransactionInput[]
 
-      setReportTransactions(validTransactions)
+      setReportTransactions(reportData)
 
-      const result = await generateSARNarrative(caseId, validTransactions, analystNotes)
+      // 2. Prepare data for API (Strict Type Adherence)
+      // API expects 'step' to be an integer (time step), NOT a string timestamp
+      const apiTransactions = transactions.map(t => ({
+        step: 1, // Defaulting to 1 as actual quantitative step is rarely used by LLM for narrative
+        type: t.transaction_type || t.type || 'TRANSFER',
+        amount: parseFloat(t.amount),
+        nameOrig: t.sender_id || t.nameOrig || 'Unknown',
+        oldBalanceOrig: parseFloat(t.old_balance_orig || t.oldBalanceOrig || 0),
+        newBalanceOrig: parseFloat(t.new_balance_orig || t.newBalanceOrig || 0),
+        nameDest: t.receiver_id || t.nameDest || 'Unknown',
+        oldBalanceDest: parseFloat(t.old_balance_dest || t.oldBalanceDest || 0),
+        newBalanceDest: parseFloat(t.new_balance_dest || t.newBalanceDest || 0)
+      })) as TransactionInput[]
+
+      const result = await generateSARNarrative(caseId, apiTransactions, analystNotes)
       setNarrative(result.narrative)
       setReady(true)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate narrative", error)
-      setNarrative("Narrative generation failed. Please fill manually.")
-      // Even if AI fails, we still want to allow PDF download with mapped data
+      // Extract specific error if available
+      const specificError = error.message || "Unknown error"
+      setNarrative(`Narrative generation failed: ${specificError}. Please fill manually.`)
+
+      // Ensure PDF download is still possible if it wasn't set successfully above
+      // (Though it sets before the API call now, so this is just a fallback)
       if (reportTransactions.length === 0) {
-        // Re-run mapping if it wasn't set yet (though it should be above)
-        const validTransactions = transactions.map(t => ({
+        const reportData = transactions.map(t => ({
           step: t.timestamp || t.step || 'N/A',
           type: t.transaction_type || t.type || 'TRANSFER',
           amount: parseFloat(t.amount),
@@ -227,7 +246,7 @@ export const SARReportGenerator: React.FC<SARReportProps> = ({ caseId, transacti
           oldBalanceDest: parseFloat(t.old_balance_dest || t.oldBalanceDest || 0),
           newBalanceDest: parseFloat(t.new_balance_dest || t.newBalanceDest || 0)
         })) as TransactionInput[]
-        setReportTransactions(validTransactions)
+        setReportTransactions(reportData)
       }
       setReady(true)
     } finally {

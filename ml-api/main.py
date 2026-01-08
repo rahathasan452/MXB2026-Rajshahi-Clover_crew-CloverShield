@@ -642,10 +642,15 @@ async def generate_sar_narrative(request: SARRequest):
         {str([t.dict() for t in request.transactions[:5]])}
         
         Instructions:
-        1. Summarize the suspicious activity concisely.
-        2. Highlight specific patterns (e.g., structuring, rapid movement of funds).
-        3. Use professional, regulatory language suitable for the Bangladesh Financial Intelligence Unit (BFIU).
-        4. Do not include markdown formatting. Just the raw text paragraphs.
+        Write a comprehensive narrative including the following sections. use Markdown headers (e.g. ## Section Name) for each section.
+        
+        1. **Risk Indicators / Red Flags**: Explicitly state why the activity is suspicious (e.g., rapid fund movement, structuring).
+        2. **Behavioral Pattern Analysis**: key behaviors (timing, frequency, directional flow).
+        3. **Risk Scoring / Severity Assessment**: Assign an overall risk level (Low/Medium/High) with factors and confidence.
+        4. **Transaction Flow Overview**: Explain the money movement clearly without diagrams.
+        5. **Recommended Actions**: logical next steps for the FIU (e.g., enhanced due diligence, account monitoring).
+        
+        Tone: Professional, objective, and regulatory-focused suitable for the Bangladesh Financial Intelligence Unit (BFIU).
         """
         
         chat_completion = client.chat.completions.create(
