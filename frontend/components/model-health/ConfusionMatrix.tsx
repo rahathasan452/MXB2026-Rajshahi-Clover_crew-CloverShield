@@ -30,10 +30,10 @@ export const ConfusionMatrix = () => {
 
     // Emerald color scale
     const getColor = (v: number) => {
-        // Max value is around 900 based on mock data, normalising vaguely
-        if (v > 800) return 'rgba(16, 185, 129, 1)' // emerald-500
-        if (v > 50) return 'rgba(52, 211, 153, 0.8)' // emerald-400
-        if (v > 10) return 'rgba(110, 231, 183, 0.6)' // emerald-300
+        // Adjusted for 137k dataset size
+        if (v > 100000) return 'rgba(16, 185, 129, 1)' // emerald-500
+        if (v > 1000) return 'rgba(52, 211, 153, 0.8)' // emerald-400
+        if (v > 100) return 'rgba(110, 231, 183, 0.6)' // emerald-300
         return 'rgba(209, 250, 229, 0.4)' // emerald-100
     }
 

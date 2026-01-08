@@ -1,17 +1,17 @@
 
 export const MODEL_SUMMARY = {
-  accuracy: 0.98,
-  precision: 0.95,
-  recall: 0.92,
-  f1: 0.93,
+  accuracy: 0.998,
+  precision: 0.908,
+  recall: 1.00,
+  f1: 0.952,
 };
 
 // Structure: x = Predicted, y = Actual
 export const CONFUSION_MATRIX_DATA = [
-  { x: 'Legit', y: 'Legit', v: 900 }, // True Negative
-  { x: 'Fraud', y: 'Legit', v: 5 },   // False Positive
-  { x: 'Legit', y: 'Fraud', v: 8 },   // False Negative
-  { x: 'Fraud', y: 'Fraud', v: 92 },  // True Positive
+  { x: 'Legit', y: 'Legit', v: 134543 }, // True Negative
+  { x: 'Fraud', y: 'Legit', v: 298 },    // False Positive
+  { x: 'Legit', y: 'Fraud', v: 0 },      // False Negative
+  { x: 'Fraud', y: 'Fraud', v: 2938 },   // True Positive
 ];
 
 export const ROC_DATA = [
