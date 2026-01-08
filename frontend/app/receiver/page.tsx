@@ -57,7 +57,11 @@ export default function ReceiverPage() {
                 {/* Scanner Viewport */}
                 <div className="aspect-square bg-green-900/10 border-2 border-green-500/50 rounded-lg overflow-hidden relative shadow-[0_0_50px_rgba(34,197,94,0.1)]">
                     <Scanner 
-                        onResult={(text: string) => handleScan(text)}
+                        onScan={(result) => {
+                            if (result[0]?.rawValue) {
+                                handleScan(result[0].rawValue)
+                            }
+                        }}
                         onError={(error: any) => console.log(error?.message)}
                         components={{
                             onOff: false,
