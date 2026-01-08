@@ -237,6 +237,38 @@ export const getModelInfo = async () => {
   }
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface ChatRequest {
+  messages: ChatMessage[]
+  context?: string
+}
+
+export interface ChatResponse {
+  response: string
+  processing_time_ms: number
+}
+
+/**
+ * Chat with the CloverShield Assistant
+ */
+export const chatWithBot = async (messages: ChatMessage[], context?: string): Promise<ChatResponse> => {
+  try {
+    const response = await apiClient.post<ChatResponse>('/chat', {
+      messages,
+      context
+    })
+    return response.data
+  } catch (error: any) {
+    console.error('Chat request failed:', error)
+    const errorMessage = getErrorMessage(error)
+    throw new Error(errorMessage)
+  }
+}
+
 /**
  * Verify ML API configuration and connectivity
  * Useful for debugging connection issues

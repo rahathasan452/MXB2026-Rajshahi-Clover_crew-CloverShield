@@ -543,6 +543,20 @@ class BacktestResponse(BaseModel):
     total_tested: int
     execution_time_ms: int
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    """Request model for chat endpoint"""
+    messages: List[ChatMessage]
+    context: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    """Response model for chat endpoint"""
+    response: str
+    processing_time_ms: int
+
 # ============================================================================
 # BACKTEST ENDPOINTS
 # ============================================================================
@@ -677,6 +691,80 @@ async def backtest_rule(request: BacktestRequest):
     except Exception as e:
         # Catch query syntax errors
         raise HTTPException(status_code=400, detail=f"Invalid rule logic: {str(e)}")
+
+
+# ============================================================================
+# CHAT ENDPOINT
+# ============================================================================
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat_with_bot(request: ChatRequest):
+    """
+    Chat with the CloverShield Fraud Analyst Assistant.
+    """
+    start_time = time.time()
+    
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    if not groq_api_key:
+        raise HTTPException(status_code=503, detail="Groq API key not configured")
+        
+    try:
+        from groq import Groq
+        client = Groq(api_key=groq_api_key)
+    except ImportError:
+         raise HTTPException(status_code=503, detail="Groq library not installed")
+
+    system_prompt = """
+You are CloverShield, an expert AI Fraud Analyst Assistant designed for mobile financial services in Bangladesh.
+Your goal is to help human analysts detect fraud, understand the system, and improve policies.
+
+**Your Capabilities:**
+1.  **Explain App Features:**
+    -   **Scanner:** Real-time transaction scoring. You can explain how to input data and interpret risk scores (Pass, Warn, Block).
+    -   **Simulator:** A way to run thousands of synthetic transactions to test system stability and observe patterns.
+    -   **Graph:** Visualizes money laundering rings (structuring/smurfing). Nodes are users, edges are transactions.
+    -   **Policy Lab (Sandbox):** Allows analysts to test new rules (e.g., "amount > 50000") against historical data to measure impact.
+
+2.  **Fraud Domain Expertise:**
+    -   Explain fraud patterns like **Smurfing** (many small txs to one account), **Mule Accounts**, **Account Takeover**, and **Velocity Attacks**.
+    -   Suggest rules for specific scenarios (e.g., "To catch high-value bursts, try: `amount > 10000 and orig_txn_count > 5`").
+    -   Draft reports: You can help draft Suspicious Activity Reports (SARs).
+
+3.  **Tone & Style:**
+    -   Professional, concise, and helpful.
+    -   Use simple language but demonstrate deep domain knowledge.
+    -   If the user asks about a specific transaction ID or user, politely explain that you can currently only answer general questions or questions based on the provided context (you don't have direct DB access in this chat window).
+
+**Current Context:**
+{context}
+"""
+    
+    # Format messages for Groq
+    messages = [{"role": "system", "content": system_prompt.format(context=request.context or "No specific context provided.")}]
+    
+    # Add user history
+    for msg in request.messages:
+        messages.append({"role": msg.role, "content": msg.content})
+
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=messages,
+            model="llama-3.1-8b-instant",
+            temperature=0.4,
+            max_tokens=800
+        )
+        
+        response_text = chat_completion.choices[0].message.content.strip()
+        processing_time = int((time.time() - start_time) * 1000)
+        
+        return ChatResponse(
+            response=response_text,
+            processing_time_ms=processing_time
+        )
+        
+    except Exception as e:
+        print(f"❌ Chat generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Chat generation failed: {str(e)}")
 
 
 # ============================================================================
