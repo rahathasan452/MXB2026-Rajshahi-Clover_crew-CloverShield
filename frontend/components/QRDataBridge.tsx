@@ -39,7 +39,7 @@ export const QRDataBridge: React.FC<QRDataBridgeProps> = ({ data, label = "Secur
   useEffect(() => {
     if (showQR && mode === 'animated' && frames.length > 0) {
       const intervalMs = 1000 / fps
-      
+
       timerRef.current = setInterval(() => {
         setCurrentFrameIdx(prev => (prev + 1) % frames.length)
       }, intervalMs)
@@ -54,7 +54,7 @@ export const QRDataBridge: React.FC<QRDataBridgeProps> = ({ data, label = "Secur
 
   return (
     <div className="border border-slate-700 bg-slate-900 rounded-lg overflow-hidden">
-      <div 
+      <div
         className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800 transition-colors"
         onClick={() => setShowQR(!showQR)}
       >
@@ -72,16 +72,16 @@ export const QRDataBridge: React.FC<QRDataBridgeProps> = ({ data, label = "Secur
 
       {showQR && (
         <div className="p-6 bg-white flex flex-col items-center justify-center animate-in fade-in zoom-in duration-200">
-          
+
           {/* Mode Toggle */}
           <div className="flex bg-slate-100 p-1 rounded-lg mb-4 w-full max-w-[200px]">
-            <button 
+            <button
               onClick={() => setMode('static')}
               className={`flex-1 py-1 text-xs font-bold rounded ${mode === 'static' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-black'}`}
             >
               Static
             </button>
-            <button 
+            <button
               onClick={() => setMode('animated')}
               className={`flex-1 py-1 text-xs font-bold rounded ${mode === 'animated' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-black'}`}
             >
@@ -89,19 +89,23 @@ export const QRDataBridge: React.FC<QRDataBridgeProps> = ({ data, label = "Secur
             </button>
           </div>
 
+          {/* Frame Counter - Outside QR to prevent obstruction */}
+          {mode === 'animated' && (
+            <div className="w-full max-w-[200px] flex justify-end mb-1">
+              <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {currentFrameIdx + 1}/{frames.length}
+              </span>
+            </div>
+          )}
+
           <div className="p-2 border-2 border-black rounded mb-4 relative">
-            <QRCode 
-              value={currentQRValue} 
-              size={200} 
-              level="M" 
+            <QRCode
+              value={currentQRValue}
+              size={200}
+              level="M"
             />
-            {mode === 'animated' && (
-                <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-bl">
-                    {currentFrameIdx + 1}/{frames.length}
-                </div>
-            )}
           </div>
-          
+
           <p className="text-center text-black font-mono text-xs max-w-[200px] mb-2">
             SCAN WITH SECURE TERMINAL
           </p>
@@ -112,11 +116,11 @@ export const QRDataBridge: React.FC<QRDataBridgeProps> = ({ data, label = "Secur
                 <span>Speed: {fps} FPS</span>
                 <span>{Math.round(frames.length * 200 / 1024)} KB Total</span>
               </div>
-              <input 
-                type="range" 
-                min="1" 
-                max="30" 
-                value={fps} 
+              <input
+                type="range"
+                min="1"
+                max="30"
+                value={fps}
                 onChange={(e) => setFps(parseInt(e.target.value))}
                 className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
               />
@@ -124,7 +128,7 @@ export const QRDataBridge: React.FC<QRDataBridgeProps> = ({ data, label = "Secur
           )}
 
           <div className="mt-2 text-[10px] text-gray-500 text-center break-all w-full max-w-[250px]">
-             {mode === 'static' ? `MD5: ${data.caseId?.substring(0,8)}...` : 'Transferring Full Payload...'}
+            {mode === 'static' ? `MD5: ${data.caseId?.substring(0, 8)}...` : 'Transferring Full Payload...'}
           </div>
         </div>
       )}
