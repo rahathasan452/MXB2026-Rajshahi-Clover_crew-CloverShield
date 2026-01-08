@@ -438,6 +438,7 @@ class FraudInference:
                     f"সিদ্ধান্ত: {'ফ্রড সনাক্ত হয়েছে - লেনদেন ব্লক করা হয়েছে' if is_fraud else ('সতর্কতা - ম্যানুয়াল পর্যালোচনা প্রয়োজন' if decision == 'warn' else 'লেনদেন নিরাপদ - অনুমোদন করা যেতে পারে')}\n"
                     f"লেনদেনের তথ্য:\n{tx_info}"
                     f"\nএকটি সহজ, ব্যবহারকারী-বান্ধব ব্যাখ্যা লিখুন যা ব্যবহারকারীকে বুঝতে সাহায্য করবে কেন এই লেনদেন নিরাপদ বা ঝুঁকিপূর্ণ, এবং তাদের কী জানা উচিত বা সতর্ক থাকতে হবে।"
+                    f"\nগুরুত্বপূর্ণ: কোনো মার্কডাউন ফরম্যাটিং ব্যবহার করবেন না (কোনো ** বোল্ড বা ## হেডার নয়)। শুধুমাত্র প্লেইন টেক্সট ব্যবহার করুন।"
                 )
             else:
                 system_prompt = (
@@ -452,6 +453,7 @@ class FraudInference:
                     "- What they can do or should avoid "
                     "The explanation should be simple, friendly, and actionable for the user. "
                     "Focus on what matters to them, not technical details."
+                    "IMPORTANT: Do NOT use Markdown formatting (no bold **, no headers ##). Use plain text only."
                 )
                 
                 tx_info = ""

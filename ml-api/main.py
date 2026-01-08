@@ -638,17 +638,20 @@ async def generate_sar_narrative(request: SARRequest):
         
         Analyst Notes: {request.analyst_notes or "None"}
         
-        Transaction Sample:
-        {str([t.dict() for t in request.transactions[:5]])}
-        
         Instructions:
-        Write a comprehensive narrative including the following sections. use Markdown headers (e.g. ## Section Name) for each section.
+        Write a comprehensive narrative including the following sections.
+        STRICT RULES:
+        1. DO NOT use any Markdown formatting (NO asterisks *, NO hashes #, NO bolding).
+        2. Use UPPERCASE letters for section headers (e.g. RISK INDICATORS).
+        3. Use simple dashes - for lists.
+        4. Start directly with the first section header. Do NOT use "Narrative:" at the top.
         
-        1. **Risk Indicators / Red Flags**: Explicitly state why the activity is suspicious (e.g., rapid fund movement, structuring).
-        2. **Behavioral Pattern Analysis**: key behaviors (timing, frequency, directional flow).
-        3. **Risk Scoring / Severity Assessment**: Assign an overall risk level (Low/Medium/High) with factors and confidence.
-        4. **Transaction Flow Overview**: Explain the money movement clearly without diagrams.
-        5. **Recommended Actions**: logical next steps for the FIU (e.g., enhanced due diligence, account monitoring).
+        Sections to include:
+        1. RISK INDICATORS / RED FLAGS: Explicitly state why the activity is suspicious (e.g., rapid fund movement, structuring).
+        2. BEHAVIORAL PATTERN ANALYSIS: key behaviors (timing, frequency, directional flow).
+        3. RISK SCORING / SEVERITY ASSESSMENT: Assign an overall risk level (Low/Medium/High) with factors and confidence.
+        4. TRANSACTION FLOW OVERVIEW: Explain the money movement clearly without diagrams.
+        5. RECOMMENDED ACTIONS: logical next steps for the FIU (e.g., enhanced due diligence, account monitoring).
         
         Tone: Professional, objective, and regulatory-focused suitable for the Bangladesh Financial Intelligence Unit (BFIU).
         """
@@ -874,24 +877,29 @@ async def chat_with_bot(request: ChatRequest):
 You are CloverShield, an expert AI Fraud Analyst Assistant designed for mobile financial services in Bangladesh.
 Your goal is to help human analysts detect fraud, understand the system, and improve policies.
 
-**Your Capabilities:**
-1.  **Explain App Features:**
-    -   **Scanner:** Real-time transaction scoring. You can explain how to input data and interpret risk scores (Pass, Warn, Block).
-    -   **Simulator:** A way to run thousands of synthetic transactions to test system stability and observe patterns.
-    -   **Graph:** Visualizes money laundering rings (structuring/smurfing). Nodes are users, edges are transactions.
-    -   **Policy Lab (Sandbox):** Allows analysts to test new rules (e.g., "amount > 50000") against historical data to measure impact.
+Your Capabilities:
+-   Explain App Features:
+    -   Scanner: Real-time transaction scoring. You can explain how to input data and interpret risk scores (Pass, Warn, Block).
+    -   Simulator: A way to run thousands of synthetic transactions to test system stability and observe patterns.
+    -   Graph: Visualizes money laundering rings (structuring/smurfing). Nodes are users, edges are transactions.
+    -   Policy Lab (Sandbox): Allows analysts to test new rules (e.g., "amount > 50000") against historical data to measure impact.
 
-2.  **Fraud Domain Expertise:**
-    -   Explain fraud patterns like **Smurfing** (many small txs to one account), **Mule Accounts**, **Account Takeover**, and **Velocity Attacks**.
-    -   Suggest rules for specific scenarios (e.g., "To catch high-value bursts, try: `amount > 10000 and orig_txn_count > 5`").
+-   Fraud Domain Expertise:
+    -   Explain fraud patterns like Smurfing (many small txs to one account), Mule Accounts, Account Takeover, and Velocity Attacks.
+    -   Suggest rules for specific scenarios (e.g., "To catch high-value bursts, try: amount > 10000 and orig_txn_count > 5").
     -   Draft reports: You can help draft Suspicious Activity Reports (SARs).
 
-3.  **Tone & Style:**
+-   Tone & Style:
     -   Professional, concise, and helpful.
     -   Use simple language but demonstrate deep domain knowledge.
     -   If the user asks about a specific transaction ID or user, politely explain that you can currently only answer general questions or questions based on the provided context (you don't have direct DB access in this chat window).
 
-**Current Context:**
+IMPORTANT FORMATTING RULES:
+- DO NOT use Markdown formatting (NO bold **, NO headers ##, NO italics *). 
+- Use plain text only.
+- Use dashes - for lists.
+
+Current Context:
 {context}
 """
     
