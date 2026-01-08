@@ -148,11 +148,6 @@ const SARDocument = ({ caseId, transactions, narrative, analystName }: { caseId:
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Investigator's Narrative (AI Draft)</Text>
-        <Text style={styles.text}>{narrative}</Text>
-      </View>
-
-      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Transaction Summary</Text>
         <View style={styles.table}>
           <View style={[styles.tableRow, { backgroundColor: '#F9FAFB' }]}>
@@ -174,6 +169,13 @@ const SARDocument = ({ caseId, transactions, narrative, analystName }: { caseId:
         </View>
         {transactions.length > 15 && <Text style={{ fontSize: 9, marginTop: 5, color: '#6B7280' }}>* Showing first 15 of {transactions.length} transactions</Text>}
       </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Investigator's Narrative (AI Draft)</Text>
+        <Text style={styles.text}>{narrative}</Text>
+      </View>
+
+
 
       <View style={styles.footer}>
         <Text>This report is generated automatically by the CloverShield Sovereign AI System. For official use only.</Text>
