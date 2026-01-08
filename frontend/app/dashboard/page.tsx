@@ -82,6 +82,15 @@ export default function DashboardLanding() {
       link: '/dashboard/training',
       color: 'text-orange-400',
       bg: 'bg-orange-400/10'
+    },
+    {
+      title: language === 'bn' ? 'সিকিউর রিসিভার' : 'Secure Receiver',
+      description: language === 'bn' ? 'এয়ার-গ্যাপড ডেটা স্ক্যান করুন।' : 'Scan air-gapped data.',
+      details: language === 'bn' ? 'QR কোডের মাধ্যমে নিরাপদ টার্মিনাল থেকে কেস ডেটা গ্রহণ করুন।' : 'Receive case evidence from the secure terminal via optical QR bridge.',
+      icon: 'qr_code_scanner',
+      link: '/receiver',
+      color: 'text-pink-400',
+      bg: 'bg-pink-400/10'
     }
   ]
 
