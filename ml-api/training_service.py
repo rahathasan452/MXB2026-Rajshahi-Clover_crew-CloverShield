@@ -8,6 +8,11 @@ import xgboost as xgb
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, RandomizedSearchCV, cross_val_predict
 from sklearn.metrics import precision_recall_curve, classification_report, accuracy_score, f1_score, precision_score, recall_score
+try:
+    from imblearn.over_sampling import SMOTE
+except ImportError:
+    SMOTE = None
+
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -104,13 +109,27 @@ async def train_model_async(job_id: str, file_path: str, params: dict):
         
         # 3. Feature Engineering
         pagerank_limit = params.get('pagerank_limit', 10000)
-        fe = FraudFeatureEngineer(pagerank_limit=pagerank_limit)
+        advanced_features = params.get('advanced_feature_engineering', False)
+        fe = FraudFeatureEngineer(pagerank_limit=pagerank_limit, advanced_features=advanced_features)
         
         print("⚙️ Fitting feature engineer...")
         fe.fit(X_train, y_train)
         X_train_trans = fe.transform(X_train)
         X_test_trans = fe.transform(X_test)
         
+        # Apply Advanced Preprocessing (SMOTE) if requested
+        if params.get('advanced_preprocessing'):
+            if SMOTE:
+                print("⚖️ Applying SMOTE for class imbalance...")
+                try:
+                    smote = SMOTE(random_state=42)
+                    X_train_trans, y_train = smote.fit_resample(X_train_trans, y_train)
+                    print(f"   New training shape: {X_train_trans.shape}")
+                except Exception as e:
+                    print(f"⚠️ SMOTE failed: {str(e)}. Proceeding with original data.")
+            else:
+                print("⚠️ SMOTE requested but imbalanced-learn not installed. Proceeding without it.")
+
         # 4. Configure XGBoost
         # Calculate scale_pos_weight
         neg = (y_train == 0).sum()

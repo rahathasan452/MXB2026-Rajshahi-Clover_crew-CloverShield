@@ -17,14 +17,16 @@ class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
     - Creates frequency, ratio, log and graph features
     """
     
-    def __init__(self, pagerank_limit=None):
+    def __init__(self, pagerank_limit=None, advanced_features=False):
         """
         Initialize the feature engineer
         
         Args:
             pagerank_limit: Optional limit on number of nodes for PageRank computation
+            advanced_features: Whether to generate advanced features (balance errors, etc.)
         """
         self.pagerank_limit = pagerank_limit
+        self.advanced_features = advanced_features
         self.stats = {}
         self.graph_meta = {}
         self.type_map = {'TRANSFER': 0, 'CASH_OUT': 1}
@@ -152,6 +154,21 @@ class FraudFeatureEngineer(BaseEstimator, TransformerMixin):
         # New/novelty flags
         X['is_new_origin'] = (X['orig_txn_count'] == 0).astype(int)
         X['is_new_dest'] = (X['dest_txn_count'] == 0).astype(int)
+
+        # Advanced features
+        if self.advanced_features:
+            # Balance errors (should be 0, significant deviation is suspicious)
+            # Origin: old - amount = new  =>  error = new - (old - amount)
+            X['balance_error_orig'] = X['newBalanceOrig'] - (X['oldBalanceOrig'] - X['amount'])
+            
+            # Dest: old + amount = new  =>  error = new - (old + amount)
+            X['balance_error_dest'] = X['newBalanceDest'] - (X['oldBalanceDest'] + X['amount'])
+            
+            # Interaction strength (amount * frequency)
+            X['interaction_strength'] = X['amount'] * X['dest_txn_count']
+            
+            # Ratio of amount to receiver's balance (is this a huge transfer for them?)
+            X['amount_to_dest_balance'] = X['amount'] / (X['oldBalanceDest'].replace(0, np.nan).fillna(1.0))
 
         # Type encoding (fast & vectorized)
         X['type_encoded'] = X['type'].map(self.type_map).fillna(-1).astype(int)

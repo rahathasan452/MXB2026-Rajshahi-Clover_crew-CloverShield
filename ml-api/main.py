@@ -122,6 +122,8 @@ class TrainingConfig(BaseModel):
     max_depth: int = Field(default=6, ge=1, le=20)
     learning_rate: float = Field(default=0.05, ge=0.001, le=1.0)
     pagerank_limit: int = Field(default=10000, ge=0)
+    advanced_preprocessing: bool = Field(default=False, description="Apply advanced preprocessing (SMOTE)")
+    advanced_feature_engineering: bool = Field(default=False, description="Generate advanced features (Balance errors, Interaction strength)")
     name: str = Field(default="Custom Model")
     version: str = Field(default="1.0")
 
