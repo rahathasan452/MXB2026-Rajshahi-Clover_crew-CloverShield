@@ -3,6 +3,7 @@ export const MODEL_SUMMARY = {
   accuracy: 0.998,
   precision: 0.908,
   recall: 1.00,
+  specificity: 0.998,
   f1: 0.952,
 };
 

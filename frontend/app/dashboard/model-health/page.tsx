@@ -46,6 +46,13 @@ export default function ModelHealthPage() {
             icon: 'functions',
             color: 'text-yellow-400',
             bg: 'bg-yellow-400/10'
+        },
+        {
+            label: language === 'bn' ? 'বৈধতা' : 'Specificity',
+            value: (MODEL_SUMMARY.specificity * 100).toFixed(1) + '%',
+            icon: 'verified_user',
+            color: 'text-cyan-400',
+            bg: 'bg-cyan-400/10'
         }
     ]
 
@@ -67,7 +74,7 @@ export default function ModelHealthPage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                 {stats.map((stat, idx) => (
                     <div key={idx} className="bg-card-bg border border-white/5 rounded-xl p-6 hover:border-white/10 transition-colors">
                         <div className="flex items-center justify-between mb-4">
