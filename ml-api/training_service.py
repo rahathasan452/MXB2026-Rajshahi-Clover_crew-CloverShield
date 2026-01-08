@@ -53,14 +53,22 @@ def make_splits(df, test_frac=0.05, time_col='step', min_test_fraud=100, random_
     """
     Returns: X_train, X_test, y_train, y_test
     """
+    # Normalize column names
+    if 'is_fraud' in df.columns:
+        df = df.rename(columns={'is_fraud': 'isFraud'})
+    if 'fraud' in df.columns:
+        df = df.rename(columns={'fraud': 'isFraud'})
+
     # Temporal test split
     if time_col in df.columns:
         cutoff = df[time_col].quantile(1 - test_frac)
         train_df = df[df[time_col] <= cutoff].reset_index(drop=True)
         test_df = df[df[time_col] > cutoff].reset_index(drop=True)
     else:
-        train_df = df.copy()
-        test_df = pd.DataFrame(columns=df.columns)
+        # Random split if no time column
+        train_df, test_df = train_test_split(df, test_size=test_frac, stratify=df.get('isFraud'), random_state=42)
+        train_df = train_df.reset_index(drop=True)
+        test_df = test_df.reset_index(drop=True)
 
     # Fallback to stratified split if test set is poor
     if (test_df.empty) or (test_df['isFraud'].sum() < min_test_fraud):
