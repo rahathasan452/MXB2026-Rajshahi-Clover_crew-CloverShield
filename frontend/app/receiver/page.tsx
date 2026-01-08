@@ -60,7 +60,6 @@ export default function ReceiverPage() {
                         onResult={(text: string) => handleScan(text)}
                         onError={(error: any) => console.log(error?.message)}
                         components={{
-                            audio: false,
                             onOff: false,
                             torch: false,
                             zoom: false,
