@@ -32,7 +32,17 @@ export default function TrainingPage() {
     const [step, setStep] = useState<1 | 2 | 3>(1) // 1: Upload, 2: Config, 3: Training/Result
 
     // API Configuration
-    const [apiUrl, setApiUrl] = useState('http://localhost:7860')
+    // Prioritize Environment Variable -> LocalStorage -> Default Localhost
+    const [apiUrl, setApiUrl] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const envUrl = process.env.NEXT_PUBLIC_ML_API_URL
+            const localUrl = localStorage.getItem('ml_api_url')
+            // If Env Var exists, use it (overriding local storage to ensure fresh deploys work)
+            if (envUrl) return envUrl
+            if (localUrl) return localUrl
+        }
+        return 'http://localhost:7860'
+    })
     const [showApiConfig, setShowApiConfig] = useState(false)
 
     // Upload State
@@ -62,12 +72,7 @@ export default function TrainingPage() {
 
     // --- Effects ---
     useEffect(() => {
-        // Load API URL from localStorage if available
-        const savedUrl = localStorage.getItem('ml_api_url')
-        if (savedUrl) setApiUrl(savedUrl)
-    }, [])
-
-    useEffect(() => {
+        // Initial fetch
         fetchModels()
         const interval = setInterval(fetchModels, 5000)
         return () => clearInterval(interval)
@@ -315,9 +320,23 @@ export default function TrainingPage() {
                                     <h3 className="text-xs font-bold text-white mb-3 uppercase tracking-wider">Advanced Settings</h3>
 
                                     <label className="flex items-center justify-between cursor-pointer group mb-3">
-                                        <span className="text-sm text-text-secondary group-hover:text-white transition-colors">Advanced Preprocessing</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-text-secondary group-hover:text-white transition-colors">Advanced Preprocessing</span>
+                                            <div className="relative group/info">
+                                                <Icon name="help_outline" size={14} className="text-white/30 hover:text-blue-400 transition-colors" />
+                                                <div className="absolute left-6 top-0 w-64 bg-card-bg border border-white/20 rounded-lg p-3 shadow-2xl hidden group-hover/info:block z-50 pointer-events-none">
+                                                    <h4 className="text-xs font-bold text-white mb-1">SMOTE (Synthetic Minority Over-sampling)</h4>
+                                                    <p className="text-[10px] text-gray-300 leading-relaxed">
+                                                        Balances the dataset by generating synthetic fraud examples. Improves Recall (catching fraud) but increases training time.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div
-                                            onClick={() => setTrainingConfig({ ...trainingConfig, advanced_preprocessing: !trainingConfig.advanced_preprocessing })}
+                                            onClick={(e) => {
+                                                e.preventDefault()
+                                                setTrainingConfig({ ...trainingConfig, advanced_preprocessing: !trainingConfig.advanced_preprocessing })
+                                            }}
                                             className={`w-10 h-6 rounded-full p-1 transition-colors ${trainingConfig.advanced_preprocessing ? 'bg-emerald-500' : 'bg-white/10'}`}
                                         >
                                             <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${trainingConfig.advanced_preprocessing ? 'translate-x-4' : 'translate-x-0'}`}></div>
@@ -325,9 +344,26 @@ export default function TrainingPage() {
                                     </label>
 
                                     <label className="flex items-center justify-between cursor-pointer group mb-3">
-                                        <span className="text-sm text-text-secondary group-hover:text-white transition-colors">Feature Engineering</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-text-secondary group-hover:text-white transition-colors">Feature Engineering</span>
+                                            <div className="relative group/info">
+                                                <Icon name="help_outline" size={14} className="text-white/30 hover:text-blue-400 transition-colors" />
+                                                <div className="absolute left-6 top-0 w-64 bg-card-bg border border-white/20 rounded-lg p-3 shadow-2xl hidden group-hover/info:block z-50 pointer-events-none">
+                                                    <h4 className="text-xs font-bold text-white mb-1">Deep Feature Synthesis</h4>
+                                                    <p className="text-[10px] text-gray-300 leading-relaxed">
+                                                        Generates 4 complex features:
+                                                        <br />• Balance Errors (Orig/Dest)
+                                                        <br />• Interaction Strength
+                                                        <br />• Amount-to-Balance Ratio
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div
-                                            onClick={() => setTrainingConfig({ ...trainingConfig, advanced_feature_engineering: !trainingConfig.advanced_feature_engineering })}
+                                            onClick={(e) => {
+                                                e.preventDefault()
+                                                setTrainingConfig({ ...trainingConfig, advanced_feature_engineering: !trainingConfig.advanced_feature_engineering })
+                                            }}
                                             className={`w-10 h-6 rounded-full p-1 transition-colors ${trainingConfig.advanced_feature_engineering ? 'bg-emerald-500' : 'bg-white/10'}`}
                                         >
                                             <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${trainingConfig.advanced_feature_engineering ? 'translate-x-4' : 'translate-x-0'}`}></div>
