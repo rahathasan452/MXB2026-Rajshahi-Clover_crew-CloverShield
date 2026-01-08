@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { MODEL_SUMMARY } from '@/lib/mock-data/model-metrics'
+import { MODEL_SUMMARY, CONFUSION_MATRIX_DATA } from '@/lib/mock-data/model-metrics'
 import { Icon } from '@/components/Icon'
 import { useAppStore } from '@/store/useAppStore'
 import dynamic from 'next/dynamic'
@@ -56,6 +56,20 @@ export default function ModelHealthPage() {
         }
     ]
 
+    // Calculate Ratio: FP (Annoyed) / TP (Fraud Caught)
+    // From mock data: FP is index 1, TP is index 3
+    const fp = CONFUSION_MATRIX_DATA[1].v
+    const tp = CONFUSION_MATRIX_DATA[3].v
+    const ratio = (fp / tp).toFixed(2)
+
+    stats.push({
+        label: language === 'bn' ? 'বিরক্তি অনুপাত' : 'Annoyance Ratio (FP:TP)',
+        value: `1 : ${(tp / fp).toFixed(0)}`, // Format as "1 : 10"
+        icon: 'notifications_off',
+        color: 'text-rose-400',
+        bg: 'bg-rose-400/10'
+    })
+
     return (
         <div className="container mx-auto px-4 py-8">
             {/* Header */}
@@ -74,7 +88,7 @@ export default function ModelHealthPage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {stats.map((stat, idx) => (
                     <div key={idx} className="bg-card-bg border border-white/5 rounded-xl p-6 hover:border-white/10 transition-colors">
                         <div className="flex items-center justify-between mb-4">
