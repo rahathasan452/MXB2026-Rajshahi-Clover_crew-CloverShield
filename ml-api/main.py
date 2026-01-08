@@ -594,6 +594,120 @@ class ChatResponse(BaseModel):
     response: str
     processing_time_ms: int
 
+class SARRequest(BaseModel):
+    """Request model for SAR Narrative Generation"""
+    case_id: str
+    transactions: List[TransactionInput]
+    analyst_notes: Optional[str] = None
+
+class LogAnomalyRequest(BaseModel):
+    """Request model for internal anomaly detection"""
+    logs: List[Dict] # List of audit log dictionaries
+
+# ============================================================================
+# SAR & ANOMALY ENDPOINTS
+# ============================================================================
+
+@app.post("/generate-sar-narrative")
+async def generate_sar_narrative(request: SARRequest):
+    """
+    Generate a professional Suspicious Activity Report (SAR) narrative using Groq LLM.
+    """
+    start_time = time.time()
+    
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    if not groq_api_key:
+        raise HTTPException(status_code=503, detail="Groq API key not configured")
+
+    try:
+        from groq import Groq
+        client = Groq(api_key=groq_api_key)
+        
+        # Summarize transactions
+        total_amount = sum(t.amount for t in request.transactions)
+        avg_amount = total_amount / len(request.transactions) if request.transactions else 0
+        tx_types = list(set(t.type for t in request.transactions))
+        
+        prompt = f"""
+        You are a Senior Financial Crime Investigator. Write the "Narrative" section of a Suspicious Activity Report (SAR) for the following case.
+        
+        Case ID: {request.case_id}
+        Total Volume: {total_amount} BDT over {len(request.transactions)} transactions.
+        Transaction Types: {", ".join(tx_types)}
+        Average Amount: {avg_amount:.2f} BDT
+        
+        Analyst Notes: {request.analyst_notes or "None"}
+        
+        Transaction Sample:
+        {str([t.dict() for t in request.transactions[:5]])}
+        
+        Instructions:
+        1. Summarize the suspicious activity concisely.
+        2. Highlight specific patterns (e.g., structuring, rapid movement of funds).
+        3. Use professional, regulatory language suitable for the Bangladesh Financial Intelligence Unit (BFIU).
+        4. Do not include markdown formatting. Just the raw text paragraphs.
+        """
+        
+        chat_completion = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama-3.1-8b-instant",
+            temperature=0.3,
+            max_tokens=500
+        )
+        
+        narrative = chat_completion.choices[0].message.content.strip()
+        processing_time = int((time.time() - start_time) * 1000)
+        
+        return {
+            "narrative": narrative,
+            "processing_time_ms": processing_time
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"SAR Generation failed: {str(e)}")
+
+@app.post("/detect-internal-anomalies")
+async def detect_internal_anomalies(request: LogAnomalyRequest):
+    """
+    Scan audit logs for suspicious internal user behavior.
+    """
+    anomalies = []
+    
+    # 1. Rule-Based Detection
+    user_counts = {}
+    
+    for log in request.logs:
+        uid = log.get('user_id') or log.get('user_email')
+        if not uid: continue
+        
+        if uid not in user_counts:
+            user_counts[uid] = {'actions': 0, 'sensitive_access': 0}
+        
+        user_counts[uid]['actions'] += 1
+        
+        if 'EXPORT' in log.get('action_type', '') or 'DELETE' in log.get('action_type', ''):
+             user_counts[uid]['sensitive_access'] += 1
+
+    # Thresholds
+    for uid, stats in user_counts.items():
+        if stats['actions'] > 50: # Arbitrary high volume in short time
+            anomalies.append({
+                "user_id": uid,
+                "reason": "High Velocity Action",
+                "details": f"User performed {stats['actions']} actions in the provided window."
+            })
+        if stats['sensitive_access'] > 5:
+            anomalies.append({
+                "user_id": uid,
+                "reason": "Excessive Sensitive Access",
+                "details": "User exported or deleted data multiple times."
+            })
+            
+    # 2. LLM Detection (Optional - simple check for keyword weirdness)
+    # Skipping for speed unless specifically requested, but we can do a quick check on messages
+    
+    return {"anomalies": anomalies, "scanned_count": len(request.logs)}
+
 # ============================================================================
 # BACKTEST ENDPOINTS
 # ============================================================================

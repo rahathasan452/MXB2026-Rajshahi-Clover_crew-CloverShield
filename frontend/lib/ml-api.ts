@@ -270,6 +270,28 @@ export const chatWithBot = async (messages: ChatMessage[], context?: string): Pr
 }
 
 /**
+ * Generate SAR Narrative
+ */
+export const generateSARNarrative = async (
+  caseId: string, 
+  transactions: TransactionInput[],
+  analystNotes?: string
+): Promise<{ narrative: string, processing_time_ms: number }> => {
+  try {
+    const response = await apiClient.post('/generate-sar-narrative', {
+      case_id: caseId,
+      transactions,
+      analyst_notes: analystNotes
+    })
+    return response.data
+  } catch (error: any) {
+    console.error('SAR Generation failed:', error)
+    const errorMessage = getErrorMessage(error)
+    throw new Error(errorMessage)
+  }
+}
+
+/**
  * Verify ML API configuration and connectivity
  * Useful for debugging connection issues
  */

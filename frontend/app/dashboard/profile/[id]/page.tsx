@@ -15,6 +15,8 @@ import { NetworkGraph } from '@/components/NetworkGraph'
 import { Icon } from '@/components/Icon'
 import toast from 'react-hot-toast'
 import { formatDistanceToNow } from 'date-fns'
+import { SARReportGenerator } from '@/components/SARReportGenerator'
+import { QRDataBridge } from '@/components/QRDataBridge'
 
 export default function ProfilePage() {
   const params = useParams()
@@ -358,6 +360,45 @@ export default function ProfilePage() {
                  />
               </div>
             </div>
+
+            {/* Investigative Tools */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-8 border-t border-white/10">
+              <div className="space-y-4">
+                <h2 className="text-xl font-bold flex items-center gap-2 text-emerald-400">
+                  <Icon name="assignment" /> SAR Generator
+                </h2>
+                <div className="bg-card-bg border border-white/10 rounded-xl p-6">
+                  <p className="text-sm text-slate-400 mb-4">
+                    Generate an AI-drafted Suspicious Activity Report (SAR) for this profile.
+                  </p>
+                  <SARReportGenerator 
+                    caseId={`CASE-${userId}-${Date.now().toString().slice(-4)}`}
+                    transactions={history}
+                    analystName="System Administrator"
+                    analystNotes={`Investigating high-risk activity for user ${userId}.`}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h2 className="text-xl font-bold flex items-center gap-2 text-emerald-400">
+                  <Icon name="qr_code_scanner" /> Evidence Export
+                </h2>
+                <div className="bg-card-bg border border-white/10 rounded-xl p-6">
+                  <p className="text-sm text-slate-400 mb-4">
+                    Securely transfer case data to an air-gapped forensic device.
+                  </p>
+                   <QRDataBridge 
+                     data={{
+                       caseId: `CASE-${userId}`,
+                       transactions: history.slice(0, 5),
+                       risk: user.risk_level
+                     }}
+                   />
+                </div>
+              </div>
+            </div>
+
           </div>
         ) : (
           <div className="text-center py-20">
