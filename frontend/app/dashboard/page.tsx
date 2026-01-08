@@ -18,7 +18,7 @@ export default function DashboardLanding() {
   const router = useRouter()
   const { language, brandTheme, authUser } = useAppStore()
 
-  const brandColor = 'border-clover' 
+  const brandColor = 'border-clover'
   const brandGradient = 'from-clover'
 
   // Route protection
@@ -73,6 +73,15 @@ export default function DashboardLanding() {
       link: '/dashboard/model-health',
       color: 'text-emerald-400',
       bg: 'bg-emerald-400/10'
+    },
+    {
+      title: language === 'bn' ? 'মডেল ট্রেনিং' : 'Model Training',
+      description: language === 'bn' ? 'নতুন ডেটা দিয়ে মডেল ট্রেইন করুন।' : 'Train new fraud models.',
+      details: language === 'bn' ? 'নতুন ডেটা সেট আপলোড করুন এবং মডেল রি-ট্রেইন করুন।' : 'Upload new datasets, configure hyperparameters, and retrain the fraud detection model.',
+      icon: 'school',
+      link: '/dashboard/training',
+      color: 'text-orange-400',
+      bg: 'bg-orange-400/10'
     }
   ]
 
@@ -114,25 +123,25 @@ export default function DashboardLanding() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-12">
-        
+
         {/* Primary Action Zone - Inbox */}
         <section className="mb-12">
           <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <span className="w-1 h-6 bg-red-500 rounded-full"></span>
             {language === 'bn' ? 'প্রাথমিক কাজ' : 'Primary Workflow'}
           </h2>
-          
+
           <div className="relative group">
             <Link href={primaryMission.link} className="block group relative overflow-hidden bg-gradient-to-r from-[#0F1629] to-[#1a1f35] border border-white/10 hover:border-red-500/50 rounded-2xl p-8 transition-all duration-300 shadow-2xl hover:shadow-red-500/10">
               <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity text-red-500 transform group-hover:scale-110 duration-500">
                 <Icon name={primaryMission.icon} size={200} />
               </div>
-              
+
               <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
                 <div className={`p-4 rounded-2xl ${primaryMission.bg} ${primaryMission.color} ring-1 ring-white/10`}>
                   <Icon name={primaryMission.icon} size={48} />
                 </div>
-                
+
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-3xl font-bold text-white group-hover:text-red-400 transition-colors">
@@ -175,7 +184,7 @@ export default function DashboardLanding() {
             <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
             {language === 'bn' ? 'অ্যানালিস্ট টুলকিট' : 'Analyst Toolkit'}
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {toolkits.map((tool, idx) => (
               <div key={idx} className="relative group">
@@ -183,20 +192,20 @@ export default function DashboardLanding() {
                   <div className={`absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity ${tool.color} transform rotate-12`}>
                     <Icon name={tool.icon} size={100} />
                   </div>
-                  
+
                   <div className="relative z-10">
                     <div className={`inline-flex items-center justify-center p-2 rounded-lg ${tool.bg} ${tool.color} mb-4`}>
                       <Icon name={tool.icon} size={24} />
                     </div>
-                    
+
                     <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors">
                       {tool.title}
                     </h3>
-                    
+
                     <p className="text-text-secondary text-sm leading-relaxed mb-4">
                       {tool.description}
                     </p>
-                    
+
                     <div className="text-primary text-xs font-bold uppercase tracking-wider flex items-center gap-1 group-hover:gap-2 transition-all">
                       <span>{language === 'bn' ? 'খুলুন' : 'Open'}</span>
                       <Icon name="arrow_forward" size={14} />

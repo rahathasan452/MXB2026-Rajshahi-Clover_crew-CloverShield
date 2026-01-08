@@ -32,4 +32,5 @@ scipy>=1.10.0
 
 # CORS support (included in FastAPI)
 # python-multipart for file uploads (if needed)
+supabase>=2.0.0
 

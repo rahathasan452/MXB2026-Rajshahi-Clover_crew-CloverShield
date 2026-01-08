@@ -7,22 +7,26 @@ import os
 import sys
 import time
 import uuid
+import shutil
+import json
 from typing import Optional, Dict, List
 from datetime import datetime
 
 import pandas as pd
 import numpy as np
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, BackgroundTasks, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, validator
 import uvicorn
+from supabase import create_client, Client
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from inference import FraudInference, load_inference_engine
 from simulation import simulation_manager, SimulationConfig
+from training_service import train_model_async
 import warnings
 
 # Suppress warnings
@@ -111,6 +115,32 @@ class BatchPredictResponse(BaseModel):
     processing_time_ms: int
     total_transactions: int
 
+class TrainingConfig(BaseModel):
+    """Configuration for model training"""
+    test_split: float = Field(default=0.05, ge=0.01, le=0.5)
+    n_estimators: int = Field(default=300, ge=10, le=2000)
+    max_depth: int = Field(default=6, ge=1, le=20)
+    learning_rate: float = Field(default=0.05, ge=0.001, le=1.0)
+    pagerank_limit: int = Field(default=10000, ge=0)
+    name: str = Field(default="Custom Model")
+    version: str = Field(default="1.0")
+
+class TrainingResponse(BaseModel):
+    """Response for training initiation"""
+    job_id: str
+    status: str
+    message: str
+
+class ModelItem(BaseModel):
+    """Model registry item"""
+    id: str
+    name: str
+    version: Optional[str]
+    status: str
+    metrics: Optional[Dict]
+    is_active: bool
+    created_at: str
+
 # ============================================================================
 # FASTAPI APP
 # ============================================================================
@@ -141,6 +171,11 @@ cached_feature_engineer = None
 model_loading_lock = False
 MODEL_VERSION = "1.0.0"
 MODEL_THRESHOLD = float(os.getenv("MODEL_THRESHOLD", "0.0793"))
+
+# Supabase Client
+supabase_url: str = os.environ.get("SUPABASE_URL")
+supabase_key: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") # Use Service Role Key for backend updates
+supabase: Client = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
 
 # Risk thresholds (matching config.py)
 RISK_THRESHOLDS = {
@@ -802,6 +837,159 @@ async def stream_simulation():
         simulation_manager.stream_generator(),
         media_type="text/event-stream"
     )
+
+# ============================================================================
+# TRAINING ENDPOINTS
+# ============================================================================
+
+@app.post("/train", response_model=TrainingResponse)
+async def train_model_endpoint(
+    background_tasks: BackgroundTasks,
+    config: str = Form(...),
+    file: UploadFile = File(...)
+):
+    """
+    Start a background training job.
+    Accepts a CSV file and a JSON string for configuration.
+    """
+    try:
+        config_dict = json.loads(config)
+        # Validate config using Pydantic
+        training_config = TrainingConfig(**config_dict)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid configuration JSON: {str(e)}")
+
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Only CSV files are supported")
+
+    job_id = str(uuid.uuid4())
+    
+    # Save uploaded file to temp location
+    temp_dir = "temp_uploads"
+    os.makedirs(temp_dir, exist_ok=True)
+    file_path = os.path.join(temp_dir, f"{job_id}_{file.filename}")
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+
+    # Create initial record in Supabase
+    if supabase:
+        try:
+            supabase.table("model_registry").insert({
+                "id": job_id,
+                "name": training_config.name,
+                "version": training_config.version,
+                "status": "pending",
+                "is_active": False
+            }).execute()
+        except Exception as e:
+            # Clean up file if DB insert fails
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            raise HTTPException(status_code=500, detail=f"Failed to create job record: {str(e)}")
+    else:
+        print("⚠️ Supabase not connected. Training will proceed but status won't be persisted.")
+
+    # Trigger background task
+    params = training_config.dict()
+    background_tasks.add_task(train_model_async, job_id, file_path, params)
+
+    return TrainingResponse(
+        job_id=job_id,
+        status="pending",
+        message="Training job started in background"
+    )
+
+@app.get("/models", response_model=List[ModelItem])
+async def list_models():
+    """List all trained models from registry"""
+    if not supabase:
+        # Return mock data if no DB (or raise error)
+        # For development ease, we can return checking a local dir, but let's stick to DB
+        return []
+        
+    try:
+        response = supabase.table("model_registry").select("*").order("created_at", desc=True).execute()
+        
+        # Convert created_at to string if needed or Pydantic handles it
+        models = []
+        for item in response.data:
+            models.append(ModelItem(
+                id=item['id'],
+                name=item['name'],
+                version=item.get('version'),
+                status=item['status'],
+                metrics=item.get('metrics'),
+                is_active=item.get('is_active', False),
+                created_at=item['created_at']
+            ))
+        return models
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch models: {str(e)}")
+
+@app.post("/models/{model_id}/activate")
+async def activate_model(model_id: str):
+    """Activate a specific model version"""
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    # 1. Get model details
+    try:
+        response = supabase.table("model_registry").select("*").eq("id", model_id).single().execute()
+        model_data = response.data
+    except Exception:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    if model_data['status'] != 'ready':
+        raise HTTPException(status_code=400, detail="Model is not in 'ready' state")
+
+    model_path = model_data.get('file_path')
+    if not model_path:
+        raise HTTPException(status_code=400, detail="Model file path missing")
+
+    # 2. Update DB (set active=True for this, False for others)
+    # The trigger 'trigger_ensure_single_active_model' handles the "False for others" part!
+    try:
+        supabase.table("model_registry").update({"is_active": True}).eq("id", model_id).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update database: {str(e)}")
+
+    # 3. Hot-swap in memory
+    # We need to set the environment variable or just reload logic
+    # Best way: Update global variable directly
+    full_path = os.path.abspath(model_path) if os.path.isabs(model_path) else os.path.join(os.path.dirname(__file__), model_path)
+    
+    if not os.path.exists(full_path):
+        # Try relative to Models/ if not found
+        full_path = os.path.join(os.path.dirname(__file__), "Models", os.path.basename(model_path))
+
+    if not os.path.exists(full_path):
+         raise HTTPException(status_code=500, detail=f"Model file not found on disk: {full_path}")
+
+    # Set env var for future reloads
+    os.environ["MODEL_PATH"] = full_path
+    
+    # Trigger reload
+    global inference_engine
+    try:
+        # Load new model
+        new_engine = load_inference_engine(
+            model_path=full_path,
+            test_dataset_path=os.getenv("TEST_DATASET_PATH"),
+            threshold=float(os.getenv("MODEL_THRESHOLD", "0.0793")),
+            groq_api_key=os.getenv("GROQ_API_KEY"),
+            pagerank_limit=int(os.getenv("PAGERANK_LIMIT", "10000"))
+        )
+        inference_engine = new_engine
+        print(f"✅ Hot-swapped to model {model_id} ({full_path})")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load model into memory: {str(e)}")
+
+    return {"status": "success", "message": f"Model {model_id} activated"}
+
 
 # ============================================================================
 # ERROR HANDLERS
