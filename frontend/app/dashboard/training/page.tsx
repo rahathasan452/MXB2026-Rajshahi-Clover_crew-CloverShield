@@ -31,6 +31,10 @@ export default function TrainingPage() {
     // Wizard State
     const [step, setStep] = useState<1 | 2 | 3>(1) // 1: Upload, 2: Config, 3: Training/Result
 
+    // API Configuration
+    const [apiUrl, setApiUrl] = useState('http://localhost:7860')
+    const [showApiConfig, setShowApiConfig] = useState(false)
+
     // Upload State
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [isDragging, setIsDragging] = useState(false)
@@ -42,7 +46,10 @@ export default function TrainingPage() {
         test_split: 0.2,
         n_estimators: 100,
         max_depth: 6,
-        learning_rate: 0.1
+        learning_rate: 0.1,
+        pagerank_limit: 10000,
+        advanced_preprocessing: false,
+        advanced_feature_engineering: false
     })
 
     // Training State
@@ -55,35 +62,40 @@ export default function TrainingPage() {
 
     // --- Effects ---
     useEffect(() => {
+        // Load API URL from localStorage if available
+        const savedUrl = localStorage.getItem('ml_api_url')
+        if (savedUrl) setApiUrl(savedUrl)
+    }, [])
+
+    useEffect(() => {
         fetchModels()
-        // Poll for updates if we have a pending job or just to keep list fresh
         const interval = setInterval(fetchModels, 5000)
         return () => clearInterval(interval)
-    }, [])
+    }, [apiUrl]) // Refetch when URL changes
 
     // --- Actions ---
 
     const fetchModels = async () => {
+        if (!apiUrl) return
         try {
-            // We'll fetch from our backend proxy or Supabase directly. 
-            // User requirements said GET /models, but let's try calling Supabase directly for realtime 
-            // since the backend just proxies it mostly, OR stick to the design of using the API.
-            // Let's use the API for consistency with the plan.
-            // Assuming ML API is at http://localhost:7860 (default from main.py)
-            // In production next.config.js usually proxies /api/ml -> http://localhost:7860
-            // For now, let's assume we can hit the API. 
-            // If we are in dev, we might need the full URL.
-
-            const { data, error } = await supabase
+            const response = await axios.get(`${apiUrl}/models`)
+            setModels(response.data)
+        } catch (error) {
+            console.error('Failed to fetch models from API, falling back to Supabase:', error)
+            // Fallback to Supabase directly if API fails (handling RLS via policy)
+            const { data, error: sbError } = await supabase
                 .from('model_registry')
                 .select('*')
                 .order('created_at', { ascending: false })
 
-            if (error) throw error
-            setModels(data as Model[])
-        } catch (error) {
-            console.error('Failed to fetch models:', error)
+            if (!sbError && data) setModels(data as Model[])
         }
+    }
+
+    const saveApiUrl = (url: string) => {
+        setApiUrl(url)
+        localStorage.setItem('ml_api_url', url)
+        toast.success(`API URL updated`)
     }
 
     const handleFileDrop = (e: React.DragEvent) => {
@@ -101,10 +113,7 @@ export default function TrainingPage() {
 
     const handleActivate = async (modelId: string) => {
         try {
-            // This needs to hit the Python API to hot-swap
-            // We'll try to call the endpoint.
-            // NOTE: In a real app we'd need an env var for the ML API URL.
-            const response = await axios.post(`http://localhost:7860/models/${modelId}/activate`)
+            await axios.post(`${apiUrl}/models/${modelId}/activate`)
             toast.success('Model activated successfully!')
             fetchModels()
         } catch (error) {
@@ -122,7 +131,7 @@ export default function TrainingPage() {
         formData.append('config', JSON.stringify(trainingConfig))
 
         try {
-            const response = await axios.post('http://localhost:7860/train', formData, {
+            const response = await axios.post(`${apiUrl}/train`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -132,7 +141,7 @@ export default function TrainingPage() {
             toast.success('Training started!')
             fetchModels()
         } catch (error) {
-            toast.error('Failed to start training')
+            toast.error('Failed to start training. Check API URL.')
             console.error(error)
         } finally {
             setIsSubmitting(false)
@@ -142,18 +151,47 @@ export default function TrainingPage() {
     return (
         <div className="container mx-auto px-4 py-8">
             {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/10 rounded-lg">
-                        <Icon name="school" size={32} className="text-blue-500" />
-                    </div>
-                    {language === 'bn' ? 'মডেল ট্রেনিং' : 'Model Training & Registry'}
-                </h1>
-                <p className="text-text-secondary ml-14">
-                    {language === 'bn'
-                        ? 'নতুন ডেটা দিয়ে মডেল ট্রেইন করুন এবং ম্যানেজ করুন।'
-                        : 'Train new models with latest data and manage deployments.'}
-                </p>
+            <div className="mb-8 flex justify-between items-start">
+                <div>
+                    <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/10 rounded-lg">
+                            <Icon name="school" size={32} className="text-blue-500" />
+                        </div>
+                        {language === 'bn' ? 'মডেল ট্রেনিং' : 'Model Training & Registry'}
+                    </h1>
+                    <p className="text-text-secondary ml-14">
+                        {language === 'bn'
+                            ? 'নতুন ডেটা দিয়ে মডেল ট্রেইন করুন এবং ম্যানেজ করুন।'
+                            : 'Train new models with latest data and manage deployments.'}
+                    </p>
+                </div>
+
+                {/* API Config Toggle */}
+                <div className="relative">
+                    <button
+                        onClick={() => setShowApiConfig(!showApiConfig)}
+                        className="text-text-secondary hover:text-white flex items-center gap-2 text-sm bg-white/5 px-3 py-2 rounded-lg"
+                    >
+                        <Icon name="settings" size={16} />
+                        {showApiConfig ? 'Hide Config' : 'API Config'}
+                    </button>
+
+                    {showApiConfig && (
+                        <div className="absolute right-0 top-12 w-80 bg-card-bg border border-white/10 rounded-xl p-4 shadow-2xl z-50 animate-fade-in">
+                            <label className="text-xs text-text-secondary block mb-2">Backend API URL</label>
+                            <input
+                                type="text"
+                                value={apiUrl}
+                                onChange={(e) => saveApiUrl(e.target.value)}
+                                placeholder="http://localhost:7860"
+                                className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-xs focus:border-blue-500 outline-none mb-2"
+                            />
+                            <p className="text-[10px] text-white/40">
+                                Point to your local server or Cloud/Hugging Face Space URL (e.g., https://my-space.hf.space)
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -218,54 +256,93 @@ export default function TrainingPage() {
                         {/* Step 2: Configure */}
                         {step === 2 && (
                             <div className="animate-fade-in space-y-4">
-                                <div>
-                                    <label className="text-xs text-text-secondary block mb-1">Model Name Tag</label>
-                                    <input
-                                        type="text"
-                                        value={trainingConfig.name}
-                                        onChange={(e) => setTrainingConfig({ ...trainingConfig, name: e.target.value })}
-                                        className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-text-secondary block mb-1">Version</label>
-                                    <input
-                                        type="text"
-                                        value={trainingConfig.version}
-                                        onChange={(e) => setTrainingConfig({ ...trainingConfig, version: e.target.value })}
-                                        className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                                    />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs text-text-secondary block mb-1">Model Name Tag</label>
+                                        <input
+                                            type="text"
+                                            value={trainingConfig.name}
+                                            onChange={(e) => setTrainingConfig({ ...trainingConfig, name: e.target.value })}
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-blue-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-text-secondary block mb-1">Version</label>
+                                        <input
+                                            type="text"
+                                            value={trainingConfig.version}
+                                            onChange={(e) => setTrainingConfig({ ...trainingConfig, version: e.target.value })}
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-blue-500 outline-none"
+                                        />
+                                    </div>
                                 </div>
 
-                                <div className="pt-2 border-t border-white/10">
-                                    <label className="text-xs text-text-secondary block mb-2 flex justify-between">
-                                        <span>Test Split</span>
-                                        <span className="text-blue-400">{trainingConfig.test_split * 100}%</span>
-                                    </label>
-                                    <input
-                                        type="range"
-                                        min="0.1"
-                                        max="0.5"
-                                        step="0.05"
-                                        value={trainingConfig.test_split}
-                                        onChange={(e) => setTrainingConfig({ ...trainingConfig, test_split: parseFloat(e.target.value) })}
-                                        className="w-full accent-blue-500"
-                                    />
+                                <div className="pt-2 border-t border-white/10 space-y-4">
+                                    <div>
+                                        <label className="text-xs text-text-secondary block mb-2 flex justify-between">
+                                            <span>Test Split</span>
+                                            <span className="text-blue-400">{trainingConfig.test_split * 100}%</span>
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="0.1"
+                                            max="0.5"
+                                            step="0.05"
+                                            value={trainingConfig.test_split}
+                                            onChange={(e) => setTrainingConfig({ ...trainingConfig, test_split: parseFloat(e.target.value) })}
+                                            className="w-full accent-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-text-secondary block mb-2 flex justify-between">
+                                            <span>Max Depth</span>
+                                            <span className="text-blue-400">{trainingConfig.max_depth}</span>
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="3"
+                                            max="12"
+                                            step="1"
+                                            value={trainingConfig.max_depth}
+                                            onChange={(e) => setTrainingConfig({ ...trainingConfig, max_depth: parseInt(e.target.value) })}
+                                            className="w-full accent-blue-500"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="text-xs text-text-secondary block mb-2 flex justify-between">
-                                        <span>Max Depth (XGBoost)</span>
-                                        <span className="text-blue-400">{trainingConfig.max_depth}</span>
+
+                                {/* Advanced Options */}
+                                <div className="pt-2 border-t border-white/10">
+                                    <h3 className="text-xs font-bold text-white mb-3 uppercase tracking-wider">Advanced Settings</h3>
+
+                                    <label className="flex items-center justify-between cursor-pointer group mb-3">
+                                        <span className="text-sm text-text-secondary group-hover:text-white transition-colors">Advanced Preprocessing</span>
+                                        <div
+                                            onClick={() => setTrainingConfig({ ...trainingConfig, advanced_preprocessing: !trainingConfig.advanced_preprocessing })}
+                                            className={`w-10 h-6 rounded-full p-1 transition-colors ${trainingConfig.advanced_preprocessing ? 'bg-emerald-500' : 'bg-white/10'}`}
+                                        >
+                                            <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${trainingConfig.advanced_preprocessing ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                                        </div>
                                     </label>
-                                    <input
-                                        type="range"
-                                        min="3"
-                                        max="12"
-                                        step="1"
-                                        value={trainingConfig.max_depth}
-                                        onChange={(e) => setTrainingConfig({ ...trainingConfig, max_depth: parseInt(e.target.value) })}
-                                        className="w-full accent-blue-500"
-                                    />
+
+                                    <label className="flex items-center justify-between cursor-pointer group mb-3">
+                                        <span className="text-sm text-text-secondary group-hover:text-white transition-colors">Feature Engineering</span>
+                                        <div
+                                            onClick={() => setTrainingConfig({ ...trainingConfig, advanced_feature_engineering: !trainingConfig.advanced_feature_engineering })}
+                                            className={`w-10 h-6 rounded-full p-1 transition-colors ${trainingConfig.advanced_feature_engineering ? 'bg-emerald-500' : 'bg-white/10'}`}
+                                        >
+                                            <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${trainingConfig.advanced_feature_engineering ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                                        </div>
+                                    </label>
+
+                                    <div>
+                                        <label className="text-xs text-text-secondary block mb-1">PageRank Limit</label>
+                                        <input
+                                            type="number"
+                                            value={trainingConfig.pagerank_limit}
+                                            onChange={(e) => setTrainingConfig({ ...trainingConfig, pagerank_limit: parseInt(e.target.value) })}
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-blue-500 outline-none"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="flex gap-3 mt-6">
