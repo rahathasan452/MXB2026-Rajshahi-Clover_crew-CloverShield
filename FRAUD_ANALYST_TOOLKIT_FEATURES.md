@@ -94,15 +94,15 @@
 
 ---
 
-#### 7. Fraud Heatmap (Mock Geo Visualization)
-**What it is:** Geographic fraud distribution map
-**Why it works:** Generate mock location data for demo
+#### 7. Deterministic Pseudo-GPS Heatmap
+**What it is:** Geographic fraud distribution using hashed coordinates
+**Why it works:** SHA-256 hashing converts User IDs to Bangladesh coordinates (deterministic)
 **Effort:** 4-5 hours
 
-- Leaflet.js/Mapbox map
-- Mock coordinates for Bangladesh regions
-- Hotspot clustering
-- Filter by fraud type
+- react-simple-maps + local TopoJSON
+- Urban bias "Gravity Model" (Dhaka, Chittagong centroids)
+- Visual clustering of red dots (fraud) in synthetic neighborhoods
+- No external maps or API keys required
 
 ---
 
@@ -138,6 +138,40 @@
 - Node risk scoring (color gradient)
 - One-click "Expand Network" (2nd-degree connections)
 - Export graph as image
+
+---
+
+#### 19. Time-Travel Transaction Replay
+**What it is:** Animated temporal evolution of the network graph
+**Why it works:** Uses PaySim 'step' column as frame counter
+**Effort:** 4-5 hours
+
+- Range slider to "scrub" through transaction history
+- Dynamic graph filtering based on current step
+- "Flashing" effect for new edges to draw eye focus
+- Visual growth of nodes as volume accumulates
+
+---
+
+#### 20. Sankey Flow Visualization
+**What it is:** Trace the magnitude and dissipation of dirty money
+**Why it works:** nivo/sankey library with transaction volume as width
+**Effort:** 4-5 hours
+
+- Upstream/Downstream traces from suspicious nodes
+- Visualizes "Fan-Out" (mule networks) vs "Fan-In" (ponzi schemes)
+- Color gradient from dirty (red) to clean (green) sources
+
+---
+
+#### 21. Circadian Rhythm Anomaly Detector
+**What it is:** Radial heatmap of activity compared to baseline
+**Why it works:** Map PaySim 'step' to 24hr clock via modulo
+**Effort:** 3-4 hours
+
+- 24-hour radial clock visualization
+- Overlay of historical vs current behavior
+- Highlighting "Midnight Raids" (anomalous 2AM-5AM activity)
 
 ---
 
@@ -201,6 +235,17 @@
 
 ---
 
+#### 22. QR Bridge (Optical Handoff)
+**What it is:** Secure air-gapped data transfer via animated QR
+**Why it works:** Client-side JSON compression + display
+**Effort:** 4-5 hours
+
+- qrcode.react for high-density animated QR sequences
+- Optical exfiltration of case data to secondary device
+- Maintains "Zero-Trust" air-gap integrity
+
+---
+
 ### Category 4: Policy Lab Enhancements
 
 #### 16. Rule Builder UI
@@ -238,13 +283,23 @@
 
 ---
 
+#### 23. Deterministic Device Fingerprinting
+**What it is:** Identifying shared devices without SDKs
+**Why it works:** Hash(UserID) mod N_devices creates collisions
+**Effort:** 3-4 hours
+
+- Cryptographic hashing of user identity to simulate device IDs
+- "Device Link" edges in network graph for shared IDs
+- Detects "Device Farming" patterns algorithmically
+
+---
+
 ---
 
 ## ❌ CANNOT BUILD (Needs External Resources)
 
 | Feature | Why Not Possible |
 |---------|------------------|
-| Device Fingerprinting | Needs client-side SDK |
 | Behavioral Biometrics | Needs mobile app integration |
 | SIM Swap Detection | Needs telecom API access |
 | Real KYC/Identity Verification | Needs 3rd party API |

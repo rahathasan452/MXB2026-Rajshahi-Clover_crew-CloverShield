@@ -64,6 +64,15 @@ export default function DashboardLanding() {
       link: '/dashboard/profile/search',
       color: 'text-purple-400',
       bg: 'bg-purple-400/10'
+    },
+    {
+      title: language === 'bn' ? 'মডেল স্বাস্থ্য' : 'Model Health',
+      description: language === 'bn' ? 'মডেল কর্মক্ষমতা পর্যবেক্ষণ।' : 'Monitor model performance.',
+      details: language === 'bn' ? 'নির্ভুলতা, নির্ভুলতা এবং রিকল সহ এমএল মডেলের কর্মক্ষমতা মেট্রিক্স রিয়েল-টাইমে পর্যবেক্ষণ করুন।' : 'Monitor ML model performance metrics including Accuracy, Precision, and Recall in real-time.',
+      icon: 'monitoring',
+      link: '/dashboard/model-health',
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-400/10'
     }
   ]
 
