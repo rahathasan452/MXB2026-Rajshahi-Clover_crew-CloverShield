@@ -13,7 +13,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: ML API Logging Integration' (Protocol in workflow.md) [checkpoint: 63eabc4]
 
 ## Phase 3: Frontend Events and Audit Viewer
-- [ ] Task: Implement a frontend utility to log analyst events (e.g., `LOG_ANALYSIS_START`, `REPORT_DOWNLOADED`) using the `log_activity` RPC.
+- [x] Task: Implement a frontend utility to log analyst events (e.g., `LOG_ANALYSIS_START`, `REPORT_DOWNLOADED`) using the `log_activity` RPC. cca4ec1
 - [ ] Task: Add a new "Audit Trail" page in the dashboard (`frontend/app/dashboard/audit/page.tsx`) that displays the `audit_logs` table.
 - [ ] Task: Build an `AuditLogTable` component to display logs with filtering by user, action type, and date range.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Frontend Events and Audit Viewer' (Protocol in workflow.md)
