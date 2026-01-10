@@ -20,3 +20,4 @@
 -   **Fraud Scanner:** Real-time risk scoring engine leveraging XGBoost, providing immediate feedback on transaction legitimacy.
 -   **Customer 360 Network Graph:** Interactive visualization tool to uncover hidden connections, identifying "Mule Networks" and "Star Schemes" visually.
 -   **Policy Lab:** A sandbox environment for backtesting new fraud detection rules against historical data, allowing for safe iteration and improvement of security policies.
+-   **Audit Trail:** A comprehensive, immutable record of system activities, ML predictions, and analyst decisions, ensuring regulatory compliance and "Sovereign Defense" integrity.
