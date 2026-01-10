@@ -1,7 +1,7 @@
 # Track Plan: Robust Audit Logging System
 
 ## Phase 1: Verification and Database Extension
-- [ ] Task: Write SQL tests to verify that the existing `trg_audit_case_changes` trigger correctly logs status changes in the `transactions` table.
+- [x] Task: Write SQL tests to verify that the existing `trg_audit_case_changes` trigger correctly logs status changes in the `transactions` table. 5e85ad4
 - [ ] Task: Create a new migration to add a trigger for logging unauthorized access attempts or sensitive config changes in `model_registry` (if applicable).
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Verification and Database Extension' (Protocol in workflow.md)
 
