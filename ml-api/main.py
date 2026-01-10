@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from inference import FraudInference, load_inference_engine
 from simulation import simulation_manager, SimulationConfig
 from training_service import train_model_async
+from utils.audit import AuditLogger
 import warnings
 
 # Suppress warnings
@@ -178,6 +179,9 @@ MODEL_THRESHOLD = float(os.getenv("MODEL_THRESHOLD", "0.0793"))
 supabase_url: str = os.environ.get("SUPABASE_URL")
 supabase_key: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") # Use Service Role Key for backend updates
 supabase: Client = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
+
+# Audit Logger
+audit_logger = AuditLogger(supabase) if supabase else None
 
 # Risk thresholds (matching config.py)
 RISK_THRESHOLDS = {
@@ -470,6 +474,12 @@ async def predict(request: PredictRequest):
         probability = float(result['probabilities'][0])
         decision, risk_level = calculate_decision(probability)
         confidence = calculate_confidence(probability)
+        
+        # Log prediction to Audit Log
+        if audit_logger:
+            # Create features dictionary for audit log
+            audit_features = transaction_df.to_dict(orient='records')[0]
+            audit_logger.log_prediction(transaction_id, probability, audit_features)
         
         # Format SHAP explanations
         shap_explanations = None
