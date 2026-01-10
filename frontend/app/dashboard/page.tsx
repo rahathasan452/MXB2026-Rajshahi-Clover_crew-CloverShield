@@ -84,6 +84,15 @@ export default function DashboardLanding() {
       bg: 'bg-orange-400/10'
     },
     {
+      title: language === 'bn' ? 'অডিট ট্রেইল' : 'Audit Trail',
+      description: language === 'bn' ? 'সিস্টেম কার্যকলাপ দেখুন।' : 'Review system activity logs.',
+      details: language === 'bn' ? 'স্বচ্ছতা এবং সার্বভৌম নিরাপত্তা নিশ্চিত করতে সমস্ত অডিট এবং অ্যাক্সেস লগ পর্যবেক্ষণ করুন।' : 'Monitor all audit and access logs to ensure transparency and sovereign security.',
+      icon: 'history',
+      link: '/dashboard/audit',
+      color: 'text-emerald-500',
+      bg: 'bg-emerald-500/10'
+    },
+    {
       title: language === 'bn' ? 'সিকিউর রিসিভার' : 'Secure Receiver',
       description: language === 'bn' ? 'এয়ার-গ্যাপড ডেটা স্ক্যান করুন।' : 'Scan air-gapped data.',
       details: language === 'bn' ? 'QR কোডের মাধ্যমে নিরাপদ টার্মিনাল থেকে কেস ডেটা গ্রহণ করুন।' : 'Receive case evidence from the secure terminal via optical QR bridge.',
