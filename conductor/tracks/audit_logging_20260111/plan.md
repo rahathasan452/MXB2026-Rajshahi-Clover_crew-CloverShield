@@ -9,7 +9,7 @@
 - [x] Task: Implement a `AuditLogger` class in `ml-api/utils/audit.py` that wraps the Supabase `log_activity` RPC. 759d8a0
 - [x] Task: Write unit tests for `AuditLogger` using a mock Supabase client. 759d8a0
 - [x] Task: Integrate `AuditLogger` into the `/predict` endpoint in `ml-api/main.py` to log every fraud score calculation. a756ec4
-- [ ] Task: Integrate `AuditLogger` into the `/backtest` endpoint in `ml-api/main.py` to log policy simulations.
+- [x] Task: Integrate `AuditLogger` into the `/backtest` endpoint in `ml-api/main.py` to log policy simulations. 9263bbf
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: ML API Logging Integration' (Protocol in workflow.md)
 
 ## Phase 3: Frontend Events and Audit Viewer
