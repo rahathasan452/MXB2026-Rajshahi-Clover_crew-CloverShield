@@ -2,7 +2,7 @@
 
 ## Phase 1: Verification and Database Extension
 - [x] Task: Write SQL tests to verify that the existing `trg_audit_case_changes` trigger correctly logs status changes in the `transactions` table. 5e85ad4
-- [ ] Task: Create a new migration to add a trigger for logging unauthorized access attempts or sensitive config changes in `model_registry` (if applicable).
+- [x] Task: Create a new migration to add a trigger for logging unauthorized access attempts or sensitive config changes in `model_registry` (if applicable). 0c28b0a
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Verification and Database Extension' (Protocol in workflow.md)
 
 ## Phase 2: ML API Logging Integration
