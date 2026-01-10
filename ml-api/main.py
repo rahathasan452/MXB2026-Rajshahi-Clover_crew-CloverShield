@@ -830,7 +830,7 @@ async def backtest_rule(request: BacktestRequest):
         # Run the query
         matches = df_to_query.query(clean_query)
         
-        # 4. Calculate metrics
+        # Calculate metrics
         matches_count = len(matches)
         
         # Check if 'isFraud' or 'isFlaggedFraud' exists for ground truth
@@ -848,6 +848,13 @@ async def backtest_rule(request: BacktestRequest):
 
         execution_time = int((time.time() - start_time) * 1000)
         
+        # Log backtest to Audit Log
+        if audit_logger:
+            # Determine pass/fail based on some criteria (e.g. precision > 0.5) or just log it
+            # For now, we consider it "passed" if it caught any fraud with > 0 precision
+            passed = fraud_caught > 0 and precision > 0.1 
+            audit_logger.log_backtest(clean_query, passed, precision)
+
         return BacktestResponse(
             total_matches=int(matches_count),
             fraud_caught=int(fraud_caught),
