@@ -6,8 +6,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Verification and Database Extension' (Protocol in workflow.md) [checkpoint: ce05fa1]
 
 ## Phase 2: ML API Logging Integration
-- [ ] Task: Implement a `AuditLogger` class in `ml-api/utils/audit.py` that wraps the Supabase `log_activity` RPC.
-- [ ] Task: Write unit tests for `AuditLogger` using a mock Supabase client.
+- [x] Task: Implement a `AuditLogger` class in `ml-api/utils/audit.py` that wraps the Supabase `log_activity` RPC. 759d8a0
+- [x] Task: Write unit tests for `AuditLogger` using a mock Supabase client. 759d8a0
 - [ ] Task: Integrate `AuditLogger` into the `/predict` endpoint in `ml-api/main.py` to log every fraud score calculation.
 - [ ] Task: Integrate `AuditLogger` into the `/backtest` endpoint in `ml-api/main.py` to log policy simulations.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: ML API Logging Integration' (Protocol in workflow.md)
