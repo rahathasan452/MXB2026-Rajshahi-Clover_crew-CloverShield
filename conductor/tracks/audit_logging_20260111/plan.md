@@ -14,6 +14,6 @@
 
 ## Phase 3: Frontend Events and Audit Viewer
 - [x] Task: Implement a frontend utility to log analyst events (e.g., `LOG_ANALYSIS_START`, `REPORT_DOWNLOADED`) using the `log_activity` RPC. cca4ec1
-- [ ] Task: Add a new "Audit Trail" page in the dashboard (`frontend/app/dashboard/audit/page.tsx`) that displays the `audit_logs` table.
-- [ ] Task: Build an `AuditLogTable` component to display logs with filtering by user, action type, and date range.
+- [x] Task: Add a new "Audit Trail" page in the dashboard (`frontend/app/dashboard/audit/page.tsx`) that displays the `audit_logs` table. 4d306ac
+- [x] Task: Build an `AuditLogTable` component to display logs with filtering by user, action type, and date range. 4d306ac
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Frontend Events and Audit Viewer' (Protocol in workflow.md)
