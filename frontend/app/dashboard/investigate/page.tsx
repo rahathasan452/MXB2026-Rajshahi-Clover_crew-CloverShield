@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase, createCase } from '@/lib/supabase'
 import { useAppStore } from '@/store/useAppStore'
-import { predictFraud } from '@/lib/ml-api'
+import { predictFraud, seedQueue } from '@/lib/ml-api'
 import { Icon } from '@/components/Icon'
 import toast from 'react-hot-toast'
 import { formatDistanceToNow } from 'date-fns'
@@ -53,75 +53,17 @@ export default function InvestigatePage() {
     try {
       setSeeding(true)
       const countToFetch = isRefill ? 1 : 10
-
-      // 1. Fetch fraud sources from Engineered Dataset
-      const { data: sourceData, error: fetchError } = await supabase
-        .from('test_dataset_engineered')
-        .select('*')
-        .eq('isFraud', 1)
-        .order('dest_txn_count', { ascending: false })
-        .range(offset, offset + countToFetch - 1)
-
-      if (fetchError) throw fetchError
-      if (!sourceData || sourceData.length === 0) {
+      
+      const result = await seedQueue(countToFetch, offset, isRefill)
+      
+      if (result.seeded_count > 0) {
+        setOffset(result.next_offset)
+        if (!isRefill) toast.success(language === 'bn' ? 'স্মার্ট ফিল্টার সম্পন্ন' : 'Cases generated with AI inference')
+        fetchQueue()
+      } else {
         if (!isRefill) toast.error('No more fraud records found')
-        return
       }
 
-      // 2. Perform Background Inference for each record
-      const analyzedItems = await Promise.all(sourceData.map(async (item) => {
-        try {
-          const prediction = await predictFraud({
-            step: item.step,
-            type: item.type_encoded === 1 ? 'CASH_OUT' : 'TRANSFER',
-            amount: item.amount,
-            nameOrig: item.nameOrig,
-            oldBalanceOrig: item.oldBalanceOrig,
-            newBalanceOrig: item.newBalanceOrig,
-            nameDest: item.nameDest,
-            oldBalanceDest: item.oldBalanceDest,
-            newBalanceDest: item.newBalanceDest,
-          })
-
-          return {
-            sender_id: item.nameOrig,
-            receiver_id: item.nameDest,
-            amount: item.amount,
-            transaction_type: item.type_encoded === 1 ? 'CASH_OUT' : 'TRANSFER',
-            old_balance_orig: item.oldBalanceOrig,
-            new_balance_orig: item.newBalanceOrig,
-            old_balance_dest: item.oldBalanceDest,
-            new_balance_dest: item.newBalanceDest,
-            step: item.step,
-            transaction_timestamp: new Date().toISOString(),
-            fraud_probability: prediction.prediction.fraud_probability,
-            fraud_decision: prediction.prediction.decision,
-            risk_level: prediction.prediction.risk_level,
-            model_confidence: prediction.prediction.confidence,
-            status: 'REVIEW',
-            is_test_data: true,
-            note: 'Top fraud ring candidate (High dest txn count)'
-          }
-        } catch (e) {
-          console.error("Inference failed for item", item.nameOrig, e)
-          return null
-        }
-      }))
-
-      const validItems = analyzedItems.filter(i => i !== null)
-
-      // 3. Save to History
-      if (validItems.length > 0) {
-        const { error: insertError } = await supabase
-          .from('transaction_history')
-          .insert(validItems)
-
-        if (insertError) throw insertError
-        setOffset(prev => prev + countToFetch)
-      }
-
-      if (!isRefill) toast.success(language === 'bn' ? 'স্মার্ট ফিল্টার সম্পন্ন' : 'Cases generated with AI inference')
-      fetchQueue()
     } catch (err: any) {
       console.error('Seed error:', err)
       if (!isRefill) toast.error('Failed to seed queue: ' + err.message)

@@ -1,5 +1,18 @@
 -- Migration: Create cases table for investigation management
 
+-- Create ENUMs for better data integrity
+DO $$ BEGIN
+    CREATE TYPE case_status AS ENUM ('Open', 'Investigating', 'Resolved', 'False Positive');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE case_priority AS ENUM ('High', 'Medium', 'Low');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 CREATE TABLE IF NOT EXISTS cases (
     case_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     
@@ -8,11 +21,12 @@ CREATE TABLE IF NOT EXISTS cases (
     transaction_id UUID REFERENCES transactions(transaction_id) ON DELETE SET NULL,
     
     -- Case Details
-    status VARCHAR(50) NOT NULL CHECK (status IN ('Open', 'Investigating', 'Resolved', 'False Positive')),
-    priority VARCHAR(20) NOT NULL CHECK (priority IN ('High', 'Medium', 'Low')),
+    status case_status NOT NULL DEFAULT 'Open',
+    priority case_priority NOT NULL DEFAULT 'Medium',
     
     -- Assignment
-    analyst_id VARCHAR(50), -- Can reference auth.users if needed, but keeping simple string for now per spec
+    -- Referencing auth.users to ensure the analyst exists and is a valid system user
+    analyst_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     
     -- Metadata
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -30,6 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_cases_user ON cases(user_id);
 CREATE INDEX IF NOT EXISTS idx_cases_transaction ON cases(transaction_id);
 
 -- Trigger for updated_at
+DROP TRIGGER IF EXISTS update_cases_updated_at ON cases;
 CREATE TRIGGER update_cases_updated_at
     BEFORE UPDATE ON cases
     FOR EACH ROW

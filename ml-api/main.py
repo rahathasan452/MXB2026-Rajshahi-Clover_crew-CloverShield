@@ -527,6 +527,116 @@ async def predict(request: PredictRequest):
         print(f"❌ Prediction error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
+class SeedQueueRequest(BaseModel):
+    """Request model for seeding the queue"""
+    count: int = Field(default=10, le=50)
+    offset: int = Field(default=0, ge=0)
+    is_refill: bool = False
+
+@app.post("/simulation/seed-queue")
+async def seed_queue(request: SeedQueueRequest):
+    """
+    Seed the investigation queue with high-risk transactions from the dataset.
+    Performs inference and saves to transaction_history.
+    """
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Database not connected")
+
+    try:
+        # 1. Fetch fraud sources from Engineered Dataset
+        response = supabase.table('test_dataset_engineered') \
+            .select('*') \
+            .eq('isFraud', 1) \
+            .order('dest_txn_count', desc=True) \
+            .range(request.offset, request.offset + request.count - 1) \
+            .execute()
+        
+        source_data = response.data
+        if not source_data:
+            return {"message": "No more records found", "count": 0}
+
+        # Ensure model is loaded
+        ensure_model_loaded()
+        if inference_engine is None:
+             raise HTTPException(status_code=503, detail="Model failed to load")
+
+        valid_items = []
+        
+        # Current time as base
+        base_time = datetime.utcnow()
+        
+        for i, item in enumerate(source_data):
+            try:
+                # Prepare transaction for inference
+                tx_input = pd.DataFrame([{
+                    'step': item.get('step', 1),
+                    'type': 'CASH_OUT' if item.get('type_encoded') == 1 else 'TRANSFER',
+                    'amount': float(item['amount']),
+                    'nameOrig': item['nameOrig'],
+                    'oldBalanceOrig': float(item['oldBalanceOrig']),
+                    'newBalanceOrig': float(item['newBalanceOrig']),
+                    'nameDest': item['nameDest'],
+                    'oldBalanceDest': float(item['oldBalanceDest']),
+                    'newBalanceDest': float(item['newBalanceDest']),
+                    'isFlaggedFraud': 0
+                }])
+
+                # Run Inference
+                # We use the internal method to avoid overhead of full prediction pipeline if possible,
+                # but predict_and_explain is fine.
+                result = inference_engine.predict_and_explain(
+                    tx_input, 
+                    shap_background=None, 
+                    use_llm=False
+                )
+                
+                prob = float(result['probabilities'][0])
+                decision, risk = calculate_decision(prob)
+                conf = calculate_confidence(prob)
+                
+                # Stagger timestamps by 1-5 minutes to avoid "same millisecond" issue
+                # and make it look like a stream of recent events
+                time_offset = (len(source_data) - i) * 2  # Minutes ago
+                tx_timestamp = (base_time - pd.Timedelta(minutes=time_offset)).isoformat()
+
+                valid_items.append({
+                    "sender_id": item['nameOrig'],
+                    "receiver_id": item['nameDest'],
+                    "amount": item['amount'],
+                    "transaction_type": 'CASH_OUT' if item.get('type_encoded') == 1 else 'TRANSFER',
+                    "old_balance_orig": item['oldBalanceOrig'],
+                    "new_balance_orig": item['newBalanceOrig'],
+                    "old_balance_dest": item['oldBalanceDest'],
+                    "new_balance_dest": item['newBalanceDest'],
+                    "step": item.get('step'),
+                    "transaction_timestamp": tx_timestamp,
+                    "fraud_probability": prob,
+                    "fraud_decision": decision,
+                    "risk_level": risk,
+                    "model_confidence": conf,
+                    "status": 'REVIEW',
+                    "is_test_data": True,
+                    "note": 'Top fraud ring candidate (High dest txn count)'
+                })
+                
+            except Exception as e:
+                print(f"Skipping item {item.get('nameOrig')}: {str(e)}")
+                continue
+
+        # 3. Save to History
+        if valid_items:
+            data, count = supabase.table('transaction_history').insert(valid_items).execute()
+            
+        return {
+            "message": "Queue seeded successfully", 
+            "seeded_count": len(valid_items),
+            "next_offset": request.offset + len(source_data)
+        }
+
+    except Exception as e:
+        print(f"Seed error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/predict/batch", response_model=BatchPredictResponse)
 async def predict_batch(request: BatchPredictRequest):
     """

@@ -32,6 +32,7 @@ export const InvestigationChecklist: React.FC<InvestigationChecklistProps> = ({
   }, [initialState])
 
   const handleToggle = async (id: string) => {
+    const previousState = items
     const newState = { ...items, [id]: !items[id] }
     setItems(newState)
     
@@ -45,7 +46,8 @@ export const InvestigationChecklist: React.FC<InvestigationChecklistProps> = ({
     } catch (error) {
       console.error("Failed to save checklist:", error)
       toast.error("Failed to save progress")
-      // Revert on error? Or just leave it optimistic.
+      setItems(previousState) // Revert on error
+      if (onUpdate) onUpdate(previousState) // Revert parent
     } finally {
       setSaving(false)
     }

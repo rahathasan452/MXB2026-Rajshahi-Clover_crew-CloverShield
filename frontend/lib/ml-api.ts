@@ -292,6 +292,24 @@ export const generateSARNarrative = async (
 }
 
 /**
+ * Seed the investigation queue
+ */
+export const seedQueue = async (count: number = 10, offset: number = 0, isRefill: boolean = false): Promise<any> => {
+  try {
+    const response = await apiClient.post('/simulation/seed-queue', {
+      count,
+      offset,
+      is_refill: isRefill
+    })
+    return response.data
+  } catch (error: any) {
+    console.error('Queue seeding failed:', error)
+    const errorMessage = getErrorMessage(error)
+    throw new Error(errorMessage)
+  }
+}
+
+/**
  * Verify ML API configuration and connectivity
  * Useful for debugging connection issues
  */
