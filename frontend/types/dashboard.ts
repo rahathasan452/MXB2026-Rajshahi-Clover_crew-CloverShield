@@ -20,7 +20,7 @@ export interface Transaction {
   receiver_id: string;
   amount: number;
   transaction_type: string;
-  created_at: string; // ISO String
+  created_at?: string; // ISO String
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'BLOCKED';
   is_test_data?: boolean;
   fraud_probability?: number;
