@@ -7,11 +7,11 @@
 - [x] Task: Create a toggle switch in the UI to enable/disable automated pattern overlays [reverted]
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Automated Ring & Cluster Detection' (Protocol in workflow.md)
 
-## Phase 3: Interactive Network Expansion
+## Phase 3: Interactive Network Expansion [checkpoint: ce38b85]
 - [x] Task: Add "Expand" context menu option or button to graph nodes [17a5841]
 - [x] Task: Update the data fetching logic to retrieve 1st and 2nd degree connections on-demand [f442991]
-- [ ] Task: Implement incremental rendering to ensure the graph remains responsive during expansion
-- [ ] Task: Add a "Collapse" or "Reset" button to clear expanded views
+- [x] Task: Implement incremental rendering to ensure the graph remains responsive during expansion [f442991]
+- [x] Task: Add a "Collapse" or "Reset" button to clear expanded views [ce38b85]
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Interactive Network Expansion' (Protocol in workflow.md)
 
 ## Phase 4: Data & Evidence Export
