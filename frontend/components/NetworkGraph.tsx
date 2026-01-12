@@ -274,7 +274,51 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         graphData={data}
         nodeLabel="id"
         nodeRelSize={6}
-        nodeColor="color"
+        nodeCanvasObject={(node: any, ctx, globalScale) => {
+          const label = node.id
+          const fontSize = 12/globalScale
+          ctx.font = `${fontSize}px Sans-Serif`
+          const textWidth = ctx.measureText(label).width
+          const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2) as [number, number]
+
+          // Highlighting for Mules
+          if (node.isMule) {
+            ctx.beginPath()
+            ctx.arc(node.x, node.y, node.val * 1.5, 0, 2 * Math.PI, false)
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.2)' // Red glow
+            ctx.fill()
+            ctx.strokeStyle = '#EF4444'
+            ctx.setLineDash([2, 2])
+            ctx.lineWidth = 1/globalScale
+            ctx.stroke()
+            ctx.setLineDash([])
+          }
+
+          // Main Node Circle
+          ctx.beginPath()
+          ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false)
+          ctx.fillStyle = node.color
+          ctx.fill()
+          
+          // Border for high risk
+          if (node.riskScore > 0.7) {
+            ctx.strokeStyle = '#FFFFFF'
+            ctx.lineWidth = 2/globalScale
+            ctx.stroke()
+          }
+
+          // Label
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
+          ctx.fillText(label, node.x, node.y + node.val + 5)
+        }}
+        nodePointerAreaPaint={(node: any, color, ctx) => {
+          ctx.fillStyle = color
+          ctx.beginPath()
+          ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false)
+          ctx.fill()
+        }}
         linkColor="color"
         linkWidth="width"
         linkDirectionalParticles="particles"
