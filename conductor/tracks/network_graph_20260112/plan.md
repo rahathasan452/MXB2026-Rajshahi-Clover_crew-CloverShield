@@ -1,6 +1,6 @@
 # Plan: Enhanced Network Graph Features
 
-## Phase 1: Risk-Based Visualization & UI Polish
+## Phase 1: Risk-Based Visualization & UI Polish [checkpoint: d90f863]
 - [x] Task: Update `GraphNode` component to support dynamic color mapping based on `fraud_probability` [686eeed]
 - [x] Task: Implement a `RiskLegend` component and integrate it into the Network Graph view [15a12a9]
 - [x] Task: Refactor graph layout to improve spacing and readability for dense clusters [d21f2ab]
