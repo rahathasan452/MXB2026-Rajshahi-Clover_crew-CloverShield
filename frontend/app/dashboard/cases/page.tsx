@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { supabase, getOpenCases, Case, updateCaseStatus } from '@/lib/supabase'
+import { supabase, getOpenCases, Case, updateCaseStatus, generateDemoCases } from '@/lib/supabase'
 import { Icon } from '@/components/Icon'
 import { CaseStatusBadge, CasePriorityBadge } from '@/components/CaseStatusBadge'
 import { format } from 'date-fns'
@@ -13,6 +13,7 @@ export default function CasesPage() {
   const { authUser } = useAppStore()
   const [cases, setCases] = useState<Case[]>([])
   const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'All' | 'Open' | 'Investigating' | 'Resolved'>('All')
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -70,6 +71,24 @@ export default function CasesPage() {
     }
   }
 
+  const handleGenerateDemo = async () => {
+    setGenerating(true)
+    try {
+      const newCases = await generateDemoCases(5)
+      if (newCases.length > 0) {
+        toast.success(`Generated ${newCases.length} demo cases`)
+        fetchCases()
+      } else {
+        toast('No suitable high-risk transactions found to create cases from.', { icon: 'ℹ️' })
+      }
+    } catch (error) {
+      console.error("Failed to generate cases:", error)
+      toast.error("Failed to generate demo cases")
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   const filteredCases = cases.filter(c => {
     const matchesStatus = statusFilter === 'All' || c.status === statusFilter
     const matchesSearch = searchTerm === '' || 
@@ -98,7 +117,17 @@ export default function CasesPage() {
           <p className="text-slate-400 text-sm mt-1">Manage and triage active fraud cases</p>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
+           <button
+             onClick={handleGenerateDemo}
+             disabled={generating}
+             className="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-500/50 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all disabled:opacity-50"
+             title="Populate queue with cases from high-risk transactions"
+           >
+             <Icon name={generating ? "loader" : "zap"} size={16} className={generating ? "animate-spin" : ""} />
+             {generating ? 'Generating...' : 'Simulate Cases'}
+           </button>
+           
            <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
               <span className="text-xs text-slate-500 uppercase tracking-widest">Open</span>
               <span className="text-2xl font-bold text-yellow-500">{stats.open}</span>

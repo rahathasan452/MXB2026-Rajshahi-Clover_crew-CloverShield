@@ -228,6 +228,48 @@ export const updateCaseStatus = async (
   return data
 }
 
+export const generateDemoCases = async (count: number = 5): Promise<Case[]> => {
+  // 1. Find high-risk transactions that don't have a case yet
+  // Note: This is a bit complex in Supabase without a join-filter or 'not in'.
+  // For demo purposes, we'll fetch recent high-risk transactions and check locally or just try insert and ignore conflicts if unique constraint existed (but it doesn't on target_id yet).
+  // Better: Fetch random high risk transactions.
+  
+  const { data: transactions, error: txError } = await supabase
+    .from('transactions')
+    .select('transaction_id, sender_id, fraud_probability')
+    .in('fraud_decision', ['block', 'warn'])
+    .order('transaction_timestamp', { ascending: false })
+    .limit(50) // Fetch pool
+
+  if (txError) throw txError
+  if (!transactions || transactions.length === 0) return []
+
+  // 2. Filter out those that might already be cases (client-side check for simple demo)
+  // Get all existing case target_ids
+  const { data: existingCases } = await supabase.from('cases').select('transaction_id')
+  const existingTxIds = new Set(existingCases?.map(c => c.transaction_id) || [])
+
+  const candidates = transactions.filter(tx => !existingTxIds.has(tx.transaction_id))
+  const toCreate = candidates.slice(0, count)
+
+  if (toCreate.length === 0) return []
+
+  const newCases: Omit<Case, 'case_id' | 'created_at' | 'updated_at'>[] = toCreate.map(tx => ({
+    transaction_id: tx.transaction_id,
+    user_id: tx.sender_id, // Link to sender
+    status: 'Open',
+    priority: (tx.fraud_probability || 0) > 0.8 ? 'High' : 'Medium',
+  }))
+
+  const { data, error } = await supabase
+    .from('cases')
+    .insert(newCases)
+    .select()
+
+  if (error) throw error
+  return data || []
+}
+
 // Transaction History interface (for test dataset transactions)
 export interface TransactionHistory {
   transaction_id: string
