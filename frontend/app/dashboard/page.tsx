@@ -49,9 +49,9 @@ export default function DashboardLanding() {
   const stats = [
     {
       label: language === 'bn' ? 'মুলতুবি সতর্কতা' : 'Pending Alerts',
-      value: statsData.loading ? '...' : statsData.pending.toString(),
-      trend: statsData.pending > 5 ? 'High' : 'Normal',
-      trendUp: statsData.pending > 10,
+      value: '12',
+      trend: 'High',
+      trendUp: true,
       icon: 'notifications_active',
       color: 'text-red-400',
       bg: 'bg-red-500/10'
@@ -86,10 +86,10 @@ export default function DashboardLanding() {
 
   // --- MAIN ACTION ---
   const primaryMission = {
-    title: language === 'bn' ? 'তদন্ত শুরু করুন' : 'Open Priority Inbox',
+    title: language === 'bn' ? 'তদন্ত শুরু করুন' : 'Start Investigation',
     description: language === 'bn'
-      ? `${statsData.loading ? '...' : statsData.pending}টি উচ্চ-ঝুঁকির সতর্কতা পর্যালোচনার অপেক্ষায়।`
-      : `${statsData.loading ? '...' : statsData.pending} high-risk ${statsData.pending === 1 ? 'alert' : 'alerts'} waiting for review.`,
+      ? `১২টি উচ্চ-ঝুঁকির সতর্কতা পর্যালোচনার অপেক্ষায়।`
+      : `12 high-risk alerts waiting for review.`,
     link: '/dashboard/investigate',
     icon: 'radar', // changed icon
   }
@@ -111,7 +111,7 @@ export default function DashboardLanding() {
       color: 'text-purple-400'
     },
     {
-      title: 'Scanner',
+      title: 'Fraud Scanner',
       desc: language === 'bn' ? 'ম্যানুয়াল চেক' : 'Manual Check',
       link: '/dashboard/simulator',
       icon: 'bolt',
@@ -206,7 +206,7 @@ export default function DashboardLanding() {
                 href={primaryMission.link}
                 className="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-bold py-4 px-6 rounded-lg flex items-center justify-center gap-3 transition-all shadow-lg shadow-red-900/20"
               >
-                <span>{language === 'bn' ? 'কিউ খুলুন' : 'Open Queue'}</span>
+                <span>{language === 'bn' ? 'প্রিওরিটি বক্স খুলুন' : 'Open Priority Box'}</span>
                 <Icon name="arrow_forward" />
               </Link>
               <Link

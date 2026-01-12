@@ -42,7 +42,7 @@ export const NAV_CONFIG: NavItem[] = [
     roles: ['analyst', 'senior_analyst', 'admin']
   },
   {
-    label: 'Scanner',
+    label: 'Fraud Scanner',
     labelBn: 'স্ক্যানার',
     href: '/dashboard/simulator',
     icon: 'radar',
