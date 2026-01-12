@@ -120,6 +120,21 @@ export const getTransactionHistory = async (
   return data || []
 }
 
+export const getNetworkConnections = async (
+  userIds: string[],
+  limit: number = 50
+): Promise<Transaction[]> => {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .or(`sender_id.in.(${userIds.join(',')}),receiver_id.in.(${userIds.join(',')})`)
+    .order('transaction_timestamp', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data || []
+}
+
 export const createTransaction = async (
   transaction: Omit<Transaction, 'transaction_id' | 'transaction_timestamp'>
 ): Promise<Transaction> => {

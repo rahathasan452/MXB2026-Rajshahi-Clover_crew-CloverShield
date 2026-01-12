@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic'
 import { useAppStore } from '@/store/useAppStore'
 import { Icon } from './Icon'
 import { RiskLegend } from './RiskLegend'
+import { getNetworkConnections } from '@/lib/supabase'
 
 // Dynamically import ForceGraph2D to avoid SSR issues
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -54,23 +55,140 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const { brandTheme } = useAppStore()
   const [data, setData] = useState<GraphData>({ nodes: [], links: [] })
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
+  const [expanding, setExpanding] = useState(false)
 
-  // ... (keep useEffect etc)
+  const addTransactionsToGraph = useCallback((transactions: any[]) => {
+    setData(currentData => {
+      const newNodes = [...currentData.nodes]
+      const newLinks = [...currentData.links]
+      
+      transactions.forEach(tx => {
+        const p = tx.fraud_probability || 0
+        const senderId = tx.sender_id || tx.nameOrig
+        const receiverId = tx.receiver_id || tx.nameDest
+
+        // Link
+        const linkExists = newLinks.find(l => {
+            const s = typeof l.source === 'string' ? l.source : (l.source as any).id
+            const t = typeof l.target === 'string' ? l.target : (l.target as any).id
+            return (s === senderId && t === receiverId) || (s === receiverId && t === senderId)
+        })
+
+        if (!linkExists) {
+            newLinks.push({
+                source: senderId,
+                target: receiverId,
+                color: p > 0.7 ? '#EF4444' : p > 0.3 ? '#F59E0B' : '#22D3EE',
+                width: p > 0.7 ? 4 : 2,
+                particles: p > 0.7 ? 4 : 0
+            })
+        }
+
+        // Nodes
+        const updateOrAdd = (id: string, type: 'sender' | 'receiver') => {
+            const idx = newNodes.findIndex(n => n.id === id)
+            if (idx === -1) {
+                newNodes.push({
+                    id,
+                    val: 4 + (p * 2),
+                    color: getNodeColor(p, type),
+                    type,
+                    riskScore: p
+                })
+            } else {
+                const node = newNodes[idx]
+                const newRisk = Math.max(node.riskScore, p)
+                newNodes[idx] = {
+                    ...node,
+                    riskScore: newRisk,
+                    color: getNodeColor(newRisk, type),
+                    val: 4 + (newRisk * 2)
+                }
+            }
+        }
+
+        updateOrAdd(senderId, 'sender')
+        updateOrAdd(receiverId, 'receiver')
+      })
+
+      // Limit to last 200 nodes/links for performance
+      return { 
+          nodes: newNodes.slice(-200), 
+          links: newLinks.slice(-200) 
+      }
+    })
+  }, [])
+
+  // Initialize from history
+  useEffect(() => {
+    if (history.length > 0) {
+      addTransactionsToGraph(history)
+    }
+  }, [history, addTransactionsToGraph])
+
+  // Listen for new transactions
+  useEffect(() => {
+    if (latestTransaction) {
+      addTransactionsToGraph([latestTransaction])
+    }
+  }, [latestTransaction, addTransactionsToGraph])
 
   const handleNodeClick = useCallback((node: any) => {
     setSelectedNode(node)
   }, [])
 
-  const handleExpand = () => {
+  const handleExpand = async () => {
     if (!selectedNode) return
-    console.log("Expanding node:", selectedNode.id)
-    // Expansion logic will be implemented in the next task
-    setSelectedNode(null)
+    setExpanding(true)
+    try {
+      // 1. Fetch 1st degree connections
+      const firstDegree = await getNetworkConnections([selectedNode.id], 20)
+      addTransactionsToGraph(firstDegree)
+
+      // 2. Extract neighbors for 2nd degree
+      const neighbors = new Set<string>()
+      firstDegree.forEach(tx => {
+          if (tx.sender_id !== selectedNode.id) neighbors.add(tx.sender_id)
+          if (tx.receiver_id !== selectedNode.id) neighbors.add(tx.receiver_id)
+      })
+
+      if (neighbors.size > 0) {
+          // Fetch 2nd degree connections for top 5 neighbors (limit depth)
+          const topNeighbors = Array.from(neighbors).slice(0, 5)
+          const secondDegree = await getNetworkConnections(topNeighbors, 20)
+          addTransactionsToGraph(secondDegree)
+      }
+      
+      setSelectedNode(null)
+    } catch (error) {
+      console.error("Expansion failed:", error)
+    } finally {
+      setExpanding(false)
+    }
   }
+
+  useEffect(() => {
+    if (fgRef.current) {
+      // Increase repulsion (charge) to separate nodes more
+      fgRef.current.d3Force('charge').strength(-150)
+      // Increase link distance
+      fgRef.current.d3Force('link').distance(50)
+    }
+  }, [data])
 
   return (
     <div className="hud-card border border-white/10 relative overflow-hidden" style={{ height }}>
-      {/* ... header ... */}
+      <div className="absolute top-0 left-0 p-4 z-10 pointer-events-none">
+        <h3 className="text-xl font-bold text-text-primary flex items-center gap-2 hud-glow-blue">
+          <Icon name="hub" size={24} />
+          {language === 'bn' ? 'লাইভ নেটওয়ার্ক গ্রাফ' : 'LIVE NETWORK TOPOLOGY'}
+        </h3>
+        <p className="text-xs text-text-secondary font-mono mt-1">
+          {data.nodes.length} {language === 'bn' ? 'নোড' : 'NODES'} | {data.links.length} {language === 'bn' ? 'লিঙ্ক' : 'EDGES'}
+        </p>
+      </div>
+      
+      <div className="scanline" />
       
       <ForceGraph2D
         ref={fgRef}
@@ -100,7 +218,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           style={{ 
             left: '50%', 
             top: '50%', 
-            transform: 'translate(-50%, -50%)' // Center for now, or use node coordinates if possible
+            transform: 'translate(-50%, -50%)' 
           }}
         >
           <div className="text-xs text-slate-300 px-2 py-1 font-mono border-r border-slate-800">
@@ -108,10 +226,15 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           </div>
           <button 
             onClick={handleExpand}
-            className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded transition-all"
+            disabled={expanding}
+            className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded transition-all disabled:opacity-50"
           >
-            <Icon name="add_circle" size={12} />
-            {language === 'bn' ? 'প্রসারণ' : 'EXPAND'}
+            {expanding ? (
+                <Icon name="progress_activity" size={12} className="animate-spin" />
+            ) : (
+                <Icon name="add_circle" size={12} />
+            )}
+            {expanding ? (language === 'bn' ? 'প্রক্রিয়াকরণ' : 'EXPANDING...') : (language === 'bn' ? 'প্রসারণ' : 'EXPAND')}
           </button>
           <button 
             onClick={() => setSelectedNode(null)}
