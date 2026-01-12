@@ -1,0 +1,22 @@
+# Plan: Enhanced Network Graph Features
+
+## Phase 2: Automated Ring & Cluster Detection [checkpoint: 52e7da1]
+- [x] Task: Implement a "Star/Mule" detection utility in the frontend to identify nodes with high degree centrality [reverted]
+- [x] Task: Integrate `graphology` or similar lightweight library for Community Detection (Louvain) [reverted]
+- [x] Task: Add visual "highlighting" effects (glow/borders) for detected fraud rings [reverted]
+- [x] Task: Create a toggle switch in the UI to enable/disable automated pattern overlays [reverted]
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Automated Ring & Cluster Detection' (Protocol in workflow.md)
+
+## Phase 3: Interactive Network Expansion [checkpoint: ce38b85]
+- [x] Task: Add "Expand" context menu option or button to graph nodes [17a5841]
+- [x] Task: Update the data fetching logic to retrieve 1st and 2nd degree connections on-demand [f442991]
+- [x] Task: Implement incremental rendering to ensure the graph remains responsive during expansion [f442991]
+- [x] Task: Add a "Collapse" or "Reset" button to clear expanded views [ce38b85]
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: Interactive Network Expansion' (Protocol in workflow.md)
+
+## Phase 4: Data & Evidence Export
+- [ ] Task: Implement a "Snapshot" utility to capture the current graph viewport as PNG
+- [ ] Task: Create a "Data Manifest" generator that exports visible nodes/edges as JSON/CSV
+- [ ] Task: Combine both exports into a single "Download Evidence" action (ZIP or dual-file download)
+- [ ] Task: Add "Analyst Metadata" (Timestamp, Analyst ID) to the exported files
+- [ ] Task: Conductor - User Manual Verification 'Phase 4: Data & Evidence Export' (Protocol in workflow.md)
