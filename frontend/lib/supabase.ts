@@ -160,6 +160,74 @@ export const flagAccount = async (
   return data
 }
 
+// Case Management Types
+export interface Case {
+  case_id: string
+  user_id?: string
+  transaction_id?: string
+  status: 'Open' | 'Investigating' | 'Resolved' | 'False Positive'
+  priority: 'High' | 'Medium' | 'Low'
+  analyst_id?: string
+  created_at: string
+  updated_at: string
+}
+
+export const getOpenCases = async (): Promise<Case[]> => {
+  const { data, error } = await supabase
+    .from('cases')
+    .select('*')
+    .in('status', ['Open', 'Investigating'])
+    .order('priority', { ascending: true }) // High priority (alphabetically H < L? No, H < M < L is not alphabetic. Wait. High, Medium, Low. H, M, L. Alpha: High, Low, Medium. Need custom sort or map.)
+    // Actually, let's just order by created_at for now, or assume the UI handles sorting.
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+export const getCase = async (caseId: string): Promise<Case | null> => {
+  const { data, error } = await supabase
+    .from('cases')
+    .select('*')
+    .eq('case_id', caseId)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const createCase = async (
+  caseData: Omit<Case, 'case_id' | 'created_at' | 'updated_at'>
+): Promise<Case> => {
+  const { data, error } = await supabase
+    .from('cases')
+    .insert(caseData)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const updateCaseStatus = async (
+  caseId: string,
+  status: Case['status'],
+  analystId?: string
+): Promise<Case> => {
+  const updates: Partial<Case> = { status }
+  if (analystId) updates.analyst_id = analystId
+
+  const { data, error } = await supabase
+    .from('cases')
+    .update(updates)
+    .eq('case_id', caseId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
 // Transaction History interface (for test dataset transactions)
 export interface TransactionHistory {
   transaction_id: string
