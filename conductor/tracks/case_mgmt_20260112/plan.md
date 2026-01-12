@@ -3,7 +3,7 @@
 This plan implements a structured case management system, including a new database schema, investigation queue, and analyst toolkit components.
 
 ## Phase 1: Database Schema & API Setup
-- [~] Task: Create Supabase migration for `cases` table
+- [x] Task: Create Supabase migration for `cases` table [424ca27]
 - [ ] Task: Update `lib/supabase.ts` with new Case types and helper functions
 - [ ] Task: Create server-side logic (if needed) or RLS policies for case access
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Database Schema & API Setup' (Protocol in workflow.md)
