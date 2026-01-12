@@ -4,6 +4,7 @@ import { useAppStore } from '@/store/useAppStore'
 import { Icon } from './Icon'
 import { RiskLegend } from './RiskLegend'
 import { getNetworkConnections } from '@/lib/supabase'
+import { Transaction } from '@/types/dashboard'
 
 // Dynamically import ForceGraph2D to avoid SSR issues
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -35,8 +36,8 @@ interface GraphData {
 interface NetworkGraphProps {
   height?: number
   language?: 'en' | 'bn'
-  latestTransaction?: any
-  history?: any[]
+  latestTransaction?: Transaction
+  history?: Transaction[]
 }
 
 const getNodeColor = (risk: number, type: 'sender' | 'receiver') => {
@@ -57,15 +58,15 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
   const [expanding, setExpanding] = useState(false)
 
-  const addTransactionsToGraph = useCallback((transactions: any[]) => {
+  const addTransactionsToGraph = useCallback((transactions: Transaction[]) => {
     setData(currentData => {
       const newNodes = [...currentData.nodes]
       const newLinks = [...currentData.links]
       
       transactions.forEach(tx => {
         const p = tx.fraud_probability || 0
-        const senderId = tx.sender_id || tx.nameOrig
-        const receiverId = tx.receiver_id || tx.nameDest
+        const senderId = tx.sender_id || (tx as any).nameOrig
+        const receiverId = tx.receiver_id || (tx as any).nameDest
 
         // Link
         const linkExists = newLinks.find(l => {

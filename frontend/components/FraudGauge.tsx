@@ -4,7 +4,6 @@
  */
 
 import React from 'react'
-import { Cell, PieChart, Pie, ResponsiveContainer, Label } from 'recharts'
 
 interface FraudGaugeProps {
   probability: number // 0-1
