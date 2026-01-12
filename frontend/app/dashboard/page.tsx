@@ -86,8 +86,10 @@ export default function DashboardLanding() {
 
   // --- MAIN ACTION ---
   const primaryMission = {
-    title: language === 'bn' ? 'তদন্ত শুরু করুন' : 'Start Investigation',
-    description: language === 'bn' ? '১২টি উচ্চ-ঝুঁকির সতর্কতা পর্যালোচনার অপেক্ষায়।' : '12 high-risk alerts waiting for review.',
+    title: language === 'bn' ? 'তদন্ত শুরু করুন' : 'Open Priority Inbox',
+    description: language === 'bn'
+      ? `${statsData.loading ? '...' : statsData.pending}টি উচ্চ-ঝুঁকির সতর্কতা পর্যালোচনার অপেক্ষায়।`
+      : `${statsData.loading ? '...' : statsData.pending} high-risk ${statsData.pending === 1 ? 'alert' : 'alerts'} waiting for review.`,
     link: '/dashboard/investigate',
     icon: 'radar', // changed icon
   }

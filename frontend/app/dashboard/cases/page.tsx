@@ -146,8 +146,8 @@ export default function CasesPage() {
               key={tab}
               onClick={() => setStatusFilter(tab as any)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${statusFilter === tab
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
             >
               {tab}
@@ -176,7 +176,6 @@ export default function CasesPage() {
               <th className="p-4">Target</th>
               <th className="p-4">Priority</th>
               <th className="p-4">Status</th>
-              <th className="p-4">Analyst</th>
               <th className="p-4">Updated</th>
               <th className="p-4 text-right">Action</th>
             </tr>
@@ -225,23 +224,6 @@ export default function CasesPage() {
                   </td>
                   <td className="p-4">
                     <CaseStatusBadge status={c.status} />
-                  </td>
-                  <td className="p-4 text-slate-400">
-                    {c.analyst_id ? (
-                      <span className="flex items-center gap-1">
-                        <div className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[10px] text-white">
-                          {c.analyst_id[0]?.toUpperCase()}
-                        </div>
-                        {c.analyst_id}
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleAssign(c.case_id)}
-                        className="text-xs bg-slate-800 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 px-2 py-1 rounded transition-colors"
-                      >
-                        Assign to Me
-                      </button>
-                    )}
                   </td>
                   <td className="p-4 text-slate-500">
                     {format(new Date(c.updated_at), 'MMM d, HH:mm')}

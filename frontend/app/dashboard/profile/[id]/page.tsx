@@ -204,8 +204,12 @@ export default function ProfilePage() {
       <div className={`min-h-[80vh] flex items-center justify-center ${language === 'bn' ? 'font-bengali' : ''}`}>
         <div className="w-full max-w-md p-8 bg-card-bg border border-white/10 rounded-2xl text-center relative shadow-2xl animate-in zoom-in-95 duration-300">
           <Icon name="person_search" size={64} className="mx-auto mb-6 text-purple-400" />
-          <h1 className="text-2xl font-bold mb-2">Customer Search</h1>
-          <p className="text-text-secondary mb-8">Enter a User ID to view 360° risk profile.</p>
+          <h1 className="text-2xl font-bold mb-2">
+            {language === 'bn' ? 'গ্রাহক অনুসন্ধান' : 'Customer 360'}
+          </h1>
+          <p className="text-text-secondary mb-8">
+            {language === 'bn' ? '৩৬০° ঝুঁকি প্রোফাইল দেখতে গ্রাহক আইডি দিন।' : 'Enter a User ID to view 360° risk profile.'}
+          </p>
 
           <form onSubmit={handleSearch} className="space-y-4 relative">
             <div className="relative">

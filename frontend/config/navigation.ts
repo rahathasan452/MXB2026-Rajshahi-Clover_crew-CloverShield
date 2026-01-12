@@ -20,8 +20,8 @@ export const NAV_CONFIG: NavItem[] = [
     roles: ['viewer', 'analyst', 'senior_analyst', 'admin']
   },
   {
-    label: 'Investigate',
-    labelBn: 'তদন্ত',
+    label: 'Priority Inbox',
+    labelBn: 'অগ্রাধিকার ইনবক্স',
     href: '/dashboard/investigate',
     icon: 'inbox',
     badge: true,
@@ -35,8 +35,8 @@ export const NAV_CONFIG: NavItem[] = [
     roles: ['analyst', 'senior_analyst', 'admin']
   },
   {
-    label: 'Graph Explorer',
-    labelBn: 'গ্রাফ অনুসন্ধান',
+    label: 'Customer 360',
+    labelBn: 'গ্রাহক প্রোফাইল',
     href: '/dashboard/profile/search',
     icon: 'hub',
     roles: ['analyst', 'senior_analyst', 'admin']

@@ -104,6 +104,33 @@ export const getUser = async (userId: string): Promise<User | null> => {
           is_from_test_dataset: true
         } as User
       }
+
+      // Fallback 2: Try transaction_history (for engineered dataset / simulation)
+      const { data: txHistory } = await supabase
+        .from('transaction_history')
+        .select('*')
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .limit(1)
+
+      if (txHistory && txHistory.length > 0) {
+        const tx = txHistory[0]
+        return {
+          user_id: userId,
+          name_en: `Simulated User ${userId.slice(0, 4)}`,
+          name_bn: `সিমুলেটেড ব্যবহারকারী`,
+          phone: 'N/A',
+          provider: 'Simulation',
+          balance: 0,
+          account_age_days: 0,
+          total_transactions: 1,
+          avg_transaction_amount: tx.amount,
+          verified: false,
+          kyc_complete: false,
+          risk_level: 'medium',
+          is_from_test_dataset: true
+        } as User
+      }
+
       return null
     }
     throw error
@@ -334,6 +361,16 @@ export const updateCaseChecklist = async (
 
 
 export const generateDemoCases = async (count: number = 5): Promise<Case[]> => {
+  // 0. Cleanup: Remove old cases that are NOT Open or Investigating
+  const { error: deleteError } = await supabase
+    .from('cases')
+    .delete()
+    .not('status', 'in', '("Open","Investigating")')
+
+  if (deleteError) {
+    console.error("Cleanup failed", deleteError)
+  }
+
   // 1. Try fetching from transactions (main)
   let { data: transactions, error: txError } = await supabase
     .from('transactions')
@@ -361,6 +398,7 @@ export const generateDemoCases = async (count: number = 5): Promise<Case[]> => {
   const existingTxIds = new Set(existingCases?.map(c => c.transaction_id) || [])
 
   const candidates = transactions.filter(tx => !existingTxIds.has(tx.transaction_id))
+  // Always take top candidates to maintain list
   const toCreate = candidates.slice(0, count)
 
   if (toCreate.length === 0) return []
