@@ -2,7 +2,7 @@
 
 ## Phase 1: Risk-Based Visualization & UI Polish
 - [x] Task: Update `GraphNode` component to support dynamic color mapping based on `fraud_probability` [686eeed]
-- [ ] Task: Implement a `RiskLegend` component and integrate it into the Network Graph view
+- [x] Task: Implement a `RiskLegend` component and integrate it into the Network Graph view [15a12a9]
 - [ ] Task: Refactor graph layout to improve spacing and readability for dense clusters
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Risk-Based Visualization & UI Polish' (Protocol in workflow.md)
 
