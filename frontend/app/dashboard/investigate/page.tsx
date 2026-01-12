@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { supabase, createCase } from '@/lib/supabase'
 import { useAppStore } from '@/store/useAppStore'
 import { predictFraud } from '@/lib/ml-api'
 import { Icon } from '@/components/Icon'
@@ -159,6 +159,22 @@ export default function InvestigatePage() {
     }
   }
 
+  const handleCreateCase = async (item: any) => {
+    try {
+      const newCase = await createCase({
+        transaction_id: item.transaction_id,
+        user_id: item.sender_id,
+        status: 'Open',
+        priority: item.risk_level === 'high' || item.fraud_probability > 0.8 ? 'High' : 'Medium',
+      })
+      toast.success('Case created #' + newCase.case_id.slice(0,8))
+      router.push(`/dashboard/cases/${newCase.case_id}`)
+    } catch (error) {
+      console.error('Failed to create case:', error)
+      toast.error('Failed to create case')
+    }
+  }
+
   const handleAnalyze = (item: any) => {
     // Construct query params for pre-filling the simulator
     const params = new URLSearchParams({
@@ -269,6 +285,14 @@ export default function InvestigatePage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-3 w-full md:w-auto">
+                  <button 
+                    onClick={() => handleCreateCase(item)}
+                    className="flex-1 md:flex-none bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors"
+                    title="Open Investigation Case"
+                  >
+                    <Icon name="briefcase" size={18} />
+                    Case
+                  </button>
                   <button 
                     onClick={() => handleAnalyze(item)}
                     className="flex-1 md:flex-none bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors"
