@@ -29,7 +29,7 @@
 - Case status: `Open → Investigating → Resolved → False Positive`
 - Analyst notes/comments (text field)
 - Priority badge (derived from risk score)
-- Time tracking (case opened/closed timestamps)
+- Time tracking (case   opened/closed timestamps)
 
 ---
 
