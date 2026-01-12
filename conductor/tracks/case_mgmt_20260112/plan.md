@@ -11,7 +11,7 @@ This plan implements a structured case management system, including a new databa
 ## Phase 2: Investigation Queue UI
 - [x] Task: Create `components/CaseStatusBadge.tsx` for status visualization [ec57b83]
 - [x] Task: Create `app/dashboard/cases/page.tsx` with a searchable/filterable case table [10779ad]
-- [ ] Task: Implement case assignment logic (UI + DB update)
+- [x] Task: Implement case assignment logic (UI + DB update) [c40a9d3]
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Investigation Queue UI' (Protocol in workflow.md)
 
 ## Phase 3: Case Detail & Toolkit
