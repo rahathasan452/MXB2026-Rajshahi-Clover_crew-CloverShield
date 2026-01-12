@@ -2,11 +2,11 @@
 
 This plan implements a structured case management system, including a new database schema, investigation queue, and analyst toolkit components.
 
-## Phase 1: Database Schema & API Setup
+## Phase 1: Database Schema & API Setup [checkpoint: 2a4bb5d]
 - [x] Task: Create Supabase migration for `cases` table [424ca27]
 - [x] Task: Update `lib/supabase.ts` with new Case types and helper functions [be4051b]
 - [x] Task: Create server-side logic (if needed) or RLS policies for case access [de48e4d]
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Database Schema & API Setup' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Database Schema & API Setup' (Protocol in workflow.md) [2a4bb5d]
 
 ## Phase 2: Investigation Queue UI
 - [ ] Task: Create `components/CaseStatusBadge.tsx` for status visualization
