@@ -39,6 +39,15 @@ export default function DashboardLanding() {
 
   const toolkits = [
     {
+      title: language === 'bn' ? 'কেস ম্যানেজমেন্ট' : 'Case Management',
+      description: language === 'bn' ? 'সব কেস দেখুন।' : 'Manage all fraud cases.',
+      details: language === 'bn' ? 'বিস্তারিত তদন্তের টুলস সহ কেসগুলি ট্র্যাক, অ্যাসাইন এবং সমাধান করুন।' : 'Track, assign, and resolve fraud cases with detailed investigation tools.',
+      icon: 'work',
+      link: '/dashboard/cases',
+      color: 'text-teal-400',
+      bg: 'bg-teal-400/10'
+    },
+    {
       title: language === 'bn' ? 'ফ্রড স্ক্যানার' : 'Fraud Scanner',
       description: language === 'bn' ? 'ম্যানুয়াল লেনদেন পরীক্ষা করুন।' : 'Inspect transactions manually.',
       details: language === 'bn' ? 'এমএল মডেল ব্যবহার করে ম্যানুয়ালি লেনদেন পরিদর্শন এবং ঝুঁকি স্কোর বিশ্লেষণ করুন।' : 'Manually inspect transactions and analyze risk scores using the ML model. Useful for ad-hoc analysis.',

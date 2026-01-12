@@ -40,7 +40,7 @@ export default function CasesPage() {
         .from('cases')
         .select('*')
         .order('updated_at', { ascending: false })
-      
+
       if (error) throw error
       setCases(data || [])
     } catch (error) {
@@ -55,7 +55,7 @@ export default function CasesPage() {
       toast.error("You must be logged in to assign cases")
       return
     }
-    
+
     try {
       await updateCaseStatus(caseId, 'Investigating', authUser.email || authUser.id)
       toast.success("Case assigned to you")
@@ -86,7 +86,7 @@ export default function CasesPage() {
 
   const filteredCases = cases.filter(c => {
     const matchesStatus = statusFilter === 'All' || c.status === statusFilter
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       c.case_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.analyst_id && c.analyst_id.toLowerCase().includes(searchTerm.toLowerCase()))
     return matchesStatus && matchesSearch
@@ -106,35 +106,35 @@ export default function CasesPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-emerald-400 flex items-center gap-3">
-            <Icon name="work" size={28} /> 
+            <Icon name="work" size={28} />
             Investigation Queue
           </h1>
           <p className="text-slate-400 text-sm mt-1">Manage and triage active fraud cases</p>
         </div>
 
         <div className="flex gap-4 items-center">
-           <button
-             onClick={handleGenerateDemo}
-             disabled={generating}
-             className="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-500/50 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all disabled:opacity-50"
-             title="Populate queue with cases from high-risk transactions"
-           >
-             <Icon name={generating ? "pending" : "bolt"} size={16} className={generating ? "animate-spin" : ""} />
-             {generating ? 'Generating...' : 'Simulate Cases'}
-           </button>
-           
-           <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
-              <span className="text-xs text-slate-500 uppercase tracking-widest">Open</span>
-              <span className="text-2xl font-bold text-yellow-500">{stats.open}</span>
-           </div>
-           <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
-              <span className="text-xs text-slate-500 uppercase tracking-widest">Active</span>
-              <span className="text-2xl font-bold text-blue-500">{stats.investigating}</span>
-           </div>
-           <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
-              <span className="text-xs text-slate-500 uppercase tracking-widest">High Pri</span>
-              <span className="text-2xl font-bold text-red-500">{stats.highPriority}</span>
-           </div>
+          <button
+            onClick={handleGenerateDemo}
+            disabled={generating}
+            className="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-500/50 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all disabled:opacity-50"
+            title="Populate queue with cases from high-risk transactions"
+          >
+            <Icon name={generating ? "pending" : "bolt"} size={16} className={generating ? "animate-spin" : ""} />
+            {generating ? 'Generating...' : 'Simulate Cases'}
+          </button>
+
+          <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
+            <span className="text-xs text-slate-500 uppercase tracking-widest">Open</span>
+            <span className="text-2xl font-bold text-yellow-500">{stats.open}</span>
+          </div>
+          <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
+            <span className="text-xs text-slate-500 uppercase tracking-widest">Active</span>
+            <span className="text-2xl font-bold text-blue-500">{stats.investigating}</span>
+          </div>
+          <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
+            <span className="text-xs text-slate-500 uppercase tracking-widest">High Pri</span>
+            <span className="text-2xl font-bold text-red-500">{stats.highPriority}</span>
+          </div>
         </div>
       </div>
 
@@ -145,11 +145,10 @@ export default function CasesPage() {
             <button
               key={tab}
               onClick={() => setStatusFilter(tab as any)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                statusFilter === tab 
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50' 
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${statusFilter === tab
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -157,9 +156,9 @@ export default function CasesPage() {
         </div>
 
         <div className="relative w-full md:w-64">
-          <input 
-            type="text" 
-            placeholder="Search Case ID or Analyst..." 
+          <input
+            type="text"
+            placeholder="Search Case ID or Analyst..."
             className="w-full bg-slate-950 border border-slate-700 rounded-md py-2 pl-10 pr-4 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 transition-colors"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -211,13 +210,13 @@ export default function CasesPage() {
                   <td className="p-4 text-slate-300">
                     {c.user_id ? (
                       <div className="flex items-center gap-2">
-                         <Icon name="person" size={14} className="text-slate-500"/>
-                         <span>{c.user_id}</span>
+                        <Icon name="person" size={14} className="text-slate-500" />
+                        <span>{c.user_id}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                         <Icon name="pulse" size={14} className="text-slate-500"/>
-                         <span>Txn...{c.transaction_id?.slice(0,6)}</span>
+                        <Icon name="receipt_long" size={14} className="text-slate-500" />
+                        <span>Txn...{c.transaction_id?.slice(0, 6)}</span>
                       </div>
                     )}
                   </td>
@@ -231,12 +230,12 @@ export default function CasesPage() {
                     {c.analyst_id ? (
                       <span className="flex items-center gap-1">
                         <div className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[10px] text-white">
-                           {c.analyst_id[0]?.toUpperCase()}
+                          {c.analyst_id[0]?.toUpperCase()}
                         </div>
                         {c.analyst_id}
                       </span>
                     ) : (
-                      <button 
+                      <button
                         onClick={() => handleAssign(c.case_id)}
                         className="text-xs bg-slate-800 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 px-2 py-1 rounded transition-colors"
                       >
@@ -248,7 +247,7 @@ export default function CasesPage() {
                     {format(new Date(c.updated_at), 'MMM d, HH:mm')}
                   </td>
                   <td className="p-4 text-right">
-                    <Link 
+                    <Link
                       href={`/dashboard/cases/${c.case_id}`}
                       className="inline-flex items-center gap-1 bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-md text-xs font-medium transition-all"
                     >
