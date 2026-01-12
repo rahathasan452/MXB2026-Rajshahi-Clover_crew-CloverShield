@@ -77,7 +77,35 @@ export const getUser = async (userId: string): Promise<User | null> => {
     .single()
 
   if (error) {
-    if (error.code === 'PGRST116') return null
+    if (error.code === 'PGRST116') {
+      // Fallback: Try to find user in test_dataset
+      const { data: testData, error: testError } = await supabase
+        .from('test_dataset')
+        .select('*')
+        .or(`nameOrig.eq.${userId},nameDest.eq.${userId}`)
+        .limit(1)
+
+      if (testData && testData.length > 0) {
+        const td = testData[0]
+        const isSender = td.nameOrig === userId
+        return {
+          user_id: userId,
+          name_en: isSender ? `Sender ${userId}` : `Receiver ${userId}`,
+          name_bn: isSender ? `প্রেরক ${userId}` : `প্রাপক ${userId}`,
+          phone: 'N/A',
+          provider: 'Mobile Money',
+          balance: isSender ? td.oldBalanceOrig : td.oldBalanceDest,
+          account_age_days: 0,
+          total_transactions: 1,
+          avg_transaction_amount: td.amount,
+          verified: false,
+          kyc_complete: false,
+          risk_level: td.isFlaggedFraud ? 'high' : 'low',
+          is_from_test_dataset: true
+        } as User
+      }
+      return null
+    }
     throw error
   }
   return data
@@ -252,7 +280,21 @@ export const createCase = async (
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    // Handle duplicate case for same transaction (unique constraint)
+    if (error.code === '23505' && caseData.transaction_id) {
+      const { data: existingCase, error: fetchError } = await supabase
+        .from('cases')
+        .select('*')
+        .eq('transaction_id', caseData.transaction_id)
+        .single()
+      
+      if (!fetchError && existingCase) {
+        return existingCase
+      }
+    }
+    throw error
+  }
   return data
 }
 
