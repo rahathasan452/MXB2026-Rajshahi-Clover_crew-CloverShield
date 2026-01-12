@@ -76,7 +76,10 @@ export const getUser = async (userId: string): Promise<User | null> => {
     .eq('user_id', userId)
     .single()
 
-  if (error) throw error
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw error
+  }
   return data
 }
 
@@ -233,7 +236,10 @@ export const getCase = async (caseId: string): Promise<Case | null> => {
     .eq('case_id', caseId)
     .single()
 
-  if (error) throw error
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw error
+  }
   return data
 }
 

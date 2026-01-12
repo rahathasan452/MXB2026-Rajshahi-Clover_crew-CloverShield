@@ -222,11 +222,17 @@ export default function CaseDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Target Details */}
         <div className="lg:col-span-2 space-y-6">
-          {targetUser && (
+          {targetUser ? (
             <UserProfileCard user={targetUser} />
-          )}
+          ) : caseData.user_id ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg text-center text-slate-500">
+              <Icon name="person_off" size={32} className="mx-auto mb-2 opacity-50" />
+              <p>User Profile Not Found</p>
+              <p className="font-mono text-xs">{caseData.user_id}</p>
+            </div>
+          ) : null}
 
-          {targetTx && (
+          {targetTx ? (
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
               <h3 className="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2">
                 <Icon name="receipt_long" /> Transaction Details
@@ -260,7 +266,13 @@ export default function CaseDetailPage() {
                 </div>
               </div>
             </div>
-          )}
+          ) : caseData.transaction_id ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg text-center text-slate-500">
+              <Icon name="receipt_long" size={32} className="mx-auto mb-2 opacity-50" />
+              <p>Transaction Data Unavailable</p>
+              <p className="font-mono text-xs">{caseData.transaction_id}</p>
+            </div>
+          ) : null}
 
           {/* Placeholder for future Activity Log */}
           <div className="bg-slate-900/50 border border-slate-800 border-dashed rounded-xl p-6 text-center text-slate-500">
