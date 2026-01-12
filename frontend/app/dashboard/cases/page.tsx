@@ -174,8 +174,8 @@ export default function CasesPage() {
       </div>
 
       {/* Cases Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-        <table className="w-full text-left">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl overflow-x-auto">
+        <table className="w-full text-left min-w-[800px]">
           <thead className="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider font-semibold">
             <tr>
               <th className="p-4">Case ID</th>
