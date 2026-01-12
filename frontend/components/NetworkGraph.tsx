@@ -16,52 +16,76 @@ interface GraphNode {
   community?: string
 }
 
-// ... (keep getNodeColor)
+interface GraphLink {
+  source: string | GraphNode
+  target: string | GraphNode
+  color: string
+  width: number
+  particles?: number
+}
+
+interface GraphData {
+  nodes: GraphNode[]
+  links: GraphLink[]
+}
+
+interface NetworkGraphProps {
+  height?: number
+  language?: 'en' | 'bn'
+  latestTransaction?: any
+  history?: any[]
+}
+
+const getNodeColor = (risk: number, type: 'sender' | 'receiver') => {
+  if (risk > 0.7) return '#EF4444' // Red
+  if (risk > 0.3) return '#F59E0B' // Amber
+  return type === 'sender' ? '#60A5FA' : '#F472B6' // Default Blue/Pink
+}
 
 const MULE_THRESHOLD = 5 // Nodes with > 5 unique neighbors are flagged as potential stars/mules
 
 const runCommunityDetection = (nodes: GraphNode[], links: GraphLink[]) => {
-    // Label Propagation Algorithm
-    const labels = new Map<string, string>()
-    const adj = new Map<string, string[]>()
-    
-    nodes.forEach(n => {
-        labels.set(n.id, n.id)
-        adj.set(n.id, [])
+  // Label Propagation Algorithm
+  const labels = new Map<string, string>()
+  const adj = new Map<string, string[]>()
+
+  nodes.forEach(n => {
+    labels.set(n.id, n.id)
+    adj.set(n.id, [])
+  })
+
+  links.forEach(l => {
+    const src = typeof l.source === 'string' ? l.source : (l.source as any).id
+    const tgt = typeof l.target === 'string' ? l.target : (l.target as any).id
+    if (adj.has(src)) adj.get(src)!.push(tgt)
+    if (adj.has(tgt)) adj.get(tgt)!.push(src)
+  })
+
+  // Iterate 5 times (sufficient for small graphs)
+  for (let i = 0; i < 5; i++) {
+    const nodeIds = nodes.map(n => n.id).sort(() => Math.random() - 0.5)
+    nodeIds.forEach(nodeId => {
+      const neighbors = adj.get(nodeId) || []
+      if (neighbors.length === 0) return
+
+      const neighborLabels = neighbors.map(n => labels.get(n)!)
+      const counts = new Map<string, number>()
+      let maxCount = 0
+      let bestLabel = labels.get(nodeId)!
+
+      neighborLabels.forEach(l => {
+        const c = (counts.get(l) || 0) + 1
+        counts.set(l, c)
+        if (c > maxCount) {
+          maxCount = c
+          bestLabel = l
+        }
+      })
+      labels.set(nodeId, bestLabel)
     })
-    
-    links.forEach(l => {
-        const src = typeof l.source === 'string' ? l.source : (l.source as any).id
-        const tgt = typeof l.target === 'string' ? l.target : (l.target as any).id
-        if (adj.has(src)) adj.get(src)!.push(tgt)
-        if (adj.has(tgt)) adj.get(tgt)!.push(src)
-    })
-    
-    // Iterate 5 times (sufficient for small graphs)
-    for (let i = 0; i < 5; i++) {
-        const nodeIds = nodes.map(n => n.id).sort(() => Math.random() - 0.5)
-        nodeIds.forEach(nodeId => {
-            const neighbors = adj.get(nodeId) || []
-            if (neighbors.length === 0) return
-            
-            const neighborLabels = neighbors.map(n => labels.get(n)!)
-            const counts = new Map<string, number>()
-            let maxCount = 0
-            let bestLabel = labels.get(nodeId)!
-            
-            neighborLabels.forEach(l => {
-                const c = (counts.get(l) || 0) + 1
-                counts.set(l, c)
-                if (c > maxCount) {
-                    maxCount = c
-                    bestLabel = l
-                }
-            })
-            labels.set(nodeId, bestLabel)
-        })
-    }
-    
-    return labels
+  }
+
+  return labels
 }
 
 export const NetworkGraph: React.FC<NetworkGraphProps> = ({
@@ -103,14 +127,14 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           const neighborCount = nodeNeighbors.get(tx.sender_id)?.size || 0
           nodesMap.set(tx.sender_id, {
             id: tx.sender_id,
-            val: 4 + (risk * 2), 
+            val: 4 + (risk * 2),
             color: getNodeColor(risk, 'sender'),
             type: 'sender',
             riskScore: risk,
             isMule: neighborCount >= MULE_THRESHOLD
           })
         }
-        
+
         // Add Receiver
         if (!nodesMap.has(tx.receiver_id)) {
           const risk = nodeRisks.get(tx.receiver_id) || 0
@@ -128,7 +152,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         // Add Link
         const isFraud = tx.fraud_probability > 0.7
         const isWarn = tx.fraud_probability > 0.3
-        
+
         links.push({
           source: tx.sender_id,
           target: tx.receiver_id,
@@ -141,12 +165,12 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       const updatedNodes = Array.from(nodesMap.values())
       const communityLabels = runCommunityDetection(updatedNodes, links)
       updatedNodes.forEach(n => {
-          n.community = communityLabels.get(n.id)
+        n.community = communityLabels.get(n.id)
       })
 
       setData({
         nodes: updatedNodes,
-        links: links.slice(0, 200) 
+        links: links.slice(0, 200)
       })
     }
   }, [history])
@@ -157,23 +181,23 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       addTransactionToGraph(latestTransaction)
     }
   }, [latestTransaction])
-  
+
   const addTransactionToGraph = useCallback((tx: any) => {
     setData(currentData => {
       const newNodes = [...currentData.nodes]
       const newLinks = [...currentData.links]
       const p = tx.fraud_probability || 0
-      
+
       // We need to re-calculate isMule for these nodes
       const updateNodeMuleStatus = (nodeId: string) => {
-          const neighbors = new Set<string>()
-          newLinks.forEach(l => {
-              const src = typeof l.source === 'string' ? l.source : (l.source as any).id
-              const tgt = typeof l.target === 'string' ? l.target : (l.target as any).id
-              if (src === nodeId) neighbors.add(tgt)
-              if (tgt === nodeId) neighbors.add(src)
-          })
-          return neighbors.size >= MULE_THRESHOLD
+        const neighbors = new Set<string>()
+        newLinks.forEach(l => {
+          const src = typeof l.source === 'string' ? l.source : (l.source as any).id
+          const tgt = typeof l.target === 'string' ? l.target : (l.target as any).id
+          if (src === nodeId) neighbors.add(tgt)
+          if (tgt === nodeId) neighbors.add(src)
+        })
+        return neighbors.size >= MULE_THRESHOLD
       }
 
       // Add Link first so degree calculation is accurate
@@ -207,7 +231,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           isMule: updateNodeMuleStatus(tx.nameOrig)
         }
       }
-      
+
       // Update or Add Receiver Node
       const receiverIdx = newNodes.findIndex(n => n.id === tx.nameDest)
       if (receiverIdx === -1) {
@@ -230,18 +254,18 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           isMule: updateNodeMuleStatus(tx.nameDest)
         }
       }
-      
+
       // Re-run community detection on update
       const communityLabels = runCommunityDetection(newNodes, newLinks)
       newNodes.forEach(n => {
-          n.community = communityLabels.get(n.id)
+        n.community = communityLabels.get(n.id)
       })
 
       if (newLinks.length > 100) {
         const keptLinks = newLinks.slice(-100)
         return { nodes: newNodes, links: keptLinks }
       }
-      
+
       return { nodes: newNodes, links: newLinks }
     })
   }, [])  // TODO: In Task 05, we will connect this to the actual stream.
@@ -269,15 +293,15 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
         {/* AI Toggle */}
         <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/5">
-           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-             {language === 'bn' ? 'এআই প্যাটার্ন' : 'AI Patterns'}
-           </span>
-           <button 
-             onClick={() => setShowAI(!showAI)}
-             className={`w-8 h-4 rounded-full transition-all relative ${showAI ? 'bg-emerald-500' : 'bg-slate-700'}`}
-           >
-              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showAI ? 'left-4.5' : 'left-0.5'}`} />
-           </button>
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+            {language === 'bn' ? 'এআই প্যাটার্ন' : 'AI Patterns'}
+          </span>
+          <button
+            onClick={() => setShowAI(!showAI)}
+            className={`w-8 h-4 rounded-full transition-all relative ${showAI ? 'bg-emerald-500' : 'bg-slate-700'}`}
+          >
+            <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showAI ? 'left-4.5' : 'left-0.5'}`} />
+          </button>
         </div>
       </div>
 
@@ -292,7 +316,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         nodeRelSize={6}
         nodeCanvasObject={(node: any, ctx, globalScale) => {
           const label = node.id
-          const fontSize = 12/globalScale
+          const fontSize = 12 / globalScale
           ctx.font = `${fontSize}px Sans-Serif`
 
           // Highlighting for Mules - only if AI is enabled
@@ -303,7 +327,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
             ctx.fill()
             ctx.strokeStyle = '#EF4444'
             ctx.setLineDash([2, 2])
-            ctx.lineWidth = 1/globalScale
+            ctx.lineWidth = 1 / globalScale
             ctx.stroke()
             ctx.setLineDash([])
           }
@@ -313,11 +337,11 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false)
           ctx.fillStyle = showAI ? node.color : (node.type === 'sender' ? '#60A5FA' : '#F472B6')
           ctx.fill()
-          
+
           // Border for high risk - only if AI is enabled
           if (showAI && node.riskScore > 0.7) {
             ctx.strokeStyle = '#FFFFFF'
-            ctx.lineWidth = 2/globalScale
+            ctx.lineWidth = 2 / globalScale
             ctx.stroke()
           }
 
