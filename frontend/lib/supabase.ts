@@ -20,14 +20,14 @@ export interface User {
   name_en: string
   name_bn?: string
   phone: string
-  provider: 'bKash' | 'Nagad' | 'Rocket' | 'Upay'
+  provider: string
   balance: number
   account_age_days: number
   total_transactions: number
   avg_transaction_amount: number
   verified: boolean
   kyc_complete: boolean
-  risk_level: 'low' | 'medium' | 'high' | 'suspicious'
+  risk_level: 'low' | 'medium' | 'high' | 'suspicious' | 'critical'
   created_at?: string
   updated_at?: string
   last_transaction_at?: string
@@ -96,12 +96,12 @@ export const getTransaction = async (transactionId: string): Promise<Transaction
     .select('*')
     .eq('transaction_id', transactionId)
     .single()
-  
+
   if (historyError) {
     // If both failed, return null (don't throw, just not found)
     return null
   }
-  
+
   return historyData as Transaction // Cast history to Transaction (compatible)
 }
 
@@ -296,14 +296,14 @@ export const generateDemoCases = async (count: number = 5): Promise<Case[]> => {
 
   // 2. Fallback to transaction_history if empty
   if (!transactions || transactions.length === 0) {
-     const { data: historyTx } = await supabase
-        .from('transaction_history')
-        .select('transaction_id, sender_id, fraud_probability')
-        .gt('fraud_probability', 0.5) // Filter high risk
-        .order('transaction_timestamp', { ascending: false })
-        .limit(50)
-     
-     transactions = historyTx || []
+    const { data: historyTx } = await supabase
+      .from('transaction_history')
+      .select('transaction_id, sender_id, fraud_probability')
+      .gt('fraud_probability', 0.5) // Filter high risk
+      .order('transaction_timestamp', { ascending: false })
+      .limit(50)
+
+    transactions = historyTx || []
   }
 
   if (!transactions || transactions.length === 0) return []
@@ -319,7 +319,7 @@ export const generateDemoCases = async (count: number = 5): Promise<Case[]> => {
 
   const newCases: Omit<Case, 'case_id' | 'created_at' | 'updated_at'>[] = toCreate.map(tx => ({
     transaction_id: tx.transaction_id,
-    user_id: tx.sender_id, 
+    user_id: tx.sender_id,
     status: 'Open',
     priority: (tx.fraud_probability || 0) > 0.8 ? 'High' : 'Medium',
   }))
