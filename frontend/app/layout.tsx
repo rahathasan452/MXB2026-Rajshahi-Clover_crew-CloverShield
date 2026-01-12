@@ -10,6 +10,7 @@ import { Toaster } from 'react-hot-toast'
 import { AnalyticsProvider } from '@/components/AnalyticsProvider'
 import { AuthProvider } from '@/components/AuthProvider'
 import { Chatbot } from '@/components/Chatbot'
+import { ThemeProvider } from '@/components/ThemeProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 const hindSiliguri = Hind_Siliguri({ 
@@ -43,10 +44,12 @@ export default function RootLayout({
       <body className={`${inter.className} ${hindSiliguri.variable}`}>
         <AuthProvider>
           <AnalyticsProvider>
-            <div className="min-h-screen bg-gradient-dark">
-              {children}
-            </div>
-            <Chatbot />
+            <ThemeProvider>
+              <div className="min-h-screen bg-gradient-dark transition-colors duration-300">
+                {children}
+              </div>
+              <Chatbot />
+            </ThemeProvider>
           </AnalyticsProvider>
         </AuthProvider>
         <Toaster position="top-right" />

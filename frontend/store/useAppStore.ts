@@ -12,6 +12,10 @@ interface AppState {
   language: 'en' | 'bn'
   setLanguage: (lang: 'en' | 'bn') => void
 
+  // Theme
+  theme: 'light' | 'dark'
+  setTheme: (theme: 'light' | 'dark') => void
+
   // Brand Theme
   brandTheme: 'bkash' | 'nagad'
   setBrandTheme: (theme: 'bkash' | 'nagad') => void
@@ -70,6 +74,7 @@ interface AppState {
 
 const initialState = {
   language: 'en' as const,
+  theme: 'dark' as const,
   brandTheme: 'bkash' as const,
   isSimulating: false,
   simulationSpeed: 1,
@@ -99,6 +104,8 @@ export const useAppStore = create<AppState>((set) => ({
   ...initialState,
 
   setLanguage: (lang) => set({ language: lang }),
+
+  setTheme: (theme) => set({ theme }),
 
   setBrandTheme: (theme) => set({ brandTheme: theme }),
   

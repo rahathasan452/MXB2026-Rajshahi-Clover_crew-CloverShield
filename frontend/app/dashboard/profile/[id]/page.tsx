@@ -175,20 +175,21 @@ export default function ProfilePage() {
       setIsSearching(true)
       const results: any[] = []
 
-      // Optimized: Use prefix match (start-with) instead of contains for better performance
+      // Updated: Use fuzzy match (contains) to match transaction input behavior
       const { data: testUsers } = await supabase
         .from('test_dataset')
         .select('nameOrig, nameDest')
-        .or(`nameOrig.ilike.${searchId}%,nameDest.ilike.${searchId}%`)
-        .limit(5)
+        .or(`nameOrig.ilike.%${searchId}%,nameDest.ilike.%${searchId}%`)
+        .limit(50)
 
       if (testUsers) {
         testUsers.forEach((tu: any) => {
-          if (tu.nameOrig.toLowerCase().startsWith(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameOrig)) {
+          // Check sender
+          if (tu.nameOrig.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameOrig)) {
             results.push({ user_id: tu.nameOrig, name_en: `Sender ${tu.nameOrig}`, is_test: true })
           }
           // Check destination
-          if (tu.nameDest.toLowerCase().startsWith(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameDest)) {
+          if (tu.nameDest.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameDest)) {
             results.push({ user_id: tu.nameDest, name_en: `Receiver ${tu.nameDest}`, is_test: true })
           }
         })
