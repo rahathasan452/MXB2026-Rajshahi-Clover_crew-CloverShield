@@ -2,7 +2,7 @@
 
 ## Phase 2: Automated Ring & Cluster Detection
 - [x] Task: Implement a "Star/Mule" detection utility in the frontend to identify nodes with high degree centrality [4320de9]
-- [ ] Task: Integrate `graphology` or similar lightweight library for Community Detection (Louvain)
+- [x] Task: Integrate `graphology` or similar lightweight library for Community Detection (Louvain) [3090a29]
 - [ ] Task: Add visual "highlighting" effects (glow/borders) for detected fraud rings
 - [ ] Task: Create a toggle switch in the UI to enable/disable automated pattern overlays
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Automated Ring & Cluster Detection' (Protocol in workflow.md)
