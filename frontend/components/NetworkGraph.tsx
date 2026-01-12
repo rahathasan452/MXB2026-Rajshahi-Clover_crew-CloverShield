@@ -14,26 +14,15 @@ interface GraphNode {
   val: number // size
   color: string
   type: 'sender' | 'receiver'
+  riskScore: number
 }
 
-interface GraphLink {
-  source: string
-  target: string
-  color: string
-  width: number
-  particles?: number
-}
+// ... (keep GraphLink etc)
 
-interface GraphData {
-  nodes: GraphNode[]
-  links: GraphLink[]
-}
-
-interface NetworkGraphProps {
-  height?: number
-  language?: 'en' | 'bn'
-  latestTransaction?: any
-  history?: any[]
+const getNodeColor = (risk: number, type: 'sender' | 'receiver') => {
+  if (risk > 0.7) return '#EF4444' // Red
+  if (risk > 0.3) return '#F59E0B' // Amber
+  return type === 'sender' ? '#60A5FA' : '#F472B6' // Default Blue/Pink
 }
 
 export const NetworkGraph: React.FC<NetworkGraphProps> = ({ 
@@ -52,24 +41,36 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       const nodesMap = new Map<string, GraphNode>()
       const links: GraphLink[] = []
 
+      // First pass: Calculate risk scores
+      const nodeRisks = new Map<string, number>()
+      history.forEach(tx => {
+         const p = tx.fraud_probability || 0
+         nodeRisks.set(tx.sender_id, Math.max(nodeRisks.get(tx.sender_id) || 0, p))
+         nodeRisks.set(tx.receiver_id, Math.max(nodeRisks.get(tx.receiver_id) || 0, p))
+      })
+
       history.forEach(tx => {
         // Add Sender
         if (!nodesMap.has(tx.sender_id)) {
+          const risk = nodeRisks.get(tx.sender_id) || 0
           nodesMap.set(tx.sender_id, {
             id: tx.sender_id,
-            val: 4,
-            color: '#60A5FA', // Blue
-            type: 'sender'
+            val: 4 + (risk * 2), // Slightly larger if high risk
+            color: getNodeColor(risk, 'sender'),
+            type: 'sender',
+            riskScore: risk
           })
         }
         
         // Add Receiver
         if (!nodesMap.has(tx.receiver_id)) {
+          const risk = nodeRisks.get(tx.receiver_id) || 0
           nodesMap.set(tx.receiver_id, {
             id: tx.receiver_id,
-            val: 4,
-            color: '#F472B6', // Pink
-            type: 'receiver'
+            val: 4 + (risk * 2),
+            color: getNodeColor(risk, 'receiver'),
+            type: 'receiver',
+            riskScore: risk
           })
         }
 
@@ -88,7 +89,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
       setData({
         nodes: Array.from(nodesMap.values()),
-        links: links.slice(0, 200) // Limit to avoid performance issues
+        links: links.slice(0, 200) 
       })
     }
   }, [history])
@@ -104,30 +105,58 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     setData(currentData => {
       const newNodes = [...currentData.nodes]
       const newLinks = [...currentData.links]
+      const p = tx.fraud_probability || 0
       
-      // Add Sender Node
-      if (!newNodes.find(n => n.id === tx.nameOrig)) {
+      // Update or Add Sender Node
+      const senderIdx = newNodes.findIndex(n => n.id === tx.nameOrig)
+      if (senderIdx === -1) {
         newNodes.push({
           id: tx.nameOrig,
-          val: 4,
-          color: '#60A5FA', // Blue
-          type: 'sender'
+          val: 4 + (p * 2),
+          color: getNodeColor(p, 'sender'),
+          type: 'sender',
+          riskScore: p
         })
+      } else {
+        // Update risk if new txn is riskier
+        const node = newNodes[senderIdx]
+        const newRisk = Math.max(node.riskScore, p)
+        if (newRisk > node.riskScore) {
+             newNodes[senderIdx] = {
+                 ...node,
+                 riskScore: newRisk,
+                 color: getNodeColor(newRisk, 'sender'),
+                 val: 4 + (newRisk * 2)
+             }
+        }
       }
       
-      // Add Receiver Node
-      if (!newNodes.find(n => n.id === tx.nameDest)) {
+      // Update or Add Receiver Node
+      const receiverIdx = newNodes.findIndex(n => n.id === tx.nameDest)
+      if (receiverIdx === -1) {
         newNodes.push({
           id: tx.nameDest,
-          val: 4,
-          color: '#F472B6', // Pink
-          type: 'receiver'
+          val: 4 + (p * 2),
+          color: getNodeColor(p, 'receiver'),
+          type: 'receiver',
+          riskScore: p
         })
+      } else {
+         const node = newNodes[receiverIdx]
+         const newRisk = Math.max(node.riskScore, p)
+         if (newRisk > node.riskScore) {
+             newNodes[receiverIdx] = {
+                 ...node,
+                 riskScore: newRisk,
+                 color: getNodeColor(newRisk, 'receiver'),
+                 val: 4 + (newRisk * 2)
+             }
+         }
       }
       
       // Add Link
-      const isFraud = tx.fraud_probability > 0.7
-      const isWarn = tx.fraud_probability > 0.3
+      const isFraud = p > 0.7
+      const isWarn = p > 0.3
       
       newLinks.push({
         source: tx.nameOrig,
@@ -137,11 +166,8 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         particles: isFraud ? 4 : 0
       })
       
-      // Limit graph size to prevent performance issues (keep last 100 links)
       if (newLinks.length > 100) {
-        // Simple slicing (might leave orphaned nodes, but acceptable for demo visualizer)
         const keptLinks = newLinks.slice(-100)
-        // Cleanup nodes could be complex, skipping for now
         return { nodes: newNodes, links: keptLinks }
       }
       
