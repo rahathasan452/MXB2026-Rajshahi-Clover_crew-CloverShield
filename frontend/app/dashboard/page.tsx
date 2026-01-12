@@ -158,24 +158,21 @@ export default function DashboardLanding() {
         </div>
       </div>
 
-      {/* KPI Stats Row */}
+      {/* KPI Stats Row - Utilitarian Info Style */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, idx) => (
-          <div key={idx} className="bg-[#111827] border border-white/5 p-4 rounded-xl flex items-center gap-4 hover:border-white/10 transition-colors">
-            <div className={`p-3 rounded-lg ${stat.bg} ${stat.color}`}>
-              <Icon name={stat.icon} size={24} />
+          <div key={idx} className="bg-[#0A0E17]/50 border border-white/5 p-4 rounded-lg flex items-center gap-4 group hover:bg-[#0A0E17]/80 transition-all">
+            <div className={`p-2 rounded ${stat.bg} ${stat.color} opacity-80 group-hover:opacity-100 transition-opacity`}>
+              <Icon name={stat.icon} size={20} />
             </div>
             <div>
-              <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold">{stat.label}</p>
+              <p className="text-gray-500 text-[10px] uppercase tracking-widest font-bold">{stat.label}</p>
               <div className="flex items-baseline gap-2">
-                <h3 className="text-2xl font-bold text-white">{stat.value}</h3>
+                <h3 className="text-xl font-mono font-bold text-gray-200">{stat.value}</h3>
                 {stat.trend && (
-                  <span className={`text-xs font-mono ${stat.trendUp ? 'text-red-400' : 'text-emerald-400'}`}>
+                  <span className={`text-[10px] font-mono px-1 rounded bg-white/5 ${stat.trendUp ? 'text-red-500/80' : 'text-emerald-500/80'}`}>
                     {stat.trend}
                   </span>
-                )}
-                {stat.sub && (
-                  <span className="text-xs text-gray-500 font-mono">{stat.sub}</span>
                 )}
               </div>
             </div>
@@ -247,53 +244,100 @@ export default function DashboardLanding() {
           </div>
         </div>
 
-        {/* Quick Tools Grid (Takes 1/3 width) */}
+        {/* Feature Tools Grid - Interactive & High Design */}
         <div className="grid grid-cols-2 gap-3">
           {tools.map((tool, idx) => (
             <Link
               key={idx}
               href={tool.link}
-              className="flex flex-col items-center justify-center p-4 rounded-xl bg-[#111827] border border-white/5 hover:bg-[#1a2235] hover:border-white/20 transition-all group text-center"
+              className="group relative flex flex-col items-center justify-center p-5 rounded-2xl bg-[#111827]/40 border border-white/5 hover:border-white/20 transition-all duration-300 overflow-hidden"
             >
-              <div className={`mb-3 p-2 rounded-lg bg-white/5 ${tool.color} group-hover:scale-110 transition-transform`}>
-                <Icon name={tool.icon} size={28} />
+              {/* Feature Accent Glow */}
+              <div className={`absolute -inset-2 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500 bg-current ${tool.color}`}></div>
+              
+              <div className={`relative mb-4 p-3 rounded-2xl bg-[#0A0E17] border border-white/10 ${tool.color} group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300 shadow-xl`}>
+                <Icon name={tool.icon} size={32} />
               </div>
-              <h3 className="text-sm font-semibold text-gray-200">{tool.title}</h3>
-              <p className="text-[10px] text-gray-500 mt-1">{tool.desc}</p>
+              
+              <div className="relative text-center">
+                <h3 className="text-sm font-black text-white tracking-wide uppercase group-hover:text-emerald-400 transition-colors">
+                  {tool.title}
+                </h3>
+                <p className="text-[10px] text-gray-500 mt-1 font-medium group-hover:text-gray-300 transition-colors">
+                  {tool.desc}
+                </p>
+              </div>
+
+              {/* Decorative Corner Element */}
+              <div className={`absolute bottom-0 right-0 w-8 h-8 opacity-10 group-hover:opacity-30 transition-opacity ${tool.color}`}>
+                <div className="absolute bottom-2 right-2 w-1 h-1 bg-current rounded-full"></div>
+                <div className="absolute bottom-2 right-4 w-1 h-px bg-current"></div>
+                <div className="absolute bottom-4 right-2 h-1 w-px bg-current"></div>
+              </div>
             </Link>
           ))}
         </div>
       </div>
 
-      {/* Secure Receiver & Updates */}
+      {/* Secure Receiver & Database Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link href="/receiver" className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-900/10 to-cyan-900/10 border border-white/10 hover:border-emerald-500/30 p-6 transition-all">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg">
-              <Icon name="qr_code_scanner" size={32} />
+        <Link href="/receiver" className="group relative overflow-hidden rounded-2xl bg-[#0A0E17] border border-white/10 hover:border-emerald-500/50 p-6 transition-all duration-500">
+          {/* Advanced Visual Layers */}
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-cyan-500/10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+          <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10 [mask-image:linear-gradient(to_bottom,black,transparent)]"></div>
+          
+          <div className="flex items-center gap-6 relative z-10">
+            <div className="relative">
+              <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full group-hover:bg-emerald-500/40 transition-colors"></div>
+              <div className="relative p-5 bg-[#0A0E17] border border-emerald-500/30 text-emerald-400 rounded-2xl shadow-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                <Icon name="qr_code_scanner" size={40} />
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
+            
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-widest mb-2">
+                <Icon name="security" size={10} />
+                {language === 'bn' ? 'সুরক্ষিত' : 'Encrypted Bridge'}
+              </div>
+              <h3 className="text-2xl font-black text-white group-hover:text-emerald-400 transition-colors leading-none mb-1">
                 {language === 'bn' ? 'সিকিউর রিসিভার' : 'Secure Receiver'}
               </h3>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-500 font-medium group-hover:text-gray-300 transition-colors">
                 {language === 'bn' ? 'এয়ার-গ্যাপড ডেটা স্ক্যান করুন' : 'Import air-gapped evidence via QR bridge'}
               </p>
             </div>
-            <Icon name="arrow_forward" className="ml-auto text-emerald-500/50 group-hover:translate-x-1 transition-transform" />
+
+            <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all duration-300">
+              <Icon name="arrow_forward" size={24} />
+            </div>
           </div>
+
+          {/* Decorative Scanner Effect */}
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
         </Link>
 
-        <div className="rounded-xl border border-white/5 bg-[#111827] p-6 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-1">
-              {language === 'bn' ? 'ডাটাবেস' : 'Database'}
-            </h3>
-            <p className="text-xs text-gray-500">Supabase Connected • 14ms Latency</p>
+        {/* Database Info - Minimalist Utility Panel */}
+        <div className="rounded-2xl border border-white/5 bg-[#050714]/50 p-6 flex items-center justify-between group hover:bg-[#0A0E17]/80 transition-colors">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-emerald-500 transition-colors">
+              <Icon name="dns" size={24} />
+            </div>
+            <div>
+              <h3 className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em] mb-1">
+                {language === 'bn' ? 'ডাটাবেস স্ট্যাটাস' : 'Engine Connectivity'}
+              </h3>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono text-gray-300">Supabase Cloud</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold">14ms</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-            <span className="text-emerald-500 text-sm font-mono font-bold">ONLINE</span>
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]"></span>
+              <span className="text-emerald-500 text-xs font-black tracking-widest uppercase">Live</span>
+            </div>
+            <p className="text-[10px] text-gray-600 font-mono tracking-tighter">SOVEREIGN_MODE: ENABLED</p>
           </div>
         </div>
       </div>
