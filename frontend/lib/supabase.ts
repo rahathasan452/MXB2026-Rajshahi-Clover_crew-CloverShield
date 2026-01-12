@@ -179,6 +179,7 @@ export interface Case {
   status: 'Open' | 'Investigating' | 'Resolved' | 'False Positive'
   priority: 'High' | 'Medium' | 'Low'
   analyst_id?: string
+  checklist_state?: Record<string, boolean>
   created_at: string
   updated_at: string
 }
@@ -238,6 +239,22 @@ export const updateCaseStatus = async (
   if (error) throw error
   return data
 }
+
+export const updateCaseChecklist = async (
+  caseId: string,
+  checklistState: Record<string, boolean>
+): Promise<Case> => {
+  const { data, error } = await supabase
+    .from('cases')
+    .update({ checklist_state: checklistState })
+    .eq('case_id', caseId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
 
 export const generateDemoCases = async (count: number = 5): Promise<Case[]> => {
   // 1. Find high-risk transactions that don't have a case yet
