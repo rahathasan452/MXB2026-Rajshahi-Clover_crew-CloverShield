@@ -26,4 +26,4 @@ This plan implements a structured case management system, including a new databa
 - [x] Task: Add "Create Case" button to existing Transaction Detail/Decision views [161ba0f]
 - [x] Task: Ensure mobile responsiveness for the new Case views [cd5d3fb]
 - [x] Task: Final end-to-end testing of the investigation lifecycle [manual-verified]
-- [x] Task: Conductor - User Manual Verification 'Phase 4: Integration & Polish' (Protocol in workflow.md) [4b54aa7]
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Integration & Polish' (Protocol in workflow.md) [6331c35]
