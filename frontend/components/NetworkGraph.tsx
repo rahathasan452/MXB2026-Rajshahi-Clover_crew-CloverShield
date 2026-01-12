@@ -4,7 +4,7 @@ import { useAppStore } from '@/store/useAppStore'
 import { Icon } from './Icon'
 import { RiskLegend } from './RiskLegend'
 
-// ... (dynamic import etc)
+const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false })
 
 interface GraphNode {
   id: string
@@ -14,7 +14,25 @@ interface GraphNode {
   riskScore: number
 }
 
-// ... (keep GraphLink etc)
+interface GraphLink {
+  source: string
+  target: string
+  color: string
+  width: number
+  particles?: number
+}
+
+interface GraphData {
+  nodes: GraphNode[]
+  links: GraphLink[]
+}
+
+interface NetworkGraphProps {
+  height?: number
+  language?: 'en' | 'bn'
+  latestTransaction?: any
+  history?: any[]
+}
 
 const getNodeColor = (risk: number, type: 'sender' | 'receiver') => {
   if (risk > 0.7) return '#EF4444' // Red
@@ -22,7 +40,7 @@ const getNodeColor = (risk: number, type: 'sender' | 'receiver') => {
   return type === 'sender' ? '#60A5FA' : '#F472B6' // Default Blue/Pink
 }
 
-export const NetworkGraph: React.FC<NetworkGraphProps> = ({ 
+export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   height = 400,
   language = 'en',
   latestTransaction,
@@ -41,9 +59,9 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       // First pass: Calculate risk scores
       const nodeRisks = new Map<string, number>()
       history.forEach(tx => {
-         const p = tx.fraud_probability || 0
-         nodeRisks.set(tx.sender_id, Math.max(nodeRisks.get(tx.sender_id) || 0, p))
-         nodeRisks.set(tx.receiver_id, Math.max(nodeRisks.get(tx.receiver_id) || 0, p))
+        const p = tx.fraud_probability || 0
+        nodeRisks.set(tx.sender_id, Math.max(nodeRisks.get(tx.sender_id) || 0, p))
+        nodeRisks.set(tx.receiver_id, Math.max(nodeRisks.get(tx.receiver_id) || 0, p))
       })
 
       history.forEach(tx => {
@@ -58,7 +76,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
             riskScore: risk
           })
         }
-        
+
         // Add Receiver
         if (!nodesMap.has(tx.receiver_id)) {
           const risk = nodeRisks.get(tx.receiver_id) || 0
@@ -74,7 +92,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         // Add Link
         const isFraud = tx.fraud_probability > 0.7
         const isWarn = tx.fraud_probability > 0.3
-        
+
         links.push({
           source: tx.sender_id,
           target: tx.receiver_id,
@@ -86,7 +104,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
       setData({
         nodes: Array.from(nodesMap.values()),
-        links: links.slice(0, 200) 
+        links: links.slice(0, 200)
       })
     }
   }, [history])
@@ -97,13 +115,13 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       addTransactionToGraph(latestTransaction)
     }
   }, [latestTransaction])
-  
+
   const addTransactionToGraph = useCallback((tx: any) => {
     setData(currentData => {
       const newNodes = [...currentData.nodes]
       const newLinks = [...currentData.links]
       const p = tx.fraud_probability || 0
-      
+
       // Update or Add Sender Node
       const senderIdx = newNodes.findIndex(n => n.id === tx.nameOrig)
       if (senderIdx === -1) {
@@ -119,15 +137,15 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         const node = newNodes[senderIdx]
         const newRisk = Math.max(node.riskScore, p)
         if (newRisk > node.riskScore) {
-             newNodes[senderIdx] = {
-                 ...node,
-                 riskScore: newRisk,
-                 color: getNodeColor(newRisk, 'sender'),
-                 val: 4 + (newRisk * 2)
-             }
+          newNodes[senderIdx] = {
+            ...node,
+            riskScore: newRisk,
+            color: getNodeColor(newRisk, 'sender'),
+            val: 4 + (newRisk * 2)
+          }
         }
       }
-      
+
       // Update or Add Receiver Node
       const receiverIdx = newNodes.findIndex(n => n.id === tx.nameDest)
       if (receiverIdx === -1) {
@@ -139,22 +157,22 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           riskScore: p
         })
       } else {
-         const node = newNodes[receiverIdx]
-         const newRisk = Math.max(node.riskScore, p)
-         if (newRisk > node.riskScore) {
-             newNodes[receiverIdx] = {
-                 ...node,
-                 riskScore: newRisk,
-                 color: getNodeColor(newRisk, 'receiver'),
-                 val: 4 + (newRisk * 2)
-             }
-         }
+        const node = newNodes[receiverIdx]
+        const newRisk = Math.max(node.riskScore, p)
+        if (newRisk > node.riskScore) {
+          newNodes[receiverIdx] = {
+            ...node,
+            riskScore: newRisk,
+            color: getNodeColor(newRisk, 'receiver'),
+            val: 4 + (newRisk * 2)
+          }
+        }
       }
-      
+
       // Add Link
       const isFraud = p > 0.7
       const isWarn = p > 0.3
-      
+
       newLinks.push({
         source: tx.nameOrig,
         target: tx.nameDest,
@@ -162,16 +180,16 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         width: isFraud ? 4 : 2,
         particles: isFraud ? 4 : 0
       })
-      
+
       if (newLinks.length > 100) {
         const keptLinks = newLinks.slice(-100)
         return { nodes: newNodes, links: keptLinks }
       }
-      
+
       return { nodes: newNodes, links: newLinks }
     })
   }, [])
-  
+
   // TODO: In Task 05, we will connect this to the actual stream.
   useEffect(() => {
     if (fgRef.current) {
@@ -193,9 +211,9 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           {data.nodes.length} {language === 'bn' ? 'নোড' : 'NODES'} | {data.links.length} {language === 'bn' ? 'লিঙ্ক' : 'EDGES'}
         </p>
       </div>
-      
+
       <div className="scanline" />
-      
+
       <ForceGraph2D
         ref={fgRef}
         width={undefined} // Auto-width
@@ -219,7 +237,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       <div className="absolute bottom-4 right-4 z-10">
         <RiskLegend language={language} />
       </div>
-      
+
       {data.nodes.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center text-text-secondary opacity-50">
