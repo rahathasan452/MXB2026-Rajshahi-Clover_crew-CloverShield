@@ -23,19 +23,19 @@ export default function ProfilePage() {
   const params = useParams()
   const router = useRouter()
   const { language } = useAppStore()
-  
+
   // Typed State
   const [user, setUser] = useState<UserProfile | null>(null)
   const [history, setHistory] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   const userId = params.id as string
 
   useEffect(() => {
     if (!userId || userId === 'search') {
-        setLoading(false)
-        return
+      setLoading(false)
+      return
     }
 
     const loadProfileData = async () => {
@@ -45,48 +45,48 @@ export default function ProfilePage() {
 
         // Parallel Fetching: User Data & Transaction History
         const [userResponse, txResponse] = await Promise.all([
-             // 1. Fetch User (Test Dataset)
-             supabase
-                .from('test_dataset')
-                .select('*')
-                .or(`nameOrig.eq.${userId},nameDest.eq.${userId}`)
-                .limit(1),
-             
-             // 2. Fetch History (Live)
-             supabase
-                .from('transaction_history')
-                .select('*')
-                .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-                .order('transaction_timestamp', { ascending: false })
-                .limit(10)
+          // 1. Fetch User (Test Dataset)
+          supabase
+            .from('test_dataset')
+            .select('*')
+            .or(`nameOrig.eq.${userId},nameDest.eq.${userId}`)
+            .limit(1),
+
+          // 2. Fetch History (Live)
+          supabase
+            .from('transaction_history')
+            .select('*')
+            .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+            .order('transaction_timestamp', { ascending: false })
+            .limit(10)
         ])
 
         // Process User Data
         let userData: UserProfile | null = null
         if (userResponse.data && userResponse.data.length > 0) {
-            const td = userResponse.data[0]
-            const isSender = td.nameOrig === userId
-            userData = {
-              user_id: userId,
-              name_en: isSender ? `Sender ${userId}` : `Receiver ${userId}`,
-              name_bn: isSender ? `প্রেরক ${userId}` : `প্রাপক ${userId}`,
-              phone: 'N/A', 
-              provider: 'Mobile Money',
-              balance: isSender ? td.oldBalanceOrig : td.oldBalanceDest,
-              account_age_days: 0, 
-              total_transactions: 1, 
-              avg_transaction_amount: td.amount,
-              verified: false,
-              kyc_complete: false,
-              risk_level: td.isFlaggedFraud ? 'high' : 'low',
-              is_from_test_dataset: true
-            }
+          const td = userResponse.data[0]
+          const isSender = td.nameOrig === userId
+          userData = {
+            user_id: userId,
+            name_en: isSender ? `Sender ${userId}` : `Receiver ${userId}`,
+            name_bn: isSender ? `প্রেরক ${userId}` : `প্রাপক ${userId}`,
+            phone: 'N/A',
+            provider: 'Mobile Money',
+            balance: isSender ? td.oldBalanceOrig : td.oldBalanceDest,
+            account_age_days: 0,
+            total_transactions: 1,
+            avg_transaction_amount: td.amount,
+            verified: false,
+            kyc_complete: false,
+            risk_level: td.isFlaggedFraud ? 'high' : 'low',
+            is_from_test_dataset: true
+          }
         }
 
         if (!userData) {
-            setError('User not found in dataset')
-            setLoading(false)
-            return
+          setError('User not found in dataset')
+          setLoading(false)
+          return
         }
 
         setUser(userData)
@@ -94,36 +94,36 @@ export default function ProfilePage() {
         // Process History
         const historyData: Transaction[] = []
         if (txResponse.data) {
-            historyData.push(...(txResponse.data as any[]))
+          historyData.push(...(txResponse.data as any[]))
         }
 
         // If history is scarce, supplement with test_dataset raw data
         if (historyData.length < 5) {
-             const rawTestResponse = await supabase
-                .from('test_dataset')
-                .select('*')
-                .or(`nameOrig.eq.${userId},nameDest.eq.${userId}`)
-                .order('step', { ascending: false })
-                .limit(20)
-            
-             if (rawTestResponse.data) {
-                 const mappedRaw = rawTestResponse.data.map((td: any) => ({
-                    transaction_id: `test-${td.id}`,
-                    sender_id: td.nameOrig,
-                    receiver_id: td.nameDest,
-                    amount: td.amount,
-                    transaction_type: td.type,
-                    created_at: new Date(Date.now() - (td.step * 3600000)).toISOString(), 
-                    status: 'COMPLETED' as const,
-                    is_test_data: true,
-                    fraud_probability: td.isFlaggedFraud ? 1.0 : 0.0
-                 }))
-                 historyData.push(...mappedRaw)
-             }
+          const rawTestResponse = await supabase
+            .from('test_dataset')
+            .select('*')
+            .or(`nameOrig.eq.${userId},nameDest.eq.${userId}`)
+            .order('step', { ascending: false })
+            .limit(20)
+
+          if (rawTestResponse.data) {
+            const mappedRaw = rawTestResponse.data.map((td: any) => ({
+              transaction_id: `test-${td.id}`,
+              sender_id: td.nameOrig,
+              receiver_id: td.nameDest,
+              amount: td.amount,
+              transaction_type: td.type,
+              created_at: new Date(Date.now() - (td.step * 3600000)).toISOString(),
+              status: 'COMPLETED' as const,
+              is_test_data: true,
+              fraud_probability: td.isFlaggedFraud ? 1.0 : 0.0
+            }))
+            historyData.push(...mappedRaw)
+          }
         }
 
-        setHistory(historyData.sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        setHistory(historyData.sort((a, b) =>
+          new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime()
         ))
 
       } catch (err: any) {
@@ -152,7 +152,7 @@ export default function ProfilePage() {
         .select('nameDest, dest_txn_count')
         .order('dest_txn_count', { ascending: false })
         .limit(100)
-      
+
       if (data) {
         const uniqueReceivers = Array.from(new Set(data.map((d: any) => d.nameDest as string)))
         setFrequentAccounts(uniqueReceivers.slice(0, 10))
@@ -160,7 +160,7 @@ export default function ProfilePage() {
     }
     fetchFrequent()
   }, [])
-  
+
   // Debounced search
   useEffect(() => {
     if (!searchId) {
@@ -175,7 +175,7 @@ export default function ProfilePage() {
         .select('nameOrig, nameDest')
         .or(`nameOrig.ilike.%${searchId}%,nameDest.ilike.%${searchId}%`)
         .limit(5)
-      
+
       if (testUsers) {
         testUsers.forEach((tu: any) => {
           if (tu.nameOrig.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameOrig)) {
@@ -206,11 +206,11 @@ export default function ProfilePage() {
           <Icon name="person_search" size={64} className="mx-auto mb-6 text-purple-400" />
           <h1 className="text-2xl font-bold mb-2">Customer Search</h1>
           <p className="text-text-secondary mb-8">Enter a User ID to view 360° risk profile.</p>
-          
+
           <form onSubmit={handleSearch} className="space-y-4 relative">
             <div className="relative">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={searchId}
                 onChange={(e) => setSearchId(e.target.value)}
                 onFocus={() => setShowFrequent(true)}
@@ -221,7 +221,7 @@ export default function ProfilePage() {
               />
               {/* Autocomplete & Frequent logic same as before... omitted for brevity but assumed present */}
             </div>
-            
+
             <button type="submit" className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 rounded-lg transition-colors shadow-lg shadow-purple-500/20">
               Trace Identity
             </button>
@@ -233,33 +233,33 @@ export default function ProfilePage() {
 
   // --- RENDER: Loading / Error ---
   if (loading) {
-      return (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-              <p className="text-gray-400 animate-pulse">Compiling sovereign data...</p>
-          </div>
-      )
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        <p className="text-gray-400 animate-pulse">Compiling sovereign data...</p>
+      </div>
+    )
   }
 
   if (error || !user) {
-      return (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-             <div className="bg-red-500/10 p-6 rounded-full mb-4">
-                <Icon name="person_off" size={48} className="text-red-400" />
-             </div>
-             <h2 className="text-xl font-bold text-white mb-2">Profile Unavailable</h2>
-             <p className="text-text-secondary max-w-md mb-6">{error || 'The requested user identity could not be resolved in the sovereign database.'}</p>
-             <Link href="/dashboard/profile/search" className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
-                Return to Search
-             </Link>
-          </div>
-      )
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <div className="bg-red-500/10 p-6 rounded-full mb-4">
+          <Icon name="person_off" size={48} className="text-red-400" />
+        </div>
+        <h2 className="text-xl font-bold text-white mb-2">Profile Unavailable</h2>
+        <p className="text-text-secondary max-w-md mb-6">{error || 'The requested user identity could not be resolved in the sovereign database.'}</p>
+        <Link href="/dashboard/profile/search" className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+          Return to Search
+        </Link>
+      </div>
+    )
   }
 
   // --- RENDER: Profile Content ---
   return (
     <div className={`space-y-8 pb-12 ${language === 'bn' ? 'font-bengali' : ''}`}>
-      
+
       {/* Identity Card */}
       <UserProfileCard user={user} language={language} />
 
@@ -272,40 +272,38 @@ export default function ProfilePage() {
           <div className="bg-card-bg border border-white/10 rounded-xl overflow-hidden shadow-lg">
             {history.length > 0 ? (
               <div className="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
-                  <div className="divide-y divide-white/10">
-                {history.map(tx => (
-                  <div key={tx.transaction_id} className="p-4 hover:bg-white/5 transition-colors flex items-center justify-between group">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${
-                        tx.sender_id === userId ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'
-                      }`}>
-                        <Icon name={tx.sender_id === userId ? 'arrow_outward' : 'arrow_downward'} size={16} />
+                <div className="divide-y divide-white/10">
+                  {history.map(tx => (
+                    <div key={tx.transaction_id} className="p-4 hover:bg-white/5 transition-colors flex items-center justify-between group">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${tx.sender_id === userId ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'
+                          }`}>
+                          <Icon name={tx.sender_id === userId ? 'arrow_outward' : 'arrow_downward'} size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold truncate max-w-[150px] md:max-w-[200px]" title={tx.sender_id === userId ? tx.receiver_id : tx.sender_id}>
+                            {tx.sender_id === userId ? `To: ${tx.receiver_id}` : `From: ${tx.sender_id}`}
+                          </div>
+                          <div className="text-xs text-text-secondary">
+                            {tx.created_at ? formatDistanceToNow(new Date(tx.created_at)) + ' ago' : 'Unknown'}
+                          </div>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <div className="font-bold truncate max-w-[150px] md:max-w-[200px]" title={tx.sender_id === userId ? tx.receiver_id : tx.sender_id}>
-                          {tx.sender_id === userId ? `To: ${tx.receiver_id}` : `From: ${tx.sender_id}`}
+                      <div className="text-right">
+                        <div className={`font-mono font-bold ${tx.sender_id === userId ? 'text-white' : 'text-green-400'
+                          }`}>
+                          {tx.sender_id === userId ? '-' : '+'} ৳ {tx.amount?.toLocaleString()}
                         </div>
-                        <div className="text-xs text-text-secondary">
-                          {tx.created_at ? formatDistanceToNow(new Date(tx.created_at)) + ' ago' : 'Unknown'}
-                        </div>
+                        <div className="text-xs text-text-secondary uppercase tracking-wider scale-90 origin-right">{tx.transaction_type}</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className={`font-mono font-bold ${
-                        tx.sender_id === userId ? 'text-white' : 'text-green-400'
-                      }`}>
-                        {tx.sender_id === userId ? '-' : '+'} ৳ {tx.amount?.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-text-secondary uppercase tracking-wider scale-90 origin-right">{tx.transaction_type}</div>
-                    </div>
-                  </div>
-                ))}
+                  ))}
                 </div>
               </div>
             ) : (
               <div className="p-12 text-center text-text-secondary flex flex-col items-center">
-                  <Icon name="inbox" size={48} className="opacity-20 mb-2"/>
-                  <span>No visible transaction history</span>
+                <Icon name="inbox" size={48} className="opacity-20 mb-2" />
+                <span>No visible transaction history</span>
               </div>
             )}
           </div>
@@ -317,19 +315,19 @@ export default function ProfilePage() {
             <Icon name="hub" /> Relationship Graph
           </h2>
           {/* Provide fallback/empty state within NetworkGraph component ideally, but here we pass data */}
-           <div className="bg-card-bg border border-white/10 rounded-xl p-1 min-h-[400px]">
-             {history.length > 0 ? (
-                 <NetworkGraph 
-                    language={language} 
-                    height={400} 
-                    history={history}
-                 />
-             ) : (
-                 <div className="h-full flex items-center justify-center text-gray-500">
-                     Not enough data to generate graph
-                 </div>
-             )}
-           </div>
+          <div className="bg-card-bg border border-white/10 rounded-xl p-1 min-h-[400px]">
+            {history.length > 0 ? (
+              <NetworkGraph
+                language={language}
+                height={400}
+                history={history}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                Not enough data to generate graph
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -340,7 +338,7 @@ export default function ProfilePage() {
             <Icon name="assignment" /> SAR Generator
           </h2>
           <div className="bg-card-bg border border-white/10 rounded-xl p-6 h-full">
-            <SARReportGenerator 
+            <SARReportGenerator
               caseId={`CASE-${userId}-${Date.now().toString().slice(-4)}`}
               transactions={history}
               analystName="System Administrator"
@@ -354,13 +352,13 @@ export default function ProfilePage() {
             <Icon name="qr_code_scanner" /> Evidence Export
           </h2>
           <div className="bg-card-bg border border-white/10 rounded-xl p-6 h-full">
-             <QRDataBridge 
-               data={{
-                 caseId: `CASE-${userId}`,
-                 transactions: history.slice(0, 5),
-                 risk: user.risk_level
-               }}
-             />
+            <QRDataBridge
+              data={{
+                caseId: `CASE-${userId}`,
+                transactions: history.slice(0, 5),
+                risk: user.risk_level
+              }}
+            />
           </div>
         </div>
       </div>
