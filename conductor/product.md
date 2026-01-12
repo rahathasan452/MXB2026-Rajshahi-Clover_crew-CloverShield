@@ -21,3 +21,4 @@
 -   **Customer 360 Network Graph:** Interactive visualization tool to uncover hidden connections, identifying "Mule Networks" and "Star Schemes" visually.
 -   **Policy Lab:** A sandbox environment for backtesting new fraud detection rules against historical data, allowing for safe iteration and improvement of security policies.
 -   **Audit Trail:** A comprehensive, immutable record of system activities, ML predictions, and analyst decisions, ensuring regulatory compliance and "Sovereign Defense" integrity.
+-   **Case Management Station:** A dedicated workflow for deep-dive investigations, featuring a persistent investigation checklist, quick-action toolkit (Freeze/Block/SAR), and collaborative case tracking.
