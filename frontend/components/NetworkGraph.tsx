@@ -2,12 +2,9 @@ import React, { useEffect, useState, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { useAppStore } from '@/store/useAppStore'
 import { Icon } from './Icon'
+import { RiskLegend } from './RiskLegend'
 
-// Dynamically import ForceGraph2D to avoid SSR issues
-const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
-  ssr: false,
-  loading: () => <div className="flex items-center justify-center h-full text-primary">Loading Graph Engine...</div>
-})
+// ... (dynamic import etc)
 
 interface GraphNode {
   id: string
@@ -211,6 +208,10 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         warmupTicks={100}
         cooldownTicks={100}
       />
+
+      <div className="absolute bottom-4 right-4 z-10">
+        <RiskLegend language={language} />
+      </div>
       
       {data.nodes.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
