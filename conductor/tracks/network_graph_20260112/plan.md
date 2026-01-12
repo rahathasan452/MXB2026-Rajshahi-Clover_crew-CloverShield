@@ -8,7 +8,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Automated Ring & Cluster Detection' (Protocol in workflow.md)
 
 ## Phase 3: Interactive Network Expansion
-- [ ] Task: Add "Expand" context menu option or button to graph nodes
+- [x] Task: Add "Expand" context menu option or button to graph nodes [17a5841]
 - [ ] Task: Update the data fetching logic to retrieve 1st and 2nd degree connections on-demand
 - [ ] Task: Implement incremental rendering to ensure the graph remains responsive during expansion
 - [ ] Task: Add a "Collapse" or "Reset" button to clear expanded views
