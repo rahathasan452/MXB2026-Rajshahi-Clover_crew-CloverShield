@@ -17,7 +17,7 @@ This plan implements a structured case management system, including a new databa
 
 ## Phase 3: Case Detail & Toolkit
 - [x] Task: Create `app/dashboard/cases/[id]/page.tsx` for detailed investigation [bdb13d1]
-- [ ] Task: Implement `components/QuickActionToolbar.tsx` with keyboard shortcut support
+- [x] Task: Implement `components/QuickActionToolbar.tsx` with keyboard shortcut support [5ee92e0]
 - [ ] Task: Implement `components/InvestigationChecklist.tsx` with persistence
 - [ ] Task: Integrate "Block Transaction" and "Freeze Account" simulation buttons
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Case Detail & Toolkit' (Protocol in workflow.md)
