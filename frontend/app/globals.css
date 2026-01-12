@@ -23,11 +23,29 @@
 }
 
 @layer base {
+  :root {
+    /* Dark Mode (Default) */
+    --bg-main: 5 7 20;       /* #050714 */
+    --bg-card: 15 18 41;     /* #0F1229 */
+    --text-main: 255 255 255;
+    --text-muted: 160 174 192; /* #A0AEC0 */
+    --border-main: 255 255 255;
+  }
+
+  .light {
+    /* Light Mode */
+    --bg-main: 249 250 251;  /* gray-50 */
+    --bg-card: 255 255 255;  /* white */
+    --text-main: 17 24 39;   /* gray-900 */
+    --text-muted: 75 85 99;  /* gray-600 */
+    --border-main: 229 231 235; /* gray-200 */
+  }
+
   * {
     @apply border-transparent;
   }
   body {
-    @apply bg-dark-bg text-text-primary;
+    @apply bg-dark-bg text-text-primary transition-colors duration-300;
   }
   /* Apply Hind Siliguri font for Bengali text */
   [lang="bn"],
@@ -42,42 +60,10 @@
   }
 }
 
-/* Light Mode Overrides */
-.light body {
-  @apply bg-gray-50 text-gray-900;
-}
-
+/* Light Mode Specific Overrides (Cleaned up) */
+/* Some specific gradients might still need manual tweaks if not covered by vars */
 .light .bg-gradient-dark {
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-}
-
-.light aside {
-  @apply bg-white border-gray-200;
-}
-
-.light header {
-  @apply bg-white/80 border-gray-200 text-gray-900;
-}
-
-.light .bg-[#0A0E17] {
-  @apply bg-white;
-}
-
-.light .bg-[#080b12] {
-  @apply bg-gray-50;
-}
-
-.light .text-white {
-  @apply text-gray-900;
-}
-
-.light .text-gray-400 {
-  @apply text-gray-600;
-}
-
-.light .border-white\/5,
-.light .border-white\/10 {
-  @apply border-gray-200;
 }
 
 @layer components {

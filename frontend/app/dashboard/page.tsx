@@ -143,20 +143,7 @@ export default function DashboardLanding() {
   return (
     <div className="space-y-8">
 
-      {/* Welcome Banner */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">
-            {language === 'bn' ? 'স্বাগতম, অ্যানালিস্ট' : 'Welcome back, Analyst'}
-          </h1>
-          <p className="text-gray-400 text-sm">
-            {language === 'bn' ? 'সিস্টেম এখন অনলাইনে এবং সুরক্ষিত।' : 'System is online and secure. Sovereign mode active.'}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {/* Quick Actions could go here */}
-        </div>
-      </div>
+
 
       {/* KPI Stats Row - Utilitarian Info Style */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -188,7 +175,7 @@ export default function DashboardLanding() {
           {/* Animated Background Layers */}
           <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 via-transparent to-purple-500/20 opacity-30 group-hover:opacity-50 transition-opacity"></div>
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-20 [mask-image:radial-gradient(ellipse_at_center,black,transparent)]"></div>
-          
+
           {/* Scanning Line Animation */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent absolute top-0 left-0 animate-scan-slow opacity-20"></div>
@@ -232,7 +219,7 @@ export default function DashboardLanding() {
                 </span>
                 <Icon name="arrow_forward" className="relative z-10 group-hover/btn:translate-x-1 transition-transform" />
               </Link>
-              
+
               <Link
                 href="/dashboard/audit"
                 className="px-8 py-4 rounded-xl border border-white/10 hover:bg-white/5 text-gray-400 hover:text-white font-bold transition-all flex items-center justify-center gap-2"
@@ -254,11 +241,11 @@ export default function DashboardLanding() {
             >
               {/* Feature Accent Glow */}
               <div className={`absolute -inset-2 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500 bg-current ${tool.color}`}></div>
-              
+
               <div className={`relative mb-4 p-3 rounded-2xl bg-[#0A0E17] border border-white/10 ${tool.color} group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300 shadow-xl`}>
                 <Icon name={tool.icon} size={32} />
               </div>
-              
+
               <div className="relative text-center">
                 <h3 className="text-sm font-black text-white tracking-wide uppercase group-hover:text-emerald-400 transition-colors">
                   {tool.title}
@@ -285,7 +272,7 @@ export default function DashboardLanding() {
           {/* Advanced Visual Layers */}
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-cyan-500/10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10 [mask-image:linear-gradient(to_bottom,black,transparent)]"></div>
-          
+
           <div className="flex items-center gap-6 relative z-10">
             <div className="relative">
               <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full group-hover:bg-emerald-500/40 transition-colors"></div>
@@ -293,7 +280,7 @@ export default function DashboardLanding() {
                 <Icon name="qr_code_scanner" size={40} />
               </div>
             </div>
-            
+
             <div className="flex-1">
               <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-widest mb-2">
                 <Icon name="security" size={10} />
