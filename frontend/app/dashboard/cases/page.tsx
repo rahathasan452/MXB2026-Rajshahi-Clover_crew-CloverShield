@@ -1,0 +1,217 @@
+'use client'
+
+import React, { useEffect, useState } from 'react'
+import { supabase, getOpenCases, Case } from '@/lib/supabase'
+import { Icon } from '@/components/Icon'
+import { CaseStatusBadge, CasePriorityBadge } from '@/components/CaseStatusBadge'
+import { format } from 'date-fns'
+import Link from 'next/link'
+
+export default function CasesPage() {
+  const [cases, setCases] = useState<Case[]>([])
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Open' | 'Investigating' | 'Resolved'>('All')
+  const [searchTerm, setSearchTerm] = useState('')
+
+  useEffect(() => {
+    fetchCases()
+
+    // Real-time subscription
+    const subscription = supabase
+      .channel('cases_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cases' }, (payload) => {
+        fetchCases() // Refresh list on any change
+      })
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  const fetchCases = async () => {
+    setLoading(true)
+    try {
+      // We fetch all and filter client-side for now for simplicity, 
+      // or we can use the helper which fetches Open/Investigating by default.
+      // Let's modify the helper fetch or just fetch all here directly.
+      
+      const { data, error } = await supabase
+        .from('cases')
+        .select('*')
+        .order('updated_at', { ascending: false })
+      
+      if (error) throw error
+      setCases(data || [])
+    } catch (error) {
+      console.error('Error fetching cases:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredCases = cases.filter(c => {
+    const matchesStatus = statusFilter === 'All' || c.status === statusFilter
+    const matchesSearch = searchTerm === '' || 
+      c.case_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.analyst_id && c.analyst_id.toLowerCase().includes(searchTerm.toLowerCase()))
+    return matchesStatus && matchesSearch
+  })
+
+  // Group stats
+  const stats = {
+    open: cases.filter(c => c.status === 'Open').length,
+    investigating: cases.filter(c => c.status === 'Investigating').length,
+    resolved: cases.filter(c => c.status === 'Resolved').length,
+    highPriority: cases.filter(c => c.priority === 'High' && c.status !== 'Resolved').length
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header & Stats */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-emerald-400 flex items-center gap-3">
+            <Icon name="briefcase" size={28} /> 
+            Investigation Queue
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">Manage and triage active fraud cases</p>
+        </div>
+
+        <div className="flex gap-4">
+           <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
+              <span className="text-xs text-slate-500 uppercase tracking-widest">Open</span>
+              <span className="text-2xl font-bold text-yellow-500">{stats.open}</span>
+           </div>
+           <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
+              <span className="text-xs text-slate-500 uppercase tracking-widest">Active</span>
+              <span className="text-2xl font-bold text-blue-500">{stats.investigating}</span>
+           </div>
+           <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
+              <span className="text-xs text-slate-500 uppercase tracking-widest">High Pri</span>
+              <span className="text-2xl font-bold text-red-500">{stats.highPriority}</span>
+           </div>
+        </div>
+      </div>
+
+      {/* Filters & Toolbar */}
+      <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="flex gap-2">
+          {['All', 'Open', 'Investigating', 'Resolved'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setStatusFilter(tab as any)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                statusFilter === tab 
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50' 
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative w-full md:w-64">
+          <input 
+            type="text" 
+            placeholder="Search Case ID or Analyst..." 
+            className="w-full bg-slate-950 border border-slate-700 rounded-md py-2 pl-10 pr-4 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 transition-colors"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Icon name="search" size={16} className="absolute left-3 top-2.5 text-slate-500" />
+        </div>
+      </div>
+
+      {/* Cases Table */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <table className="w-full text-left">
+          <thead className="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+            <tr>
+              <th className="p-4">Case ID</th>
+              <th className="p-4">Target</th>
+              <th className="p-4">Priority</th>
+              <th className="p-4">Status</th>
+              <th className="p-4">Analyst</th>
+              <th className="p-4">Updated</th>
+              <th className="p-4 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800 text-sm">
+            {loading ? (
+              [...Array(5)].map((_, i) => (
+                <tr key={i} className="animate-pulse">
+                  <td className="p-4"><div className="h-4 w-24 bg-slate-800 rounded"></div></td>
+                  <td className="p-4"><div className="h-4 w-32 bg-slate-800 rounded"></div></td>
+                  <td className="p-4"><div className="h-4 w-16 bg-slate-800 rounded"></div></td>
+                  <td className="p-4"><div className="h-4 w-20 bg-slate-800 rounded"></div></td>
+                  <td className="p-4"><div className="h-4 w-24 bg-slate-800 rounded"></div></td>
+                  <td className="p-4"><div className="h-4 w-32 bg-slate-800 rounded"></div></td>
+                  <td className="p-4"><div className="h-8 w-20 bg-slate-800 rounded ml-auto"></div></td>
+                </tr>
+              ))
+            ) : filteredCases.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="p-12 text-center text-slate-500">
+                  <Icon name="check-circle" size={48} className="mx-auto mb-4 opacity-20" />
+                  <p>No cases found matching your criteria.</p>
+                </td>
+              </tr>
+            ) : (
+              filteredCases.map((c) => (
+                <tr key={c.case_id} className="hover:bg-slate-800/50 transition-colors group">
+                  <td className="p-4 font-mono text-emerald-400/80 group-hover:text-emerald-400">
+                    #{c.case_id.slice(0, 8)}
+                  </td>
+                  <td className="p-4 text-slate-300">
+                    {c.user_id ? (
+                      <div className="flex items-center gap-2">
+                         <Icon name="user" size={14} className="text-slate-500"/>
+                         <span>{c.user_id}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                         <Icon name="activity" size={14} className="text-slate-500"/>
+                         <span>Txn...{c.transaction_id?.slice(0,6)}</span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    <CasePriorityBadge priority={c.priority} />
+                  </td>
+                  <td className="p-4">
+                    <CaseStatusBadge status={c.status} />
+                  </td>
+                  <td className="p-4 text-slate-400">
+                    {c.analyst_id ? (
+                      <span className="flex items-center gap-1">
+                        <div className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[10px] text-white">
+                           {c.analyst_id[0].toUpperCase()}
+                        </div>
+                        {c.analyst_id}
+                      </span>
+                    ) : (
+                      <span className="text-slate-600 italic text-xs">Unassigned</span>
+                    )}
+                  </td>
+                  <td className="p-4 text-slate-500">
+                    {format(new Date(c.updated_at), 'MMM d, HH:mm')}
+                  </td>
+                  <td className="p-4 text-right">
+                    <Link 
+                      href={`/dashboard/cases/${c.case_id}`}
+                      className="inline-flex items-center gap-1 bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                    >
+                      View <Icon name="arrow-right" size={12} />
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
