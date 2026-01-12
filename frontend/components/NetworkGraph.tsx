@@ -13,13 +13,58 @@ interface GraphNode {
   type: 'sender' | 'receiver'
   riskScore: number
   isMule?: boolean
+  community?: string
 }
 
 // ... (keep getNodeColor)
 
 const MULE_THRESHOLD = 5 // Nodes with > 5 unique neighbors are flagged as potential stars/mules
 
-export const NetworkGraph: React.FC<NetworkGraphProps> = ({ 
+const runCommunityDetection = (nodes: GraphNode[], links: GraphLink[]) => {
+    // Label Propagation Algorithm
+    const labels = new Map<string, string>()
+    const adj = new Map<string, string[]>()
+    
+    nodes.forEach(n => {
+        labels.set(n.id, n.id)
+        adj.set(n.id, [])
+    })
+    
+    links.forEach(l => {
+        const src = typeof l.source === 'string' ? l.source : (l.source as any).id
+        const tgt = typeof l.target === 'string' ? l.target : (l.target as any).id
+        if (adj.has(src)) adj.get(src)!.push(tgt)
+        if (adj.has(tgt)) adj.get(tgt)!.push(src)
+    })
+    
+    // Iterate 5 times (sufficient for small graphs)
+    for (let i = 0; i < 5; i++) {
+        const nodeIds = nodes.map(n => n.id).sort(() => Math.random() - 0.5)
+        nodeIds.forEach(nodeId => {
+            const neighbors = adj.get(nodeId) || []
+            if (neighbors.length === 0) return
+            
+            const neighborLabels = neighbors.map(n => labels.get(n)!)
+            const counts = new Map<string, number>()
+            let maxCount = 0
+            let bestLabel = labels.get(nodeId)!
+            
+            neighborLabels.forEach(l => {
+                const c = (counts.get(l) || 0) + 1
+                counts.set(l, c)
+                if (c > maxCount) {
+                    maxCount = c
+                    bestLabel = l
+                }
+            })
+            labels.set(nodeId, bestLabel)
+        })
+    }
+    
+    return labels
+}
+
+export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   height = 400,
   language = 'en',
   latestTransaction,
@@ -92,8 +137,14 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         })
       })
 
+      const updatedNodes = Array.from(nodesMap.values())
+      const communityLabels = runCommunityDetection(updatedNodes, links)
+      updatedNodes.forEach(n => {
+          n.community = communityLabels.get(n.id)
+      })
+
       setData({
-        nodes: Array.from(nodesMap.values()),
+        nodes: updatedNodes,
         links: links.slice(0, 200) 
       })
     }
@@ -179,6 +230,12 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         }
       }
       
+      // Re-run community detection on update
+      const communityLabels = runCommunityDetection(newNodes, newLinks)
+      newNodes.forEach(n => {
+          n.community = communityLabels.get(n.id)
+      })
+
       if (newLinks.length > 100) {
         const keptLinks = newLinks.slice(-100)
         return { nodes: newNodes, links: keptLinks }
@@ -186,8 +243,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       
       return { nodes: newNodes, links: newLinks }
     })
-  }, [])
-  // TODO: In Task 05, we will connect this to the actual stream.
+  }, [])  // TODO: In Task 05, we will connect this to the actual stream.
   useEffect(() => {
     if (fgRef.current) {
       // Increase repulsion (charge) to separate nodes more
