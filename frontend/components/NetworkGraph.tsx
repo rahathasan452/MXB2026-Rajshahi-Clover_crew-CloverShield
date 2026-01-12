@@ -173,7 +173,14 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   }, [])
   
   // TODO: In Task 05, we will connect this to the actual stream.
-  // For Task 04, I'll set up the visualizer component.
+  useEffect(() => {
+    if (fgRef.current) {
+      // Increase repulsion (charge) to separate nodes more
+      fgRef.current.d3Force('charge').strength(-150)
+      // Increase link distance
+      fgRef.current.d3Force('link').distance(50)
+    }
+  }, [data])
 
   return (
     <div className="hud-card border border-white/10 relative overflow-hidden" style={{ height }}>
@@ -203,10 +210,10 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         linkDirectionalParticleSpeed={0.005}
         linkDirectionalParticleWidth={4}
         backgroundColor="#00000000" // Transparent
-        d3AlphaDecay={0.05}
-        d3VelocityDecay={0.3}
-        warmupTicks={100}
-        cooldownTicks={100}
+        d3AlphaDecay={0.03}
+        d3VelocityDecay={0.4}
+        warmupTicks={200}
+        cooldownTicks={150}
       />
 
       <div className="absolute bottom-4 right-4 z-10">
