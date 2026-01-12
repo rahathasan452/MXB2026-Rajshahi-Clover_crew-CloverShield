@@ -176,16 +176,34 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     }
   }, [data])
 
+  const handleReset = () => {
+    setData({ nodes: [], links: [] })
+    // Re-initialize from history
+    if (history.length > 0) {
+        addTransactionsToGraph(history)
+    }
+  }
+
   return (
     <div className="hud-card border border-white/10 relative overflow-hidden" style={{ height }}>
-      <div className="absolute top-0 left-0 p-4 z-10 pointer-events-none">
-        <h3 className="text-xl font-bold text-text-primary flex items-center gap-2 hud-glow-blue">
-          <Icon name="hub" size={24} />
-          {language === 'bn' ? 'লাইভ নেটওয়ার্ক গ্রাফ' : 'LIVE NETWORK TOPOLOGY'}
-        </h3>
-        <p className="text-xs text-text-secondary font-mono mt-1">
-          {data.nodes.length} {language === 'bn' ? 'নোড' : 'NODES'} | {data.links.length} {language === 'bn' ? 'লিঙ্ক' : 'EDGES'}
-        </p>
+      <div className="absolute top-0 left-0 p-4 z-10 pointer-events-none w-full flex justify-between items-start">
+        <div>
+          <h3 className="text-xl font-bold text-text-primary flex items-center gap-2 hud-glow-blue">
+            <Icon name="hub" size={24} />
+            {language === 'bn' ? 'লাইভ নেটওয়ার্ক গ্রাফ' : 'LIVE NETWORK TOPOLOGY'}
+          </h3>
+          <p className="text-xs text-text-secondary font-mono mt-1">
+            {data.nodes.length} {language === 'bn' ? 'নোড' : 'NODES'} | {data.links.length} {language === 'bn' ? 'লিঙ্ক' : 'EDGES'}
+          </p>
+        </div>
+
+        <button 
+          onClick={handleReset}
+          className="pointer-events-auto flex items-center gap-1 bg-slate-900/50 hover:bg-slate-800 backdrop-blur-sm px-3 py-1.5 rounded-md border border-white/5 text-slate-400 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest"
+        >
+          <Icon name="restart_alt" size={14} />
+          {language === 'bn' ? 'রিসেট' : 'RESET VIEW'}
+        </button>
       </div>
       
       <div className="scanline" />
