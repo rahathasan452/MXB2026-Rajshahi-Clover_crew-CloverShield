@@ -80,6 +80,17 @@ export const getUser = async (userId: string): Promise<User | null> => {
   return data
 }
 
+export const getTransaction = async (transactionId: string): Promise<Transaction | null> => {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('transaction_id', transactionId)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
 export const getTransactionHistory = async (
   userId: string,
   limit: number = 10
