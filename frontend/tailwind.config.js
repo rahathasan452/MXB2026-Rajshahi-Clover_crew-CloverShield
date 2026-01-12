@@ -35,6 +35,16 @@ module.exports = {
         'gradient-dark': 'linear-gradient(135deg, #0A0E27 0%, #1a1a2e 100%)',
         'gradient-header': 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
       },
+      animation: {
+        'scan-slow': 'scan 8s linear infinite',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        scan: {
+          '0%': { top: '0%' },
+          '100%': { top: '100%' },
+        },
+      },
     },
   },
   plugins: [],

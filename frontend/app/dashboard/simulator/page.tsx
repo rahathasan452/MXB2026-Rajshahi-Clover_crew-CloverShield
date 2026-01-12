@@ -187,7 +187,7 @@ function SimulatorContent() {
 
     if (senderId && receiverId && amountStr && type) {
       const amount = parseFloat(amountStr)
-      
+
       // Update form state
       setTransactionForm({
         senderId,
@@ -206,21 +206,21 @@ function SimulatorContent() {
             if (response.ok) {
               const data = await response.json()
               if (data.transaction) {
-                 const tx = data.transaction
-                 const submitData = {
-                    senderId,
-                    receiverId,
-                    amount,
-                    type,
-                    oldBalanceOrig: tx.oldBalanceOrig,
-                    newBalanceOrig: type === 'CASH_OUT' || type === 'TRANSFER' ? tx.oldBalanceOrig - amount : tx.oldBalanceOrig,
-                    oldBalanceDest: tx.oldBalanceDest,
-                    newBalanceDest: type === 'TRANSFER' ? tx.oldBalanceDest + amount : tx.oldBalanceDest,
-                    step: tx.step,
-                    isTestData: true,
-                    isSimulation: false
-                 }
-                 handleTransactionSubmit(submitData)
+                const tx = data.transaction
+                const submitData = {
+                  senderId,
+                  receiverId,
+                  amount,
+                  type,
+                  oldBalanceOrig: tx.oldBalanceOrig,
+                  newBalanceOrig: type === 'CASH_OUT' || type === 'TRANSFER' ? tx.oldBalanceOrig - amount : tx.oldBalanceOrig,
+                  oldBalanceDest: tx.oldBalanceDest,
+                  newBalanceDest: type === 'TRANSFER' ? tx.oldBalanceDest + amount : tx.oldBalanceDest,
+                  step: tx.step,
+                  isTestData: true,
+                  isSimulation: false
+                }
+                handleTransactionSubmit(submitData)
               }
             }
           } catch (e) {
@@ -253,12 +253,6 @@ function SimulatorContent() {
         setIsLoading(true)
         const usersData = await getUsers()
         setUsers(usersData)
-        if (usersData.length > 0 && !selectedUser) {
-          setSelectedUser(usersData[0])
-          useAppStore.getState().setTransactionForm({
-            senderId: usersData[0].user_id,
-          })
-        }
       } catch (error: any) {
         // Suppress toast for users fetch if we are using dataset IDs
         console.warn('Failed to load users:', error.message)
@@ -272,17 +266,17 @@ function SimulatorContent() {
   return (
     <div className={`min-h-screen bg-[#050714] ${language === 'bn' ? 'font-bengali' : ''}`}>
       <div className="bg-gradient-header border-b border-white/10 p-4 mb-6">
-          <div className="container mx-auto flex items-center gap-4">
-               <Link href="/dashboard" className="flex items-center gap-2 text-primary hover:text-white transition-colors">
-                  <Icon name="arrow_back" />
-                  <span className="font-bold">{language === 'bn' ? 'ড্যাশবোর্ড এ ফিরে যান' : 'Back to Dashboard'}</span>
-               </Link>
-          </div>
+        <div className="container mx-auto flex items-center gap-4">
+          <Link href="/dashboard" className="flex items-center gap-2 text-primary hover:text-white transition-colors">
+            <Icon name="arrow_back" />
+            <span className="font-bold">{language === 'bn' ? 'ড্যাশবোর্ড এ ফিরে যান' : 'Back to Dashboard'}</span>
+          </Link>
+        </div>
       </div>
 
       <div className="container mx-auto px-4 pb-8">
         <AnalyticsDashboard language={language} />
-        
+
         <div className="space-y-8 mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
@@ -306,7 +300,7 @@ function SimulatorContent() {
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-xl font-bold text-text-primary">{language === 'bn' ? 'শীর্ষ ঝুঁকি প্রভাবক' : 'Top Risk Drivers'}</h3>
                         <button onClick={() => setShowRiskDrivers(!showRiskDrivers)} className="text-primary text-sm font-medium">
-                            {showRiskDrivers ? (language === 'bn' ? 'লুকান' : 'Hide') : (language === 'bn' ? 'দেখান' : 'Show')}
+                          {showRiskDrivers ? (language === 'bn' ? 'লুকান' : 'Hide') : (language === 'bn' ? 'দেখান' : 'Show')}
                         </button>
                       </div>
                       {showRiskDrivers && <RiskDrivers shapExplanations={currentPrediction.shap_explanations} language={language} hideTitle={true} />}

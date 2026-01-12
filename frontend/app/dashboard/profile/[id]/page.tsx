@@ -143,6 +143,7 @@ export default function ProfilePage() {
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [showFrequent, setShowFrequent] = useState(false)
   const [frequentAccounts, setFrequentAccounts] = useState<string[]>([])
+  const [isSearching, setIsSearching] = useState(false)
 
   // Fetch frequent accounts on mount
   useEffect(() => {
@@ -155,7 +156,7 @@ export default function ProfilePage() {
 
       if (data) {
         const uniqueReceivers = Array.from(new Set(data.map((d: any) => d.nameDest as string)))
-        setFrequentAccounts(uniqueReceivers.slice(0, 10))
+        setFrequentAccounts(uniqueReceivers.slice(0, 8))
       }
     }
     fetchFrequent()
@@ -165,28 +166,35 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!searchId) {
       setSearchResults([])
+      setIsSearching(false)
       return
     }
     const timer = setTimeout(async () => {
       if (searchId.length < 2) return
+
+      setIsSearching(true)
       const results: any[] = []
+
+      // Optimized: Use prefix match (start-with) instead of contains for better performance
       const { data: testUsers } = await supabase
         .from('test_dataset')
         .select('nameOrig, nameDest')
-        .or(`nameOrig.ilike.%${searchId}%,nameDest.ilike.%${searchId}%`)
+        .or(`nameOrig.ilike.${searchId}%,nameDest.ilike.${searchId}%`)
         .limit(5)
 
       if (testUsers) {
         testUsers.forEach((tu: any) => {
-          if (tu.nameOrig.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameOrig)) {
+          if (tu.nameOrig.toLowerCase().startsWith(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameOrig)) {
             results.push({ user_id: tu.nameOrig, name_en: `Sender ${tu.nameOrig}`, is_test: true })
           }
-          if (tu.nameDest.toLowerCase().includes(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameDest)) {
+          // Check destination
+          if (tu.nameDest.toLowerCase().startsWith(searchId.toLowerCase()) && !results.find(r => r.user_id === tu.nameDest)) {
             results.push({ user_id: tu.nameDest, name_en: `Receiver ${tu.nameDest}`, is_test: true })
           }
         })
       }
       setSearchResults(results.slice(0, 10))
+      setIsSearching(false)
     }, 300)
     return () => clearTimeout(timer)
   }, [searchId])
@@ -223,7 +231,66 @@ export default function ProfilePage() {
                 className="w-full bg-white/5 border border-white/10 rounded-lg p-4 text-center text-xl font-mono focus:border-primary focus:outline-none transition-all focus:bg-white/10"
                 autoFocus
               />
-              {/* Autocomplete & Frequent logic same as before... omitted for brevity but assumed present */}
+              {/* Autocomplete & Frequent Dropdown */}
+              {(showFrequent || isSearching || (searchId.length > 1 && searchResults.length > 0)) && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-[#111827] border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto w-full">
+
+                  {/* Loading Indicator */}
+                  {isSearching && (
+                    <div className="p-4 flex items-center justify-center gap-2 text-gray-400">
+                      <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs">Searching database...</span>
+                    </div>
+                  )}
+
+                  {/* Search Results */}
+                  {!isSearching && searchId.length > 1 && searchResults.map((result, idx) => (
+                    <button
+                      key={`search-${idx}`}
+                      type="button"
+                      onClick={() => router.push(`/dashboard/profile/${result.user_id}`)}
+                      className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center justify-between group transition-colors border-b border-white/5 last:border-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400 group-hover:scale-110 transition-transform">
+                          <Icon name="person" size={18} />
+                        </div>
+                        <div>
+                          <p className="font-mono text-sm font-bold text-gray-200 group-hover:text-purple-400 transition-colors">
+                            {result.user_id}
+                          </p>
+                          <p className="text-xs text-gray-500">{result.name_en}</p>
+                        </div>
+                      </div>
+                      <Icon name="arrow_forward" size={16} className="text-gray-600 group-hover:text-purple-400 -translate-x-2 group-hover:translate-x-0 transition-all opacity-0 group-hover:opacity-100" />
+                    </button>
+                  ))}
+
+                  {/* Frequent / Recent accounts */}
+                  {!isSearching && searchId.length < 2 && frequentAccounts.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-white/5 text-[10px] uppercase tracking-wider font-bold text-gray-500 sticky top-0 backdrop-blur-md">
+                        {language === 'bn' ? 'ঘনঘন লেনদেন' : 'Frequent Accounts'}
+                      </div>
+                      {frequentAccounts.map((acc, idx) => (
+                        <button
+                          key={`freq-${idx}`}
+                          type="button"
+                          onClick={() => router.push(`/dashboard/profile/${acc}`)}
+                          className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center justify-between group transition-colors border-b border-white/5 last:border-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+                              <Icon name="history" size={18} />
+                            </div>
+                            <span className="font-mono text-sm text-gray-300 group-hover:text-white transition-colors">{acc}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <button type="submit" className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 rounded-lg transition-colors shadow-lg shadow-purple-500/20">

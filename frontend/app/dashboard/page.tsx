@@ -186,34 +186,62 @@ export default function DashboardLanding() {
       {/* Split View: Investigation Call-to-Action & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* Primary Action Card (Takes 2/3 width) */}
-        <div className="lg:col-span-2 group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-900/20 to-purple-900/20 border border-white/10 hover:border-red-500/30 transition-all p-1">
-          <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10"></div>
+        {/* Primary Action Card (Takes 2/3 width) - Redesigned for Visual Impact */}
+        <div className="lg:col-span-2 group relative overflow-hidden rounded-2xl bg-[#0A0E17] border border-white/10 hover:border-red-500/50 transition-all duration-500 p-px">
+          {/* Animated Background Layers */}
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 via-transparent to-purple-500/20 opacity-30 group-hover:opacity-50 transition-opacity"></div>
+          <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-20 [mask-image:radial-gradient(ellipse_at_center,black,transparent)]"></div>
+          
+          {/* Scanning Line Animation */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent absolute top-0 left-0 animate-scan-slow opacity-20"></div>
+          </div>
 
-          <div className="relative h-full bg-[#0A0E17]/80 backdrop-blur-sm rounded-xl p-8 flex flex-col justify-center">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="text-3xl font-bold text-white mb-2">{primaryMission.title}</h2>
-                <p className="text-gray-300 text-lg">{primaryMission.description}</p>
+          <div className="relative h-full bg-[#0A0E17]/90 backdrop-blur-xl rounded-xl p-8 md:p-12 flex flex-col justify-between overflow-hidden">
+            {/* Decorative Orbiting Rings */}
+            <div className="absolute -right-20 -top-20 w-80 h-80 border border-red-500/10 rounded-full group-hover:scale-110 transition-transform duration-700 pointer-events-none"></div>
+            <div className="absolute -right-10 -top-10 w-60 h-60 border border-red-500/5 rounded-full group-hover:rotate-12 transition-transform duration-1000 pointer-events-none"></div>
+
+            <div className="flex flex-col md:flex-row items-start justify-between gap-8">
+              <div className="space-y-4 max-w-xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-widest">
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  {language === 'bn' ? 'জরুরী সতর্কতা' : 'Critical Priority'}
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black text-white leading-tight tracking-tight">
+                  {primaryMission.title}
+                </h2>
+                <p className="text-gray-400 text-lg md:text-xl leading-relaxed">
+                  {primaryMission.description}
+                </p>
               </div>
-              <div className="p-4 bg-red-500/20 text-red-500 rounded-full animate-pulse-slow">
-                <Icon name={primaryMission.icon} size={48} />
+
+              <div className="relative flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
+                <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full"></div>
+                <div className="relative p-6 bg-gradient-to-br from-red-600/20 to-transparent border border-white/10 rounded-3xl backdrop-blur-sm shadow-2xl">
+                  <Icon name={primaryMission.icon} size={64} className="text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-4 mt-auto">
+            <div className="flex flex-col sm:flex-row gap-4 mt-12">
               <Link
                 href={primaryMission.link}
-                className="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-bold py-4 px-6 rounded-lg flex items-center justify-center gap-3 transition-all shadow-lg shadow-red-900/20"
+                className="group/btn relative px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl flex items-center justify-center gap-3 transition-all overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)]"
               >
-                <span>{language === 'bn' ? 'প্রিওরিটি বক্স খুলুন' : 'Open Priority Box'}</span>
-                <Icon name="arrow_forward" />
+                <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-25deg] -translate-x-full group-hover/btn:translate-x-[250%] transition-transform duration-700 ease-in-out"></div>
+                <span className="relative z-10 text-lg uppercase tracking-wide">
+                  {language === 'bn' ? 'প্রিওরিটি বক্স খুলুন' : 'Open Priority Box'}
+                </span>
+                <Icon name="arrow_forward" className="relative z-10 group-hover/btn:translate-x-1 transition-transform" />
               </Link>
+              
               <Link
                 href="/dashboard/audit"
-                className="px-6 py-4 rounded-lg border border-white/10 hover:bg-white/5 text-gray-300 font-medium transition-colors"
+                className="px-8 py-4 rounded-xl border border-white/10 hover:bg-white/5 text-gray-400 hover:text-white font-bold transition-all flex items-center justify-center gap-2"
               >
-                {language === 'bn' ? 'ইতিহাস' : 'History'}
+                <Icon name="history" size={20} />
+                {language === 'bn' ? 'ইতিহাস দেখুন' : 'View History'}
               </Link>
             </div>
           </div>

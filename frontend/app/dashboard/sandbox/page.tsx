@@ -8,10 +8,11 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAppStore } from '@/store/useAppStore'
-import { backtestRule } from '@/lib/ml-api'
+import { backtestRule, chatWithBot } from '@/lib/ml-api'
 import { Icon } from '@/components/Icon'
 import toast from 'react-hot-toast'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { LLMExplanationBox } from '@/components/LLMExplanationBox'
 
 // Feature Metadata
 const FEATURES = [
@@ -42,6 +43,7 @@ interface Condition {
   feature: string
   operator: string
   value: string
+  logic?: 'AND' | 'OR' // Logic to combine with previous condition
 }
 
 export default function SandboxPage() {
@@ -54,13 +56,28 @@ export default function SandboxPage() {
   const [results, setResults] = useState<any>(null)
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
 
+  const [explanation, setExplanation] = useState<string | null>(null)
+  const [explaining, setExplaining] = useState(false)
+
   // Generate rule string from conditions
   const generateRuleString = () => {
-    return conditions.map(c => {
+    return conditions.map((c, idx) => {
       const featureConfig = FEATURES.find(f => f.id === c.feature)
       const val = featureConfig?.type === 'select' ? `"${c.value}"` : c.value
-      return `${c.feature} ${c.operator} ${val}`
-    }).join(' and ')
+      const clause = `${c.feature} ${c.operator} ${val}`
+      if (idx === 0) return clause
+      return ` ${c.logic ? c.logic.toLowerCase() : 'and'} ${clause}`
+    }).join('')
+  }
+
+  // Generate natural language description
+  const generateNaturalLanguage = () => {
+    return conditions.map((c, idx) => {
+      const featureConfig = FEATURES.find(f => f.id === c.feature)
+      const featureName = featureConfig?.name || c.feature
+      const logic = idx > 0 ? (c.logic || 'AND') : ''
+      return `${logic} ${featureName} ${c.operator} ${c.value}`
+    }).join(' ').trim()
   }
 
   const handleRun = async () => {
@@ -79,11 +96,12 @@ export default function SandboxPage() {
   }
 
   const addCondition = () => {
-    setConditions([...conditions, { 
-      id: Math.random().toString(36).substr(2, 9), 
-      feature: 'amount', 
-      operator: '>', 
-      value: '0' 
+    setConditions([...conditions, {
+      id: Math.random().toString(36).substr(2, 9),
+      feature: 'amount',
+      operator: '>',
+      value: '0',
+      logic: 'AND'
     }])
   }
 
@@ -116,19 +134,44 @@ export default function SandboxPage() {
 
   // Pre-defined templates
   const applyTemplate = (templateConditions: Condition[]) => {
-    setConditions(templateConditions.map(c => ({...c, id: Math.random().toString(36).substr(2, 9)})))
+    setConditions(templateConditions.map((c, idx) => ({
+      ...c,
+      id: Math.random().toString(36).substr(2, 9),
+      logic: idx === 0 ? undefined : 'AND'
+    })))
+    setExplanation(null)
+  }
+
+  const handleExplainRule = async () => {
+    try {
+      setExplaining(true)
+      setExplanation(null)
+      const ruleText = generateNaturalLanguage()
+      const query = generateRuleString()
+
+      const response = await chatWithBot([
+        { role: 'user', content: `Explain this fraud detection rule in simple, professional terms for a non-technical analyst: "${ruleText}" (Technical query: ${query}). briefly explain what behaviors this targets.` }
+      ])
+
+      setExplanation(response.response)
+    } catch (error: any) {
+      toast.error('Failed to generate explanation')
+      console.error(error)
+    } finally {
+      setExplaining(false)
+    }
   }
 
   const templates = [
-    { 
-      name: 'High Value Transfers', 
+    {
+      name: 'High Value Transfers',
       conditions: [
         { id: 't1', feature: 'amount', operator: '>', value: '200000' },
         { id: 't2', feature: 'type', operator: '==', value: 'TRANSFER' }
       ]
     },
-    { 
-      name: 'Repeated Small Payments', 
+    {
+      name: 'Repeated Small Payments',
       conditions: [
         { id: 't1', feature: 'amount', operator: '<', value: '500' },
         { id: 't2', feature: 'type', operator: '==', value: 'TRANSFER' },
@@ -142,8 +185,8 @@ export default function SandboxPage() {
         { id: 't2', feature: 'amount', operator: '>', value: '50000' }
       ]
     },
-    { 
-      name: 'Balance Draining', 
+    {
+      name: 'Balance Draining',
       conditions: [
         { id: 't1', feature: 'amount_over_oldBalanceOrig', operator: '>=', value: '1' },
         { id: 't2', feature: 'oldBalanceOrig', operator: '>', value: '0' }
@@ -167,8 +210,8 @@ export default function SandboxPage() {
 
   return (
     <div className={`min-h-screen bg-[#050714] text-white ${language === 'bn' ? 'font-bengali' : ''}`}>
-       {/* Nav */}
-       <div className="bg-gradient-header border-b border-white/10 p-4 mb-6 sticky top-0 z-50 backdrop-blur-md">
+      {/* Nav */}
+      <div className="bg-gradient-header border-b border-white/10 p-4 mb-6 sticky top-0 z-50 backdrop-blur-md">
         <div className="container mx-auto flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2 text-primary hover:text-white transition-colors">
             <Icon name="arrow_back" />
@@ -184,7 +227,7 @@ export default function SandboxPage() {
 
       <div className="container mx-auto px-4 pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Controls */}
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-card-bg border border-white/10 rounded-xl p-6">
@@ -192,7 +235,7 @@ export default function SandboxPage() {
                 <h3 className="text-lg font-bold flex items-center gap-2">
                   <Icon name="tune" /> Rule Logic
                 </h3>
-                <button 
+                <button
                   onClick={addCondition}
                   className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors"
                   title="Add Condition"
@@ -200,90 +243,106 @@ export default function SandboxPage() {
                   <Icon name="add" size={20} />
                 </button>
               </div>
-              
+
               <div className="space-y-3 mb-6">
                 {conditions.map((condition, idx) => {
                   const featureConfig = FEATURES.find(f => f.id === condition.feature)
                   return (
-                    <div key={condition.id} className="relative bg-white/5 border border-white/10 rounded-lg p-3 group">
-                      <div className="flex flex-col gap-2">
-                        {/* Feature Select with Tooltip */}
-                        <div className="flex items-center gap-2">
-                          <select 
-                            value={condition.feature} 
-                            onChange={(e) => updateCondition(condition.id, 'feature', e.target.value)}
-                            className="flex-1 bg-transparent border-b border-white/20 pb-1 text-sm font-semibold focus:border-primary focus:outline-none"
+                    <React.Fragment key={condition.id}>
+                      {idx > 0 && (
+                        <div className="flex justify-center my-1 relative">
+                          <div className="absolute inset-x-0 top-1/2 h-px bg-white/10 -z-10"></div>
+                          <select
+                            value={condition.logic || 'AND'}
+                            onChange={(e) => updateCondition(condition.id, 'logic', e.target.value)}
+                            className="bg-[#0A0E17] text-purple-400 text-xs font-bold rounded px-3 py-1 border border-white/20 focus:outline-none focus:border-purple-500 hover:border-purple-500/50 transition-colors uppercase tracking-wider cursor-pointer"
                           >
-                            {FEATURES.map(f => (
-                              <option key={f.id} value={f.id} className="bg-card-bg text-white">{f.name}</option>
-                            ))}
+                            <option value="AND">AND (Match All)</option>
+                            <option value="OR">OR (Match Any)</option>
                           </select>
-                          
-                          <div className="relative">
-                            <button 
-                              onMouseEnter={() => setActiveTooltip(condition.id)}
-                              onMouseLeave={() => setActiveTooltip(null)}
-                              className="text-text-secondary hover:text-primary transition-colors cursor-help"
-                            >
-                              <Icon name="help" size={16} />
-                            </button>
-                            
-                            {activeTooltip === condition.id && featureConfig && (
-                              <div className="absolute right-0 top-6 w-64 bg-slate-800 border border-white/20 rounded-lg p-3 shadow-2xl z-50 text-xs">
-                                <p className="font-bold text-white mb-1">{featureConfig.name}</p>
-                                <p className="text-text-secondary mb-2">{featureConfig.description}</p>
-                                {featureConfig.range && (
-                                  <div className="bg-white/10 rounded px-2 py-1 inline-block">
-                                    <span className="text-primary font-mono">Range: {featureConfig.range}</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
                         </div>
+                      )}
 
-                        {/* Operator & Value */}
-                        <div className="flex items-center gap-2">
-                          <select 
-                            value={condition.operator}
-                            onChange={(e) => updateCondition(condition.id, 'operator', e.target.value)}
-                            className="w-16 bg-white/5 rounded px-2 py-1 text-sm font-mono focus:border-primary focus:outline-none"
-                          >
-                            {OPERATORS.map(op => (
-                              <option key={op.value} value={op.value} className="bg-card-bg">{op.label}</option>
-                            ))}
-                          </select>
-
-                          {featureConfig?.type === 'select' ? (
+                      <div className="relative bg-white/5 border border-white/10 rounded-lg p-3 group hover:border-white/20 transition-colors">
+                        <div className="flex flex-col gap-2">
+                          {/* Feature Select with Tooltip */}
+                          <div className="flex items-center gap-2">
                             <select
-                              value={condition.value}
-                              onChange={(e) => updateCondition(condition.id, 'value', e.target.value)}
-                              className="flex-1 bg-white/5 rounded px-2 py-1 text-sm focus:border-primary focus:outline-none"
+                              value={condition.feature}
+                              onChange={(e) => updateCondition(condition.id, 'feature', e.target.value)}
+                              className="flex-1 bg-transparent border-b border-white/20 pb-1 text-sm font-semibold focus:border-primary focus:outline-none"
                             >
-                              {featureConfig.options?.map(opt => (
-                                <option key={opt} value={opt} className="bg-card-bg">{opt}</option>
+                              {FEATURES.map(f => (
+                                <option key={f.id} value={f.id} className="bg-card-bg text-white">{f.name}</option>
                               ))}
                             </select>
-                          ) : (
-                            <input 
-                              type="number" 
-                              value={condition.value}
-                              onChange={(e) => updateCondition(condition.id, 'value', e.target.value)}
-                              className="flex-1 bg-white/5 rounded px-2 py-1 text-sm font-mono focus:border-primary focus:outline-none"
-                              step="any"
-                            />
-                          )}
 
-                          <button 
-                            onClick={() => removeCondition(condition.id)}
-                            className="text-red-400 hover:text-red-300 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            disabled={conditions.length === 1}
-                          >
-                            <Icon name="delete" size={18} />
-                          </button>
+                            <div className="relative">
+                              <button
+                                onMouseEnter={() => setActiveTooltip(condition.id)}
+                                onMouseLeave={() => setActiveTooltip(null)}
+                                className="text-text-secondary hover:text-primary transition-colors cursor-help"
+                              >
+                                <Icon name="help" size={16} />
+                              </button>
+
+                              {activeTooltip === condition.id && featureConfig && (
+                                <div className="absolute right-0 top-6 w-64 bg-slate-800 border border-white/20 rounded-lg p-3 shadow-2xl z-50 text-xs">
+                                  <p className="font-bold text-white mb-1">{featureConfig.name}</p>
+                                  <p className="text-text-secondary mb-2">{featureConfig.description}</p>
+                                  {featureConfig.range && (
+                                    <div className="bg-white/10 rounded px-2 py-1 inline-block">
+                                      <span className="text-primary font-mono">Range: {featureConfig.range}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Operator & Value */}
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={condition.operator}
+                              onChange={(e) => updateCondition(condition.id, 'operator', e.target.value)}
+                              className="w-16 bg-white/5 rounded px-2 py-1 text-sm font-mono focus:border-primary focus:outline-none"
+                            >
+                              {OPERATORS.map(op => (
+                                <option key={op.value} value={op.value} className="bg-card-bg">{op.label}</option>
+                              ))}
+                            </select>
+
+                            {featureConfig?.type === 'select' ? (
+                              <select
+                                value={condition.value}
+                                onChange={(e) => updateCondition(condition.id, 'value', e.target.value)}
+                                className="flex-1 bg-white/5 rounded px-2 py-1 text-sm focus:border-primary focus:outline-none"
+                              >
+                                {featureConfig.options?.map(opt => (
+                                  <option key={opt} value={opt} className="bg-card-bg">{opt}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type="number"
+                                value={condition.value}
+                                onChange={(e) => updateCondition(condition.id, 'value', e.target.value)}
+                                className="flex-1 bg-white/5 rounded px-2 py-1 text-sm font-mono focus:border-primary focus:outline-none"
+                                step="any"
+                              />
+                            )}
+
+                            <button
+                              onClick={() => removeCondition(condition.id)}
+                              className="text-red-400 hover:text-red-300 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              disabled={conditions.length === 1}
+                            >
+                              <Icon name="delete" size={18} />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </React.Fragment>
                   )
                 })}
               </div>
@@ -291,8 +350,8 @@ export default function SandboxPage() {
               <div className="space-y-4 pt-4 border-t border-white/10">
                 <div>
                   <label className="block text-sm text-text-secondary mb-1">Limit (Recent Transactions)</label>
-                  <select 
-                    value={limit} 
+                  <select
+                    value={limit}
                     onChange={(e) => setLimit(Number(e.target.value))}
                     className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-primary focus:outline-none"
                   >
@@ -304,22 +363,42 @@ export default function SandboxPage() {
                   </select>
                 </div>
 
-                <div className="bg-black/20 rounded p-2 text-xs font-mono text-text-secondary break-all">
-                  <span className="text-primary">Query:</span> {generateRuleString()}
+                {/* Rule Preview */}
+                <div className="bg-black/30 rounded-lg p-3 border border-dashed border-white/10">
+                  <div className="text-[10px] text-text-secondary uppercase tracking-widest font-bold mb-1">Human Readable Logic</div>
+                  <div className="text-sm text-gray-300 font-medium leading-relaxed">
+                    {generateNaturalLanguage()}
+                  </div>
                 </div>
 
-                <button 
-                  onClick={handleRun} 
-                  disabled={loading}
-                  className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                >
-                  {loading ? (
-                    <Icon name="autorenew" className="animate-spin" />
-                  ) : (
-                    <Icon name="play_arrow" />
-                  )}
-                  Run Simulation
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleExplainRule}
+                    disabled={explaining || conditions.length === 0}
+                    className="bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors border border-purple-500/20"
+                  >
+                    {explaining ? <Icon name="autorenew" className="animate-spin" /> : <Icon name="psychology" />}
+                    Explain Logic
+                  </button>
+                  <button
+                    onClick={handleRun}
+                    disabled={loading}
+                    className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
+                  >
+                    {loading ? (
+                      <Icon name="autorenew" className="animate-spin" />
+                    ) : (
+                      <Icon name="play_arrow" />
+                    )}
+                    Run Simulation
+                  </button>
+                </div>
+
+                {explanation && (
+                  <div className="animate-in fade-in slide-in-from-top-2">
+                    <LLMExplanationBox explanation={explanation} language={language} />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -327,14 +406,14 @@ export default function SandboxPage() {
               <h3 className="text-sm font-bold text-text-secondary uppercase mb-3">Quick Templates</h3>
               <div className="space-y-2">
                 {templates.map((t, i) => (
-                  <button 
+                  <button
                     key={i}
                     onClick={() => applyTemplate(t.conditions)}
                     className="w-full text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 transition-all text-sm group"
                   >
                     <div className="font-bold text-white group-hover:text-primary mb-1">{t.name}</div>
                     <div className="text-xs text-text-secondary opacity-70">
-                       {t.conditions.length} conditions
+                      {t.conditions.length} conditions
                     </div>
                   </button>
                 ))}
@@ -383,10 +462,10 @@ export default function SandboxPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={false} />
                       <XAxis type="number" stroke="rgba(255,255,255,0.5)" fontSize={12} />
                       <YAxis dataKey="name" type="category" stroke="rgba(255,255,255,0.5)" fontSize={12} width={100} />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                         itemStyle={{ color: '#fff' }}
-                        cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                       />
                       <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={30}>
                         {
