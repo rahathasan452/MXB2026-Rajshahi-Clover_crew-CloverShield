@@ -36,10 +36,6 @@ export default function CasesPage() {
   const fetchCases = async () => {
     setLoading(true)
     try {
-      // We fetch all and filter client-side for now for simplicity, 
-      // or we can use the helper which fetches Open/Investigating by default.
-      // Let's modify the helper fetch or just fetch all here directly.
-      
       const { data, error } = await supabase
         .from('cases')
         .select('*')
@@ -61,7 +57,6 @@ export default function CasesPage() {
     }
     
     try {
-      // Optimistic update could be done here, but simpler to wait for realtime or refetch
       await updateCaseStatus(caseId, 'Investigating', authUser.email || authUser.id)
       toast.success("Case assigned to you")
       fetchCases()
@@ -83,7 +78,7 @@ export default function CasesPage() {
       }
     } catch (error) {
       console.error("Failed to generate cases:", error)
-      toast.error("Failed to generate demo cases")
+      toast.error("Failed to generate demo cases. Ensure you are logged in.")
     } finally {
       setGenerating(false)
     }
@@ -111,7 +106,7 @@ export default function CasesPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-emerald-400 flex items-center gap-3">
-            <Icon name="briefcase" size={28} /> 
+            <Icon name="work" size={28} /> 
             Investigation Queue
           </h1>
           <p className="text-slate-400 text-sm mt-1">Manage and triage active fraud cases</p>
@@ -124,7 +119,7 @@ export default function CasesPage() {
              className="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-500/50 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all disabled:opacity-50"
              title="Populate queue with cases from high-risk transactions"
            >
-             <Icon name={generating ? "loader" : "zap"} size={16} className={generating ? "animate-spin" : ""} />
+             <Icon name={generating ? "pending" : "bolt"} size={16} className={generating ? "animate-spin" : ""} />
              {generating ? 'Generating...' : 'Simulate Cases'}
            </button>
            
@@ -203,7 +198,7 @@ export default function CasesPage() {
             ) : filteredCases.length === 0 ? (
               <tr>
                 <td colSpan={7} className="p-12 text-center text-slate-500">
-                  <Icon name="check-circle" size={48} className="mx-auto mb-4 opacity-20" />
+                  <Icon name="check_circle" size={48} className="mx-auto mb-4 opacity-20" />
                   <p>No cases found matching your criteria.</p>
                 </td>
               </tr>
@@ -216,12 +211,12 @@ export default function CasesPage() {
                   <td className="p-4 text-slate-300">
                     {c.user_id ? (
                       <div className="flex items-center gap-2">
-                         <Icon name="user" size={14} className="text-slate-500"/>
+                         <Icon name="person" size={14} className="text-slate-500"/>
                          <span>{c.user_id}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                         <Icon name="activity" size={14} className="text-slate-500"/>
+                         <Icon name="pulse" size={14} className="text-slate-500"/>
                          <span>Txn...{c.transaction_id?.slice(0,6)}</span>
                       </div>
                     )}
@@ -257,7 +252,7 @@ export default function CasesPage() {
                       href={`/dashboard/cases/${c.case_id}`}
                       className="inline-flex items-center gap-1 bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-md text-xs font-medium transition-all"
                     >
-                      View <Icon name="arrow-right" size={12} />
+                      View <Icon name="arrow_forward" size={12} />
                     </Link>
                   </td>
                 </tr>
