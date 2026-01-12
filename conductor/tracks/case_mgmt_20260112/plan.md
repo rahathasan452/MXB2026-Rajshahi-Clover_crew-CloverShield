@@ -15,12 +15,12 @@ This plan implements a structured case management system, including a new databa
 - [x] Task: Implement 'Generate Demo Cases' feature to populate queue from test dataset [e79a499]
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Investigation Queue UI' (Protocol in workflow.md) [40e38ad]
 
-## Phase 3: Case Detail & Toolkit
+## Phase 3: Case Detail & Toolkit [checkpoint: e7019a4]
 - [x] Task: Create `app/dashboard/cases/[id]/page.tsx` for detailed investigation [bdb13d1]
 - [x] Task: Implement `components/QuickActionToolbar.tsx` with keyboard shortcut support [5ee92e0]
 - [x] Task: Implement `components/InvestigationChecklist.tsx` with persistence [3b8292a]
 - [x] Task: Integrate "Block Transaction" and "Freeze Account" simulation buttons [acb2b2f]
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Case Detail & Toolkit' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Case Detail & Toolkit' (Protocol in workflow.md) [e7019a4]
 
 ## Phase 4: Integration & Polish
 - [ ] Task: Add "Create Case" button to existing Transaction Detail/Decision views
