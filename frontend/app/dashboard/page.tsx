@@ -20,38 +20,63 @@ export default function DashboardLanding() {
     // router.push('/') 
   }
 
-  // --- STATS CONFIG (Mock for HUD) ---
+  // --- STATS CONFIG (Dynamic) ---
+  const [statsData, setStatsData] = React.useState({
+    pending: 0,
+    cases: 0,
+    risk: 0,
+    loading: true
+  })
+
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { getDashboardStats } = await import('@/lib/supabase')
+        const data = await getDashboardStats()
+        setStatsData({
+          pending: data.pending_alerts,
+          cases: data.open_cases,
+          risk: data.avg_risk_score,
+          loading: false
+        })
+      } catch (e) {
+        console.error("Stats fetch failed", e)
+      }
+    }
+    fetchStats()
+  }, [])
+
   const stats = [
-    { 
-      label: language === 'bn' ? 'মুলতুবি সতর্কতা' : 'Pending Alerts', 
-      value: '12', 
-      trend: '+4', 
-      trendUp: true,
+    {
+      label: language === 'bn' ? 'মুলতুবি সতর্কতা' : 'Pending Alerts',
+      value: statsData.loading ? '...' : statsData.pending.toString(),
+      trend: statsData.pending > 5 ? 'High' : 'Normal',
+      trendUp: statsData.pending > 10,
       icon: 'notifications_active',
       color: 'text-red-400',
       bg: 'bg-red-500/10'
     },
-    { 
-      label: language === 'bn' ? 'উন্মুক্ত কেস' : 'Open Cases', 
-      value: '5', 
-      trend: '-2', 
-      trendUp: false, // good thing
+    {
+      label: language === 'bn' ? 'উন্মুক্ত কেস' : 'Open Cases',
+      value: statsData.loading ? '...' : statsData.cases.toString(),
+      trend: 'Active',
+      trendUp: false,
       icon: 'folder_open',
       color: 'text-orange-400',
       bg: 'bg-orange-500/10'
     },
-    { 
-      label: language === 'bn' ? 'ঝুঁকি স্কোর (গড়)' : 'Avg Risk Score', 
-      value: '0.82', 
-      trend: '+0.05', 
-      trendUp: true, // bad thing
+    {
+      label: language === 'bn' ? 'ঝুঁকি স্কোর (গড়)' : 'Avg Risk Score',
+      value: statsData.loading ? '...' : statsData.risk.toFixed(2),
+      trend: 'Last 100',
+      trendUp: statsData.risk > 0.5,
       icon: 'speed',
       color: 'text-yellow-400',
       bg: 'bg-yellow-500/10'
     },
-    { 
-      label: language === 'bn' ? 'সিস্টেম স্ট্যাটাস' : 'System Status', 
-      value: 'Active', 
+    {
+      label: language === 'bn' ? 'সিস্টেম স্ট্যাটাস' : 'System Status',
+      value: 'Active',
       sub: '99.9% Uptime',
       icon: 'dns',
       color: 'text-emerald-400',
@@ -77,10 +102,10 @@ export default function DashboardLanding() {
       color: 'text-teal-400'
     },
     {
-      title: 'Graph',
-      desc: language === 'bn' ? 'নেটওয়ার্ক বিশ্লেষণ' : 'Network Analysis',
+      title: 'Customer 360',
+      desc: language === 'bn' ? 'গ্রাহক প্রোফাইল' : 'Profile Search',
       link: '/dashboard/profile/search',
-      icon: 'hub',
+      icon: 'person_search',
       color: 'text-purple-400'
     },
     {
@@ -115,7 +140,7 @@ export default function DashboardLanding() {
 
   return (
     <div className="space-y-8">
-      
+
       {/* Welcome Banner */}
       <div className="flex items-center justify-between">
         <div>
@@ -127,7 +152,7 @@ export default function DashboardLanding() {
           </p>
         </div>
         <div className="flex gap-2">
-            {/* Quick Actions could go here */}
+          {/* Quick Actions could go here */}
         </div>
       </div>
 
@@ -158,11 +183,11 @@ export default function DashboardLanding() {
 
       {/* Split View: Investigation Call-to-Action & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Primary Action Card (Takes 2/3 width) */}
         <div className="lg:col-span-2 group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-900/20 to-purple-900/20 border border-white/10 hover:border-red-500/30 transition-all p-1">
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10"></div>
-          
+
           <div className="relative h-full bg-[#0A0E17]/80 backdrop-blur-sm rounded-xl p-8 flex flex-col justify-center">
             <div className="flex items-start justify-between mb-6">
               <div>
@@ -173,16 +198,16 @@ export default function DashboardLanding() {
                 <Icon name={primaryMission.icon} size={48} />
               </div>
             </div>
-            
+
             <div className="flex gap-4 mt-auto">
-              <Link 
+              <Link
                 href={primaryMission.link}
                 className="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-bold py-4 px-6 rounded-lg flex items-center justify-center gap-3 transition-all shadow-lg shadow-red-900/20"
               >
                 <span>{language === 'bn' ? 'কিউ খুলুন' : 'Open Queue'}</span>
                 <Icon name="arrow_forward" />
               </Link>
-              <Link 
+              <Link
                 href="/dashboard/audit"
                 className="px-6 py-4 rounded-lg border border-white/10 hover:bg-white/5 text-gray-300 font-medium transition-colors"
               >
@@ -195,8 +220,8 @@ export default function DashboardLanding() {
         {/* Quick Tools Grid (Takes 1/3 width) */}
         <div className="grid grid-cols-2 gap-3">
           {tools.map((tool, idx) => (
-            <Link 
-              key={idx} 
+            <Link
+              key={idx}
               href={tool.link}
               className="flex flex-col items-center justify-center p-4 rounded-xl bg-[#111827] border border-white/5 hover:bg-[#1a2235] hover:border-white/20 transition-all group text-center"
             >
@@ -214,32 +239,32 @@ export default function DashboardLanding() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Link href="/receiver" className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-900/10 to-cyan-900/10 border border-white/10 hover:border-emerald-500/30 p-6 transition-all">
           <div className="flex items-center gap-4">
-             <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg">
-               <Icon name="qr_code_scanner" size={32} />
-             </div>
-             <div>
-               <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
-                 {language === 'bn' ? 'সিকিউর রিসিভার' : 'Secure Receiver'}
-               </h3>
-               <p className="text-sm text-gray-400">
-                 {language === 'bn' ? 'এয়ার-গ্যাপড ডেটা স্ক্যান করুন' : 'Import air-gapped evidence via QR bridge'}
-               </p>
-             </div>
-             <Icon name="arrow_forward" className="ml-auto text-emerald-500/50 group-hover:translate-x-1 transition-transform" />
+            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg">
+              <Icon name="qr_code_scanner" size={32} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
+                {language === 'bn' ? 'সিকিউর রিসিভার' : 'Secure Receiver'}
+              </h3>
+              <p className="text-sm text-gray-400">
+                {language === 'bn' ? 'এয়ার-গ্যাপড ডেটা স্ক্যান করুন' : 'Import air-gapped evidence via QR bridge'}
+              </p>
+            </div>
+            <Icon name="arrow_forward" className="ml-auto text-emerald-500/50 group-hover:translate-x-1 transition-transform" />
           </div>
         </Link>
-        
+
         <div className="rounded-xl border border-white/5 bg-[#111827] p-6 flex items-center justify-between">
-           <div>
-             <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-1">
-               {language === 'bn' ? 'ডাটাবেস' : 'Database'}
-             </h3>
-             <p className="text-xs text-gray-500">Supabase Connected • 14ms Latency</p>
-           </div>
-           <div className="flex items-center gap-2">
-             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-             <span className="text-emerald-500 text-sm font-mono font-bold">ONLINE</span>
-           </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-1">
+              {language === 'bn' ? 'ডাটাবেস' : 'Database'}
+            </h3>
+            <p className="text-xs text-gray-500">Supabase Connected • 14ms Latency</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+            <span className="text-emerald-500 text-sm font-mono font-bold">ONLINE</span>
+          </div>
         </div>
       </div>
 

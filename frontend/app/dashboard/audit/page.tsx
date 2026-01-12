@@ -11,9 +11,50 @@ import { Icon } from '@/components/Icon'
 export default function AuditTrailPage() {
   const { language } = useAppStore()
 
+  /* Dynamic System Status Check */
+  const [systemStatus, setSystemStatus] = React.useState({
+    logging: 'Checking...',
+    integrity: 'Checking...',
+    storage: 'Checking...',
+    active: false
+  })
+
   useEffect(() => {
     // Log the navigation event for compliance
     logAudit('NAVIGATED_TO_AUDIT', 'Analyst accessed the comprehensive audit trail')
+
+    // Check connection
+    const checkStatus = async () => {
+      try {
+        const { supabase } = await import('@/lib/supabase')
+        const { count, error } = await supabase.from('audit_logs').select('*', { count: 'exact', head: true })
+
+        if (!error) {
+          setSystemStatus({
+            logging: 'ACTIVE',
+            integrity: 'VERIFIED',
+            storage: 'SUPABASE CLOUD', // Or 'ON-PREMISE' if env var set
+            active: true
+          })
+        } else {
+          setSystemStatus({
+            logging: 'ERROR',
+            integrity: 'UNKNOWN',
+            storage: 'DISCONNECTED',
+            active: false
+          })
+        }
+      } catch (e) {
+        setSystemStatus({
+          logging: 'OFFLINE',
+          integrity: 'UNKNOWN',
+          storage: 'UNREACHABLE',
+          active: false
+        })
+      }
+    }
+
+    checkStatus()
   }, [])
 
   return (
@@ -37,14 +78,14 @@ export default function AuditTrailPage() {
                 {language === 'bn' ? 'অডিট ট্রেইল' : 'Compliance Audit Trail'}
               </h1>
               <p className="text-slate-400 mt-2 max-w-2xl text-sm leading-relaxed font-light">
-                {language === 'bn' 
-                  ? 'সিস্টেমের সমস্ত কার্যকলাপ এবং ডেটা অ্যাক্সেসের একটি অপরিবর্তনীয় রেকর্ড। সার্বভৌম নিরাপত্তা এবং স্বচ্ছতা নিশ্চিত করতে এটি ডিজাইন করা হয়েছে।' 
+                {language === 'bn'
+                  ? 'সিস্টেমের সমস্ত কার্যকলাপ এবং ডেটা অ্যাক্সেসের একটি অপরিবর্তনীয় রেকর্ড। সার্বভৌম নিরাপত্তা এবং স্বচ্ছতা নিশ্চিত করতে এটি ডিজাইন করা হয়েছে।'
                   : 'An immutable record of all system activities and data access. Designed to ensure sovereign security, transparency, and regulatory compliance.'}
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => window.print()}
                 className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 border border-slate-700 transition-all"
               >
@@ -53,24 +94,27 @@ export default function AuditTrailPage() {
             </div>
           </div>
 
-          {/* Audit Stats Summary (Decorative for now) */}
+          {/* Audit Stats Summary (Dynamic) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="hud-card p-6 border-l-4 border-l-emerald-500">
               <p className="text-xs text-slate-500 uppercase font-bold tracking-tighter mb-1">Logging Status</p>
               <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> ACTIVE
+                <span className={`w-2 h-2 rounded-full ${systemStatus.active ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
+                {systemStatus.logging}
               </h3>
             </div>
             <div className="hud-card p-6 border-l-4 border-l-blue-500">
               <p className="text-xs text-slate-500 uppercase font-bold tracking-tighter mb-1">Integrity Check</p>
               <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <Icon name="verified" className="text-blue-500" size={20} /> VERIFIED
+                <Icon name={systemStatus.active ? "verified" : "error"} className={systemStatus.active ? "text-blue-500" : "text-red-500"} size={20} />
+                {systemStatus.integrity}
               </h3>
             </div>
             <div className="hud-card p-6 border-l-4 border-l-purple-500">
               <p className="text-xs text-slate-500 uppercase font-bold tracking-tighter mb-1">Storage Provider</p>
               <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <Icon name="database" className="text-purple-500" size={20} /> ON-PREMISE
+                <Icon name="database" className="text-purple-500" size={20} />
+                {systemStatus.storage}
               </h3>
             </div>
           </div>

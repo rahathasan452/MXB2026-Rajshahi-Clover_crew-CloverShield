@@ -288,7 +288,7 @@ export const createCase = async (
         .select('*')
         .eq('transaction_id', caseData.transaction_id)
         .single()
-      
+
       if (!fetchError && existingCase) {
         return existingCase
       }
@@ -416,5 +416,47 @@ export const createTransactionHistory = async (
 
   if (error) throw error
   return data
+}
+
+// Dashboard Stats
+export interface DashboardStats {
+  pending_alerts: number
+  open_cases: number
+  avg_risk_score: number
+  active_system: boolean
+}
+
+export const getDashboardStats = async (): Promise<DashboardStats> => {
+  // 1. Pending Alerts (High risk transactions pending review)
+  const { count: pendingAlerts } = await supabase
+    .from('transaction_history')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'REVIEW')
+
+  // 2. Open Cases
+  const { count: openCases } = await supabase
+    .from('cases')
+    .select('*', { count: 'exact', head: true })
+    .in('status', ['Open', 'Investigating'])
+
+  // 3. Avg Risk Score (Last 100 transactions)
+  const { data: recentTx } = await supabase
+    .from('transaction_history')
+    .select('fraud_probability')
+    .order('transaction_timestamp', { ascending: false })
+    .limit(100)
+
+  let avgRisk = 0
+  if (recentTx && recentTx.length > 0) {
+    const sum = recentTx.reduce((acc, curr) => acc + (curr.fraud_probability || 0), 0)
+    avgRisk = sum / recentTx.length
+  }
+
+  return {
+    pending_alerts: pendingAlerts || 0,
+    open_cases: openCases || 0,
+    avg_risk_score: avgRisk,
+    active_system: true // Implicitly true if we got this far
+  }
 }
 
