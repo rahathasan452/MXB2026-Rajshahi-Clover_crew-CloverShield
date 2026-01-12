@@ -73,6 +73,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const fgRef = useRef<any>()
   const { brandTheme } = useAppStore()
   const [data, setData] = useState<GraphData>({ nodes: [], links: [] })
+  const [showAI, setShowAI] = useState(true)
 
   // Initialize from history
   useEffect(() => {
@@ -255,14 +256,29 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
   return (
     <div className="hud-card border border-white/10 relative overflow-hidden" style={{ height }}>
-      <div className="absolute top-0 left-0 p-4 z-10 pointer-events-none">
-        <h3 className="text-xl font-bold text-text-primary flex items-center gap-2 hud-glow-blue">
-          <Icon name="hub" size={24} />
-          {language === 'bn' ? 'লাইভ নেটওয়ার্ক গ্রাফ' : 'LIVE NETWORK TOPOLOGY'}
-        </h3>
-        <p className="text-xs text-text-secondary font-mono mt-1">
-          {data.nodes.length} {language === 'bn' ? 'নোড' : 'NODES'} | {data.links.length} {language === 'bn' ? 'লিঙ্ক' : 'EDGES'}
-        </p>
+      <div className="absolute top-0 left-0 p-4 z-10 pointer-events-none w-full flex justify-between items-start">
+        <div>
+          <h3 className="text-xl font-bold text-text-primary flex items-center gap-2 hud-glow-blue">
+            <Icon name="hub" size={24} />
+            {language === 'bn' ? 'লাইভ নেটওয়ার্ক গ্রাফ' : 'LIVE NETWORK TOPOLOGY'}
+          </h3>
+          <p className="text-xs text-text-secondary font-mono mt-1">
+            {data.nodes.length} {language === 'bn' ? 'নোড' : 'NODES'} | {data.links.length} {language === 'bn' ? 'লিঙ্ক' : 'EDGES'}
+          </p>
+        </div>
+
+        {/* AI Toggle */}
+        <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/50 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/5">
+           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+             {language === 'bn' ? 'এআই প্যাটার্ন' : 'AI Patterns'}
+           </span>
+           <button 
+             onClick={() => setShowAI(!showAI)}
+             className={`w-8 h-4 rounded-full transition-all relative ${showAI ? 'bg-emerald-500' : 'bg-slate-700'}`}
+           >
+              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showAI ? 'left-4.5' : 'left-0.5'}`} />
+           </button>
+        </div>
       </div>
 
       <div className="scanline" />
@@ -278,11 +294,9 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           const label = node.id
           const fontSize = 12/globalScale
           ctx.font = `${fontSize}px Sans-Serif`
-          const textWidth = ctx.measureText(label).width
-          const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2) as [number, number]
 
-          // Highlighting for Mules
-          if (node.isMule) {
+          // Highlighting for Mules - only if AI is enabled
+          if (showAI && node.isMule) {
             ctx.beginPath()
             ctx.arc(node.x, node.y, node.val * 1.5, 0, 2 * Math.PI, false)
             ctx.fillStyle = 'rgba(239, 68, 68, 0.2)' // Red glow
@@ -297,11 +311,11 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           // Main Node Circle
           ctx.beginPath()
           ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false)
-          ctx.fillStyle = node.color
+          ctx.fillStyle = showAI ? node.color : (node.type === 'sender' ? '#60A5FA' : '#F472B6')
           ctx.fill()
           
-          // Border for high risk
-          if (node.riskScore > 0.7) {
+          // Border for high risk - only if AI is enabled
+          if (showAI && node.riskScore > 0.7) {
             ctx.strokeStyle = '#FFFFFF'
             ctx.lineWidth = 2/globalScale
             ctx.stroke()
