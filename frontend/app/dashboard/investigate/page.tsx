@@ -33,7 +33,7 @@ export default function InvestigatePage() {
         .eq('status', 'REVIEW')
         .order('transaction_timestamp', { ascending: false })
         .limit(20)
-      
+
       if (error) throw error
       setQueue(data || [])
     } catch (err: any) {
@@ -53,7 +53,7 @@ export default function InvestigatePage() {
     try {
       setSeeding(true)
       const countToFetch = isRefill ? 1 : 10
-      
+
       // 1. Fetch fraud sources from Engineered Dataset
       const { data: sourceData, error: fetchError } = await supabase
         .from('test_dataset_engineered')
@@ -61,7 +61,7 @@ export default function InvestigatePage() {
         .eq('isFraud', 1)
         .order('dest_txn_count', { ascending: false })
         .range(offset, offset + countToFetch - 1)
-      
+
       if (fetchError) throw fetchError
       if (!sourceData || sourceData.length === 0) {
         if (!isRefill) toast.error('No more fraud records found')
@@ -115,7 +115,7 @@ export default function InvestigatePage() {
         const { error: insertError } = await supabase
           .from('transaction_history')
           .insert(validItems)
-        
+
         if (insertError) throw insertError
         setOffset(prev => prev + countToFetch)
       }
@@ -135,7 +135,7 @@ export default function InvestigatePage() {
     const originalQueue = [...queue]
     const updatedQueue = queue.filter(q => q.transaction_id !== id)
     setQueue(updatedQueue)
-    
+
     try {
       const { error } = await supabase
         .from('transaction_history')
@@ -144,9 +144,9 @@ export default function InvestigatePage() {
           note: decision === 'APPROVE' ? 'Approved by Analyst' : 'Blocked by Analyst'
         })
         .eq('transaction_id', id)
-      
+
       if (error) throw error
-      
+
       toast.success(decision === 'APPROVE' ? 'Approved' : 'Blocked')
 
       // Auto-Refill Logic: If queue is getting low, fetch the next one
@@ -167,7 +167,7 @@ export default function InvestigatePage() {
         status: 'Open',
         priority: item.risk_level === 'high' || item.fraud_probability > 0.8 ? 'High' : 'Medium',
       })
-      toast.success('Case created #' + newCase.case_id.slice(0,8))
+      toast.success('Case created #' + newCase.case_id.slice(0, 8))
       router.push(`/dashboard/cases/${newCase.case_id}`)
     } catch (error) {
       console.error('Failed to create case:', error)
@@ -200,8 +200,8 @@ export default function InvestigatePage() {
             <Icon name="inbox" className="text-red-500" />
             {language === 'bn' ? 'তদন্তের তালিকা' : 'Priority Inbox'}
           </h1>
-          <button 
-            onClick={() => handleSeed(false)} 
+          <button
+            onClick={() => handleSeed(false)}
             disabled={seeding}
             className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full transition-colors flex items-center gap-1"
           >
@@ -226,7 +226,7 @@ export default function InvestigatePage() {
             <p className="text-text-secondary mb-6">
               {language === 'bn' ? 'কোনো পেন্ডিং কেস নেই।' : 'No high-risk transactions pending review.'}
             </p>
-            <button 
+            <button
               onClick={() => handleSeed(false)}
               className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-bold transition-colors"
             >
@@ -237,13 +237,12 @@ export default function InvestigatePage() {
           <div className="grid gap-4">
             {queue.map((item) => (
               <div key={item.transaction_id} className="bg-card-bg border border-white/10 rounded-xl p-6 hover:border-white/20 transition-colors flex flex-col md:flex-row gap-6 items-start md:items-center justify-between animate-fade-in">
-                
+
                 {/* Info */}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
-                      item.fraud_decision === 'block' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${item.fraud_decision === 'block' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
+                      }`}>
                       {item.fraud_decision}
                     </span>
                     <span className="text-text-secondary text-xs flex items-center gap-1">
@@ -254,14 +253,14 @@ export default function InvestigatePage() {
                       <span className="bg-blue-500/10 text-blue-400 text-xs px-2 rounded-full border border-blue-500/20">TEST</span>
                     )}
                   </div>
-                  
+
                   <div className="flex items-baseline gap-1 mb-1">
                     <span className="text-2xl font-mono font-bold text-white">
                       ৳ {item.amount?.toLocaleString()}
                     </span>
                     <span className="text-sm text-text-secondary uppercase">{item.transaction_type}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 text-sm text-text-secondary">
                     <Link href={`/dashboard/profile/${item.sender_id}`} className="font-mono text-white/80 hover:text-primary transition-colors hover:underline">
                       {item.sender_id}
@@ -276,24 +275,23 @@ export default function InvestigatePage() {
                 {/* Score */}
                 <div className="text-center min-w-[100px]">
                   <div className="text-xs text-text-secondary mb-1">Risk Score</div>
-                  <div className={`text-2xl font-black ${
-                    item.fraud_probability > 0.8 ? 'text-red-500' : 'text-yellow-400'
-                  }`}>
+                  <div className={`text-2xl font-black ${item.fraud_probability > 0.8 ? 'text-red-500' : 'text-yellow-400'
+                    }`}>
                     {(item.fraud_probability * 100).toFixed(1)}%
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-3 w-full md:w-auto">
-                  <button 
+                  <button
                     onClick={() => handleCreateCase(item)}
                     className="flex-1 md:flex-none bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors"
                     title="Open Investigation Case"
                   >
-                    <Icon name="briefcase" size={18} />
+                    <Icon name="work" size={18} />
                     Case
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleAnalyze(item)}
                     className="flex-1 md:flex-none bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors"
                     title="Run Real-time Analysis"
@@ -301,14 +299,14 @@ export default function InvestigatePage() {
                     <Icon name="bolt" size={18} />
                     Analyze
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleDecision(item.transaction_id, 'APPROVE')}
                     className="flex-1 md:flex-none bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors"
                   >
                     <Icon name="check" size={18} />
                     Approve
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleDecision(item.transaction_id, 'BLOCK')}
                     className="flex-1 md:flex-none bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors"
                   >

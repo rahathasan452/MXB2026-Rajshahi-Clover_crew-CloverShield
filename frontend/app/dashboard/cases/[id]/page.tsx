@@ -1,18 +1,18 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { 
-  supabase, 
-  getCase, 
-  getUser, 
-  getTransaction, 
-  Case, 
-  User, 
-  Transaction, 
-  updateCaseStatus, 
-  createAnalystAction, 
-  flagAccount, 
-  updateTransaction 
+import {
+  supabase,
+  getCase,
+  getUser,
+  getTransaction,
+  Case,
+  User,
+  Transaction,
+  updateCaseStatus,
+  createAnalystAction,
+  flagAccount,
+  updateTransaction
 } from '@/lib/supabase'
 import { Icon } from '@/components/Icon'
 import { CaseStatusBadge, CasePriorityBadge } from '@/components/CaseStatusBadge'
@@ -67,14 +67,14 @@ export default function CaseDetailPage() {
         const u = await getUser(c.user_id)
         setTargetUser(u)
       }
-      
+
       if (c.transaction_id) {
         const tx = await getTransaction(c.transaction_id)
         setTargetTx(tx)
         // If tx has sender and we haven't fetched user yet
         if (tx?.sender_id && !targetUser && !c.user_id) {
-             const u = await getUser(tx.sender_id)
-             setTargetUser(u)
+          const u = await getUser(tx.sender_id)
+          setTargetUser(u)
         }
       }
     } catch (error) {
@@ -182,7 +182,7 @@ export default function CaseDetailPage() {
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
         <Link href="/dashboard/cases" className="hover:text-emerald-400 transition-colors">Cases</Link>
-        <Icon name="chevron-right" size={14} />
+        <Icon name="chevron_right" size={14} />
         <span className="text-slate-300">#{caseId.slice(0, 8)}</span>
       </div>
 
@@ -190,31 +190,31 @@ export default function CaseDetailPage() {
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-lg">
         <div>
           <div className="flex items-center gap-3 mb-2">
-             <h1 className="text-3xl font-bold text-white font-mono">Case #{caseId.slice(0, 8)}</h1>
-             <CaseStatusBadge status={caseData.status} />
+            <h1 className="text-3xl font-bold text-white font-mono">Case #{caseId.slice(0, 8)}</h1>
+            <CaseStatusBadge status={caseData.status} />
           </div>
           <div className="flex items-center gap-6 text-sm text-slate-400">
-             <span className="flex items-center gap-1">
-               <Icon name="clock" size={14} /> Created {format(new Date(caseData.created_at), 'MMM d, yyyy HH:mm')}
-             </span>
-             <span className="flex items-center gap-1">
-               <Icon name="user" size={14} /> Analyst: <span className="text-emerald-400">{caseData.analyst_id || 'Unassigned'}</span>
-             </span>
-             <CasePriorityBadge priority={caseData.priority} />
+            <span className="flex items-center gap-1">
+              <Icon name="schedule" size={14} /> Created {format(new Date(caseData.created_at), 'MMM d, yyyy HH:mm')}
+            </span>
+            <span className="flex items-center gap-1">
+              <Icon name="person" size={14} /> Analyst: <span className="text-emerald-400">{caseData.analyst_id || 'Unassigned'}</span>
+            </span>
+            <CasePriorityBadge priority={caseData.priority} />
           </div>
         </div>
 
         <div className="flex gap-2">
           {/* Status Actions - Placeholder for Quick Actions */}
           {caseData.status === 'Open' && (
-             <button onClick={() => handleStatusChange('Investigating')} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-lg shadow-blue-900/20">
-               Start Investigation
-             </button>
+            <button onClick={() => handleStatusChange('Investigating')} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-lg shadow-blue-900/20">
+              Start Investigation
+            </button>
           )}
           {caseData.status === 'Investigating' && (
-             <button onClick={() => handleStatusChange('Resolved')} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-lg shadow-emerald-900/20">
-               Mark Resolved
-             </button>
+            <button onClick={() => handleStatusChange('Resolved')} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-lg shadow-emerald-900/20">
+              Mark Resolved
+            </button>
           )}
         </div>
       </div>
@@ -222,64 +222,64 @@ export default function CaseDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Target Details */}
         <div className="lg:col-span-2 space-y-6">
-           {targetUser && (
-             <UserProfileCard user={targetUser} />
-           )}
-           
-           {targetTx && (
-             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
-                <h3 className="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2">
-                  <Icon name="activity" /> Transaction Details
-                </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                   <div className="p-3 bg-slate-950 rounded border border-slate-800">
-                      <span className="block text-xs text-slate-500 uppercase">Amount</span>
-                      <span className="text-xl font-mono text-white">৳ {targetTx.amount.toLocaleString()}</span>
-                   </div>
-                   <div className="p-3 bg-slate-950 rounded border border-slate-800">
-                      <span className="block text-xs text-slate-500 uppercase">Type</span>
-                      <span className="text-white">{targetTx.transaction_type}</span>
-                   </div>
-                   <div className="p-3 bg-slate-950 rounded border border-slate-800">
-                      <span className="block text-xs text-slate-500 uppercase">Fraud Score</span>
-                      <span className={`text-lg font-bold ${(targetTx.fraud_probability || 0) > 0.7 ? 'text-red-500' : 'text-yellow-500'}`}>
-                        {((targetTx.fraud_probability || 0) * 100).toFixed(1)}%
-                      </span>
-                   </div>
-                   <div className="p-3 bg-slate-950 rounded border border-slate-800">
-                      <span className="block text-xs text-slate-500 uppercase">Timestamp</span>
-                      <span className="text-slate-300">{format(new Date(targetTx.transaction_timestamp), 'PP pp')}</span>
-                   </div>
-                   <div className="col-span-2 p-3 bg-slate-950 rounded border border-slate-800 flex justify-between items-center">
-                      <div>
-                        <span className="block text-xs text-slate-500 uppercase">Status</span>
-                        <span className={`font-bold ${targetTx.status === 'BLOCKED' ? 'text-red-500' : 'text-white'}`}>
-                           {targetTx.status}
-                        </span>
-                      </div>
-                   </div>
-                </div>
-             </div>
-           )}
+          {targetUser && (
+            <UserProfileCard user={targetUser} />
+          )}
 
-           {/* Placeholder for future Activity Log */}
-           <div className="bg-slate-900/50 border border-slate-800 border-dashed rounded-xl p-6 text-center text-slate-500">
-              <Icon name="file-text" size={32} className="mx-auto mb-2 opacity-30" />
-              <p>Activity Log & Notes (Coming Soon)</p>
-           </div>
+          {targetTx && (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
+              <h3 className="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2">
+                <Icon name="receipt_long" /> Transaction Details
+              </h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="p-3 bg-slate-950 rounded border border-slate-800">
+                  <span className="block text-xs text-slate-500 uppercase">Amount</span>
+                  <span className="text-xl font-mono text-white">৳ {targetTx.amount.toLocaleString()}</span>
+                </div>
+                <div className="p-3 bg-slate-950 rounded border border-slate-800">
+                  <span className="block text-xs text-slate-500 uppercase">Type</span>
+                  <span className="text-white">{targetTx.transaction_type}</span>
+                </div>
+                <div className="p-3 bg-slate-950 rounded border border-slate-800">
+                  <span className="block text-xs text-slate-500 uppercase">Fraud Score</span>
+                  <span className={`text-lg font-bold ${(targetTx.fraud_probability || 0) > 0.7 ? 'text-red-500' : 'text-yellow-500'}`}>
+                    {((targetTx.fraud_probability || 0) * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-950 rounded border border-slate-800">
+                  <span className="block text-xs text-slate-500 uppercase">Timestamp</span>
+                  <span className="text-slate-300">{format(new Date(targetTx.transaction_timestamp), 'PP pp')}</span>
+                </div>
+                <div className="col-span-2 p-3 bg-slate-950 rounded border border-slate-800 flex justify-between items-center">
+                  <div>
+                    <span className="block text-xs text-slate-500 uppercase">Status</span>
+                    <span className={`font-bold ${targetTx.status === 'BLOCKED' ? 'text-red-500' : 'text-white'}`}>
+                      {targetTx.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Placeholder for future Activity Log */}
+          <div className="bg-slate-900/50 border border-slate-800 border-dashed rounded-xl p-6 text-center text-slate-500">
+            <Icon name="description" size={32} className="mx-auto mb-2 opacity-30" />
+            <p>Activity Log & Notes (Coming Soon)</p>
+          </div>
         </div>
 
         {/* Right Column: Toolkit */}
         <div className="space-y-6">
-           <InvestigationChecklist 
-             caseId={caseId} 
-             initialState={caseData.checklist_state || {}}
-           />
+          <InvestigationChecklist
+            caseId={caseId}
+            initialState={caseData.checklist_state || {}}
+          />
 
-           <QuickActionToolbar 
-             onAction={handleQuickAction}
-             loading={actionLoading}
-           />
+          <QuickActionToolbar
+            onAction={handleQuickAction}
+            loading={actionLoading}
+          />
         </div>
       </div>
     </div>
