@@ -22,8 +22,8 @@ This plan implements a structured case management system, including a new databa
 - [x] Task: Integrate "Block Transaction" and "Freeze Account" simulation buttons [acb2b2f]
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Case Detail & Toolkit' (Protocol in workflow.md) [e7019a4]
 
-## Phase 4: Integration & Polish
+## Phase 4: Integration & Polish [checkpoint: 00e6827]
 - [x] Task: Add "Create Case" button to existing Transaction Detail/Decision views [161ba0f]
 - [x] Task: Ensure mobile responsiveness for the new Case views [cd5d3fb]
 - [x] Task: Final end-to-end testing of the investigation lifecycle [manual-verified]
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Integration & Polish' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Integration & Polish' (Protocol in workflow.md) [00e6827]
