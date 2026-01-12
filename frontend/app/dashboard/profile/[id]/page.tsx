@@ -278,24 +278,7 @@ export default function ProfilePage() {
 
   return (
     <div className={`min-h-screen bg-[#050714] text-white ${language === 'bn' ? 'font-bengali' : ''}`}>
-      {/* Nav */}
-       <div className="bg-gradient-header border-b border-white/10 p-4 mb-6 sticky top-0 z-50 backdrop-blur-md">
-        <div className="container mx-auto flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 text-primary hover:text-white transition-colors">
-            <Icon name="arrow_back" />
-            <span className="font-bold">{language === 'bn' ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
-          </Link>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <Icon name="badge" className="text-purple-400" />
-            {language === 'bn' ? 'গ্রাহক প্রোফাইল' : 'Customer 360'}
-          </h1>
-          <Link href="/dashboard/profile/search" className="text-sm bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full transition-colors">
-             New Search
-          </Link>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 pb-12">
+      <div className="container mx-auto px-4 py-6">
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
