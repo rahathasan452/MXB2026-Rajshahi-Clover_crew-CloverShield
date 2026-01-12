@@ -21,7 +21,7 @@ export interface Transaction {
   amount: number;
   transaction_type: string;
   created_at?: string; // ISO String
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'BLOCKED';
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'BLOCKED' | 'REVIEW';
   is_test_data?: boolean;
   fraud_probability?: number;
 }
