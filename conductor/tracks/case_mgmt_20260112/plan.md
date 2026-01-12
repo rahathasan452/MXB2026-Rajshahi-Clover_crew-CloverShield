@@ -23,7 +23,7 @@ This plan implements a structured case management system, including a new databa
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Case Detail & Toolkit' (Protocol in workflow.md) [e7019a4]
 
 ## Phase 4: Integration & Polish
-- [ ] Task: Add "Create Case" button to existing Transaction Detail/Decision views
+- [x] Task: Add "Create Case" button to existing Transaction Detail/Decision views [161ba0f]
 - [ ] Task: Ensure mobile responsiveness for the new Case views
 - [ ] Task: Final end-to-end testing of the investigation lifecycle
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Integration & Polish' (Protocol in workflow.md)
