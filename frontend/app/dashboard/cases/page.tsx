@@ -1,13 +1,16 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { supabase, getOpenCases, Case } from '@/lib/supabase'
+import { supabase, getOpenCases, Case, updateCaseStatus } from '@/lib/supabase'
 import { Icon } from '@/components/Icon'
 import { CaseStatusBadge, CasePriorityBadge } from '@/components/CaseStatusBadge'
 import { format } from 'date-fns'
 import Link from 'next/link'
+import { useAppStore } from '@/store/useAppStore'
+import { toast } from 'react-hot-toast'
 
 export default function CasesPage() {
+  const { authUser } = useAppStore()
   const [cases, setCases] = useState<Case[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<'All' | 'Open' | 'Investigating' | 'Resolved'>('All')
@@ -47,6 +50,23 @@ export default function CasesPage() {
       console.error('Error fetching cases:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAssign = async (caseId: string) => {
+    if (!authUser) {
+      toast.error("You must be logged in to assign cases")
+      return
+    }
+    
+    try {
+      // Optimistic update could be done here, but simpler to wait for realtime or refetch
+      await updateCaseStatus(caseId, 'Investigating', authUser.email || authUser.id)
+      toast.success("Case assigned to you")
+      fetchCases()
+    } catch (error) {
+      console.error("Failed to assign case:", error)
+      toast.error("Failed to assign case")
     }
   }
 
@@ -187,12 +207,17 @@ export default function CasesPage() {
                     {c.analyst_id ? (
                       <span className="flex items-center gap-1">
                         <div className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[10px] text-white">
-                           {c.analyst_id[0].toUpperCase()}
+                           {c.analyst_id[0]?.toUpperCase()}
                         </div>
                         {c.analyst_id}
                       </span>
                     ) : (
-                      <span className="text-slate-600 italic text-xs">Unassigned</span>
+                      <button 
+                        onClick={() => handleAssign(c.case_id)}
+                        className="text-xs bg-slate-800 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 px-2 py-1 rounded transition-colors"
+                      >
+                        Assign to Me
+                      </button>
                     )}
                   </td>
                   <td className="p-4 text-slate-500">
