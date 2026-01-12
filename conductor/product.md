@@ -18,7 +18,7 @@
 
 -   **Mission Control Dashboard:** A localized "Security HUD" built with Next.js 14, prioritizing high-risk transactions and offering full bilingual (English/Bangla) support.
 -   **Fraud Scanner:** Real-time risk scoring engine leveraging XGBoost, providing immediate feedback on transaction legitimacy.
--   **Customer 360 Network Graph:** Interactive visualization tool to uncover hidden connections, identifying "Mule Networks" and "Star Schemes" visually.
+-   **Customer 360 Network Graph:** Advanced visualization tool with on-demand expansion (up to 2nd degree) and risk-based node coloring for tracing complex fraud rings.
 -   **Policy Lab:** A sandbox environment for backtesting new fraud detection rules against historical data, allowing for safe iteration and improvement of security policies.
 -   **Audit Trail:** A comprehensive, immutable record of system activities, ML predictions, and analyst decisions, ensuring regulatory compliance and "Sovereign Defense" integrity.
 -   **Case Management Station:** A dedicated workflow for deep-dive investigations, featuring a persistent investigation checklist, quick-action toolkit (Freeze/Block/SAR), and collaborative case tracking.
