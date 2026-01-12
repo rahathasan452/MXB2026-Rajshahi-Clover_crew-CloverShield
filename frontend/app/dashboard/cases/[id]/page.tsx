@@ -1,10 +1,24 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { supabase, getCase, getUser, getTransaction, Case, User, Transaction, updateCaseStatus } from '@/lib/supabase'
+import { 
+  supabase, 
+  getCase, 
+  getUser, 
+  getTransaction, 
+  Case, 
+  User, 
+  Transaction, 
+  updateCaseStatus, 
+  createAnalystAction, 
+  flagAccount, 
+  updateTransaction 
+} from '@/lib/supabase'
 import { Icon } from '@/components/Icon'
 import { CaseStatusBadge, CasePriorityBadge } from '@/components/CaseStatusBadge'
 import { UserProfileCard } from '@/components/UserProfileCard'
+import { QuickActionToolbar, QuickActionType } from '@/components/QuickActionToolbar'
+import { InvestigationChecklist } from '@/components/InvestigationChecklist'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -21,6 +35,7 @@ export default function CaseDetailPage() {
   const [targetUser, setTargetUser] = useState<User | null>(null)
   const [targetTx, setTargetTx] = useState<Transaction | null>(null)
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
 
   useEffect(() => {
     if (caseId) fetchData()
@@ -51,11 +66,13 @@ export default function CaseDetailPage() {
       if (c.user_id) {
         const u = await getUser(c.user_id)
         setTargetUser(u)
-      } else if (c.transaction_id) {
+      }
+      
+      if (c.transaction_id) {
         const tx = await getTransaction(c.transaction_id)
         setTargetTx(tx)
-        // If tx has sender, maybe fetch sender too?
-        if (tx?.sender_id) {
+        // If tx has sender and we haven't fetched user yet
+        if (tx?.sender_id && !targetUser && !c.user_id) {
              const u = await getUser(tx.sender_id)
              setTargetUser(u)
         }
@@ -76,6 +93,84 @@ export default function CaseDetailPage() {
       setCaseData(prev => prev ? ({ ...prev, status: newStatus }) : null)
     } catch (error) {
       toast.error("Failed to update status")
+    }
+  }
+
+  const handleQuickAction = async (type: QuickActionType) => {
+    if (!authUser || !caseData) {
+      toast.error("Unauthorized")
+      return
+    }
+
+    setActionLoading(true)
+    try {
+      switch (type) {
+        case 'FREEZE':
+          if (!targetUser) {
+            toast.error("No user linked to this case")
+            break
+          }
+          await flagAccount(targetUser.user_id, `Case ${caseId}: Freeze Requested`, authUser.id)
+          await createAnalystAction({
+            action_type: 'FLAG_ACCOUNT',
+            user_id: targetUser.user_id,
+            analyst_id: authUser.id,
+            analyst_name: authUser.email,
+            action_data: { reason: 'Freeze Requested via Quick Action' }
+          })
+          toast.success(`Account ${targetUser.user_id} flagged for freeze`)
+          break
+
+        case 'BLOCK':
+          if (!targetTx) {
+            toast.error("No transaction linked to this case")
+            break
+          }
+          await updateTransaction(targetTx.transaction_id, { status: 'BLOCKED' })
+          await createAnalystAction({
+            action_type: 'REJECT',
+            transaction_id: targetTx.transaction_id,
+            analyst_id: authUser.id,
+            analyst_name: authUser.email,
+            action_data: { reason: 'Blocked via Quick Action' }
+          })
+          toast.success("Transaction blocked")
+          // Refresh tx
+          setTargetTx(prev => prev ? ({ ...prev, status: 'BLOCKED' }) : null)
+          break
+
+        case 'SAR':
+          // Just a simulation/placeholder for now
+          toast.success("SAR Draft generated and sent to email")
+          await createAnalystAction({
+            action_type: 'REPORT_FRAUD',
+            transaction_id: caseData.transaction_id,
+            user_id: caseData.user_id,
+            analyst_id: authUser.id,
+            analyst_name: authUser.email,
+            action_data: { type: 'SAR' }
+          })
+          break
+
+        case 'EMAIL':
+          toast.success("Verification email sent to user")
+          break
+
+        case 'APPROVE':
+          await handleStatusChange('Resolved')
+          toast.success("Case resolved")
+          break
+
+        case 'DISMISS':
+          await handleStatusChange('False Positive')
+          toast.success("Case marked as False Positive")
+          break
+      }
+    } catch (error) {
+      console.error("Action failed:", error)
+      toast.error(`Action ${type} failed`)
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -155,6 +250,14 @@ export default function CaseDetailPage() {
                       <span className="block text-xs text-slate-500 uppercase">Timestamp</span>
                       <span className="text-slate-300">{format(new Date(targetTx.transaction_timestamp), 'PP pp')}</span>
                    </div>
+                   <div className="col-span-2 p-3 bg-slate-950 rounded border border-slate-800 flex justify-between items-center">
+                      <div>
+                        <span className="block text-xs text-slate-500 uppercase">Status</span>
+                        <span className={`font-bold ${targetTx.status === 'BLOCKED' ? 'text-red-500' : 'text-white'}`}>
+                           {targetTx.status}
+                        </span>
+                      </div>
+                   </div>
                 </div>
              </div>
            )}
@@ -168,25 +271,15 @@ export default function CaseDetailPage() {
 
         {/* Right Column: Toolkit */}
         <div className="space-y-6">
-           {/* Placeholder for Checklist */}
-           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2">
-                 <Icon name="list" /> Investigation Checklist
-              </h3>
-              <div className="text-sm text-slate-500 italic">
-                 Checklist component loading...
-              </div>
-           </div>
+           <InvestigationChecklist 
+             caseId={caseId} 
+             initialState={caseData.checklist_state || {}}
+           />
 
-           {/* Placeholder for Quick Actions */}
-           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2">
-                 <Icon name="zap" /> Quick Actions
-              </h3>
-              <div className="text-sm text-slate-500 italic">
-                 Toolbar component loading...
-              </div>
-           </div>
+           <QuickActionToolbar 
+             onAction={handleQuickAction}
+             loading={actionLoading}
+           />
         </div>
       </div>
     </div>
