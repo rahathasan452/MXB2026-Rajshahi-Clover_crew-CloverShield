@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Create deployment scripts and update documentation to emphasize 'One Command Deploy' for zero-trust environments.
-*Link: [./conductor/tracks/one_command_deploy_20260114/](./conductor/tracks/one_command_deploy_20260114/)*
+## [ ] Track: Enhance Analyst Copilot with comprehensive project context (User Guide, Solution Desc) to make it a true expert system.
+*Link: [./conductor/tracks/chatbot_context_20260114/](./conductor/tracks/chatbot_context_20260114/)*

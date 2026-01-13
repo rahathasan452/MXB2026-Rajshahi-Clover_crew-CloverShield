@@ -57,6 +57,22 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   const [data, setData] = useState<GraphData>({ nodes: [], links: [] })
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
   const [expanding, setExpanding] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [dimensions, setDimensions] = useState({ width: 0 })
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setDimensions({ width: entry.contentRect.width })
+      }
+    })
+
+    resizeObserver.observe(containerRef.current)
+
+    return () => resizeObserver.disconnect()
+  }, [])
 
   const addTransactionsToGraph = useCallback((transactions: Transaction[]) => {
     setData(currentData => {
@@ -194,7 +210,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   }
 
   return (
-    <div className="hud-card border border-white/10 relative overflow-hidden" style={{ height }}>
+    <div ref={containerRef} className="hud-card border border-white/10 relative overflow-hidden" style={{ height }}>
       <div className="absolute top-0 left-0 p-4 z-10 pointer-events-none w-full flex justify-between items-start">
         <div>
           <h3 className="text-xl font-bold text-text-primary flex items-center gap-2 hud-glow-blue">
@@ -217,27 +233,29 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
       <div className="scanline" />
 
-      <ForceGraph2D
-        ref={fgRef}
-        width={undefined}
-        height={height}
-        graphData={data}
-        nodeLabel="id"
-        nodeRelSize={6}
-        nodeColor="color"
-        linkColor="color"
-        linkWidth="width"
-        onNodeClick={handleNodeClick}
-        onBackgroundClick={() => setSelectedNode(null)}
-        linkDirectionalParticles="particles"
-        linkDirectionalParticleSpeed={0.005}
-        linkDirectionalParticleWidth={4}
-        backgroundColor="#00000000"
-        d3AlphaDecay={0.03}
-        d3VelocityDecay={0.4}
-        warmupTicks={200}
-        cooldownTicks={150}
-      />
+      {dimensions.width > 0 && (
+        <ForceGraph2D
+          ref={fgRef}
+          width={dimensions.width}
+          height={height}
+          graphData={data}
+          nodeLabel="id"
+          nodeRelSize={6}
+          nodeColor="color"
+          linkColor="color"
+          linkWidth="width"
+          onNodeClick={handleNodeClick}
+          onBackgroundClick={() => setSelectedNode(null)}
+          linkDirectionalParticles="particles"
+          linkDirectionalParticleSpeed={0.005}
+          linkDirectionalParticleWidth={4}
+          backgroundColor="#00000000"
+          d3AlphaDecay={0.03}
+          d3VelocityDecay={0.4}
+          warmupTicks={200}
+          cooldownTicks={150}
+        />
+      )}
 
       {selectedNode && (
         <div
