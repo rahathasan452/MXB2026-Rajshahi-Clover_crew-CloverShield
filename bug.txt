@@ -1,11 +1,7 @@
-bn in dashbrd feture cards
-
-audit pdf export
 
 rule -- frd scan 
 
-sar report gen n animated qr data bridge transfer compionent in case file, fraud scanner .
-pdf export n qr data bridge  in audit log 
+ 
 
 
 
