@@ -369,41 +369,47 @@ export default function SandboxPage() {
                   </select>
                 </div>
 
-                {/* Rule Preview */}
-                <div className="bg-black/30 rounded-lg p-3 border border-dashed border-white/10">
-                  <div className="text-[10px] text-text-secondary uppercase tracking-widest font-bold mb-1">Human Readable Logic</div>
+                {/* Rule Preview & Explain */}
+                <div className="bg-black/30 rounded-lg p-4 border border-dashed border-white/10 relative group">
+                  <div className="flex items-center justify-between mb-2">
+                      <div className="text-[10px] text-text-secondary uppercase tracking-widest font-bold">Human Readable Logic</div>
+                      <button
+                        onClick={handleExplainRule}
+                        disabled={explaining || conditions.length === 0}
+                        className="text-xs flex items-center gap-1.5 text-purple-400 hover:text-purple-300 transition-colors bg-purple-500/10 hover:bg-purple-500/20 px-2 py-1 rounded"
+                      >
+                        {explaining ? <Icon name="autorenew" className="animate-spin" size={12} /> : <Icon name="psychology" size={14} />}
+                        {language === 'bn' ? 'ব্যাখ্যা করুন' : 'Explain Logic'}
+                      </button>
+                  </div>
                   <div className="text-sm text-gray-300 font-medium leading-relaxed">
                     {generateNaturalLanguage()}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <button
-                    onClick={handleExplainRule}
-                    disabled={explaining || conditions.length === 0}
-                    className="bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors border border-purple-500/20"
-                  >
-                    {explaining ? <Icon name="autorenew" className="animate-spin" /> : <Icon name="psychology" />}
-                    Explain
-                  </button>
+                {/* Primary Actions */}
+                <div className="grid grid-cols-2 gap-4 mt-2">
                   <button
                     onClick={handleRun}
                     disabled={loading}
-                    className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
+                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-lg shadow-blue-900/20 hover:shadow-blue-900/40 hover:-translate-y-0.5"
                   >
-                    {loading ? (
-                      <Icon name="autorenew" className="animate-spin" />
-                    ) : (
-                      <Icon name="play_arrow" />
-                    )}
-                    Run Sim
+                    <div className="flex items-center gap-2">
+                        {loading ? <Icon name="autorenew" className="animate-spin" /> : <Icon name="play_arrow" />}
+                        <span>Run Simulation</span>
+                    </div>
+                    <span className="text-[10px] font-normal opacity-70">Test against historical data</span>
                   </button>
+
                   <button
                     onClick={handleDeploy}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-500/20"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/40 hover:-translate-y-0.5"
                   >
-                    <Icon name="rocket_launch" />
-                    Deploy
+                    <div className="flex items-center gap-2">
+                        <Icon name="rocket_launch" />
+                        <span>Deploy Policy</span>
+                    </div>
+                    <span className="text-[10px] font-normal opacity-70">Activate in Scanner</span>
                   </button>
                 </div>
 

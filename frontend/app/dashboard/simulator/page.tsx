@@ -108,7 +108,7 @@ function SimulatorContent() {
         )
 
         trackMLAPICall({ success: true, processingTimeMs: Date.now() - startTime })
-        
+
         // Policy Check Overlay
         if (isPolicyDetectionEnabled && activePolicy && activePolicy.length > 0) {
           const policyTx = {
@@ -118,7 +118,7 @@ function SimulatorContent() {
             orig_txn_count: 0, // Placeholder if needed
             // Add other derived features if available in the future
           }
-          
+
           if (evaluatePolicy(policyTx, activePolicy)) {
             prediction.prediction.decision = 'block'
             prediction.prediction.risk_level = 'high'
@@ -270,13 +270,6 @@ function SimulatorContent() {
     }
   }, [authUser, router])
 
-  if (!authUser) return null
-
-  // Initialize analytics on mount
-  useEffect(() => {
-    initAnalytics()
-  }, [])
-
   // Load users on mount
   useEffect(() => {
     const loadUsers = async () => {
@@ -293,6 +286,9 @@ function SimulatorContent() {
     }
     loadUsers()
   }, [])
+
+  if (!authUser) return null
+
 
   return (
     <div className={`min-h-screen bg-[#050714] ${language === 'bn' ? 'font-bengali' : ''}`}>
@@ -314,24 +310,56 @@ function SimulatorContent() {
                   <Icon name="account_balance_wallet" size={28} className="text-primary" />
                   {language === 'bn' ? 'রিয়েল-টাইম ফ্রড স্ক্যানার' : 'Real-time Fraud Scanner'}
                 </h2>
+
+                                <button 
+
+                                  onClick={() => activePolicy.length > 0 && togglePolicyDetection()}
+
+                                  disabled={activePolicy.length === 0}
+
+                                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all border shadow-lg ${
+
+                                    activePolicy.length === 0
+
+                                      ? 'bg-white/5 text-text-secondary border-white/5 cursor-not-allowed opacity-50'
+
+                                      : isPolicyDetectionEnabled 
+
+                                        ? 'bg-emerald-500 text-white border-emerald-400 hover:bg-emerald-600 hud-glow-green scale-105 active:scale-95' 
+
+                                        : 'bg-slate-800 text-slate-300 border-slate-600 hover:border-primary hover:text-white active:scale-95'
+
+                                  }`}
+
+                                >
+
+                                  <div className={`w-2.5 h-2.5 rounded-full ${
+
+                                    activePolicy.length === 0 
+
+                                      ? 'bg-slate-600' 
+
+                                      : isPolicyDetectionEnabled ? 'bg-white animate-pulse' : 'bg-slate-500'
+
+                                  }`}></div>
+
+                                  {activePolicy.length === 0
+
+                                    ? (language === 'bn' ? 'কোন পলিসি নেই' : 'No Policy Deployed')
+
+                                    : isPolicyDetectionEnabled 
+
+                                      ? (language === 'bn' ? 'পলিসি সক্রিয়' : 'Policy: ACTIVE') 
+
+                                      : (language === 'bn' ? 'পলিসি নিষ্ক্রিয়' : 'Policy: INACTIVE')}
+
+                                  {activePolicy.length > 0 && <Icon name={isPolicyDetectionEnabled ? 'check_circle' : 'pause_circle'} size={16} />}
+
+                                </button>
+
                 
-                {activePolicy.length > 0 && (
-                  <button 
-                    onClick={() => togglePolicyDetection()}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                      isPolicyDetectionEnabled 
-                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
-                        : 'bg-white/5 text-text-secondary border-white/10 hover:border-white/30'
-                    }`}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${isPolicyDetectionEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`}></div>
-                    {isPolicyDetectionEnabled 
-                      ? (language === 'bn' ? 'পলিসি সক্রিয়' : 'Policy Active') 
-                      : (language === 'bn' ? 'পলিসি নিষ্ক্রিয়' : 'Policy Inactive')}
-                  </button>
-                )}
               </div>
-              
+
               <TransactionForm users={users} onSubmit={handleTransactionSubmit} language={language} />
             </div>
             <div className="space-y-6">
@@ -360,10 +388,10 @@ function SimulatorContent() {
                       <h3 className="text-xl font-bold text-text-primary border-b border-white/10 pb-2">
                         {language === 'bn' ? 'অ্যাকশন এবং রিপোর্ট' : 'Actions & Reporting'}
                       </h3>
-                      <SARReportGenerator 
+                      <SARReportGenerator
                         caseId={lastTransaction.transaction_id || 'SIM-000'}
                         transactions={[lastTransaction]}
-                        analystName={authUser?.email || 'Analyst'} 
+                        analystName={authUser?.email || 'Analyst'}
                       />
                       <div className="pt-2">
                         <QRDataBridge data={lastTransaction} label="Transaction Handoff" />
