@@ -89,7 +89,17 @@ export default function AuditTrailPage() {
 
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <QRDataBridge 
-                data={logs.slice(0, 20).map(l => ({ id: l.id, action: l.action_type, msg: l.human_readable_message }))} 
+                data={{
+                  doc_type: 'AUDIT_LOG_EXPORT',
+                  generated_at: new Date().toISOString(),
+                  logs: logs.slice(0, 50).map(l => ({
+                    id: l.id,
+                    time: l.created_at,
+                    action: l.action_type,
+                    actor: l.actor_id,
+                    details: l.human_readable_message
+                  }))
+                }}
                 label="Sync Recent Logs" 
               />
               

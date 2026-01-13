@@ -29,8 +29,10 @@ interface AppState {
   // Auth
   authUser: any | null
   authSession: any | null
+  isAuthInitialized: boolean
   setAuthUser: (user: any | null) => void
   setAuthSession: (session: any | null) => void
+  setAuthInitialized: (initialized: boolean) => void
 
   // Users
   users: User[]
@@ -86,6 +88,7 @@ const initialState = {
   simulationSpeed: 1,
   authUser: null,
   authSession: null,
+  isAuthInitialized: false,
   users: [],
   selectedUser: null,
   transactionForm: {
@@ -116,12 +119,13 @@ export const useAppStore = create<AppState>((set) => ({
   setTheme: (theme) => set({ theme }),
 
   setBrandTheme: (theme) => set({ brandTheme: theme }),
-  
+
   setIsSimulating: (isSimulating) => set({ isSimulating }),
   setSimulationSpeed: (speed) => set({ simulationSpeed: speed }),
 
   setAuthUser: (user) => set({ authUser: user }),
   setAuthSession: (session) => set({ authSession: session }),
+  setAuthInitialized: (initialized) => set({ isAuthInitialized: initialized }),
 
   setUsers: (users) => set({ users }),
   setSelectedUser: (user) => set({ selectedUser: user }),
@@ -139,9 +143,9 @@ export const useAppStore = create<AppState>((set) => ({
   setCurrentPrediction: (prediction) => set({ currentPrediction: prediction }),
 
   setActivePolicy: (policy) => set({ activePolicy: policy }),
-  togglePolicyDetection: (enabled) => 
-    set((state) => ({ 
-      isPolicyDetectionEnabled: enabled !== undefined ? enabled : !state.isPolicyDetectionEnabled 
+  togglePolicyDetection: (enabled) =>
+    set((state) => ({
+      isPolicyDetectionEnabled: enabled !== undefined ? enabled : !state.isPolicyDetectionEnabled
     })),
 
   setAnalytics: (analytics) =>

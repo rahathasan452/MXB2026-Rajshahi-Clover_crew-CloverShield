@@ -388,28 +388,22 @@ export default function SandboxPage() {
                 </div>
 
                 {/* Primary Actions */}
-                <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="grid grid-cols-2 gap-3 mt-2">
                   <button
                     onClick={handleRun}
                     disabled={loading}
-                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-lg shadow-blue-900/20 hover:shadow-blue-900/40 hover:-translate-y-0.5"
+                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-900/20 hover:shadow-blue-900/40 hover:-translate-y-0.5"
                   >
-                    <div className="flex items-center gap-2">
-                        {loading ? <Icon name="autorenew" className="animate-spin" /> : <Icon name="play_arrow" />}
-                        <span>Run Simulation</span>
-                    </div>
-                    <span className="text-[10px] font-normal opacity-70">Test against historical data</span>
+                    {loading ? <Icon name="autorenew" className="animate-spin" /> : <Icon name="play_arrow" />}
+                    <span>{language === 'bn' ? 'সিমুলেশন চালান' : 'Run Simulation'}</span>
                   </button>
 
                   <button
                     onClick={handleDeploy}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/40 hover:-translate-y-0.5"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/40 hover:-translate-y-0.5"
                   >
-                    <div className="flex items-center gap-2">
-                        <Icon name="rocket_launch" />
-                        <span>Deploy Policy</span>
-                    </div>
-                    <span className="text-[10px] font-normal opacity-70">Activate in Scanner</span>
+                    <Icon name="rocket_launch" />
+                    <span>{language === 'bn' ? 'পলিসি প্রয়োগ করুন' : 'Deploy Policy'}</span>
                   </button>
                 </div>
 

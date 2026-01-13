@@ -16,45 +16,33 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { authUser } = useAppStore()
+  const { authUser, isAuthInitialized } = useAppStore()
   const router = useRouter()
-  const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
-    // Small delay to ensure store is initialized
-    const checkAuth = () => {
-      if (authUser === null) {
-        // User is not authenticated, redirect to landing page
-        router.push('/')
-      } else {
-        // User is authenticated, allow access
-        setIsChecking(false)
-      }
+    // Only redirect if auth is initialized and we still don't have a user
+    if (isAuthInitialized && !authUser) {
+      router.push('/')
     }
+  }, [isAuthInitialized, authUser, router])
 
-    // Check immediately
-    checkAuth()
-
-    // Also check after a brief delay to handle async store initialization
-    const timeout = setTimeout(() => {
-      checkAuth()
-    }, 100)
-
-    return () => clearTimeout(timeout)
-  }, [authUser, router])
-
-  // Show loading spinner while checking auth state or if not authenticated
-  if (isChecking || authUser === null) {
+  // Show loading spinner while initializing auth
+  if (!isAuthInitialized) {
     return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+      <div className="min-h-screen bg-[#050714] flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin mb-4">
             <Icon name="refresh" size={48} className="text-primary" />
           </div>
-          <p className="text-text-secondary text-lg">Checking authentication...</p>
+          <p className="text-text-secondary text-lg">Verifying credentials...</p>
         </div>
       </div>
     )
+  }
+
+  // If finalized but no user, we are redirecting (useEffect above), so return null or spinner
+  if (!authUser) {
+    return null
   }
 
   // User is authenticated, render protected content

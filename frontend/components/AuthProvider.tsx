@@ -12,7 +12,7 @@ import { onAuthStateChange, getSession } from '@/lib/auth'
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { setAuthUser, setAuthSession } = useAppStore()
+  const { setAuthUser, setAuthSession, setAuthInitialized } = useAppStore()
 
   useEffect(() => {
     // Get initial session
@@ -25,6 +25,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       } catch (error) {
         console.error('Error initializing auth:', error)
+      } finally {
+        setAuthInitialized(true)
       }
     }
 
@@ -35,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       data: { subscription },
     } = onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event, session?.user?.email)
-      
+
       if (session) {
         setAuthSession(session)
         setAuthUser(session.user)
