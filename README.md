@@ -36,6 +36,9 @@ The project follows a microservices architecture orchestrated by Docker Compose:
 2.  **Fraud Scanner (Explainable AI):** Real-time risk scoring (<200ms) with SHAP visualizations and LLM narratives explaining *why* a transaction was blocked.
 3.  **Customer 360 (Network Graph):** Interactive visualization of money flow to spot "Mule Networks" and "Star Schemes."
 4.  **Policy Lab (Rule Sandbox):** A safe environment for backtesting new fraud rules on historical data before deployment.
+5.  **Analyst Copilot (Chatbot):** An LLM-powered assistant to query system status, explain fraud patterns, and draft reports.
+6.  **Advanced Case Management:** Comprehensive investigative tools with checklists, status tracking, and automated SAR (Suspicious Activity Report) generation.
+7.  **Audit Trail & Governance:** Immutable logging of every analyst action and model prediction for regulatory compliance.
 
 ---
 
@@ -65,7 +68,7 @@ This will spin up the entire system (Frontend + API) in containers, simulating a
         ```bash
         cp ml-api/env.template ml-api/.env
         ```
-    *   *Note:* The default templates are pre-configured for local Docker communication. You only need to add your `GROQ_API_KEY` in `ml-api/.env` if you want LLM explanations.
+    *   *Note:* The default templates are pre-configured for local Docker communication. You only need to add your `GROQ_API_KEY` in `ml-api/.env` if you want LLM explanations and Chatbot features.
 
 3.  **Launch the Workstation:**
     From the root directory, run:
@@ -126,9 +129,11 @@ npm run dev
 
 ## 🧪 Training & Retraining
 
-The project includes a **Training Kit** in the `notebook/` directory.
-*   **`frd-dtct_model_train.ipynb`:** This notebook demonstrates the entire pipeline—loading data, feature engineering (Graph + Temporal), training XGBoost, and saving the model.
-*   **Sovereign Retraining:** In a real deployment, bank data scientists would run this notebook on their internal secure servers using private data to produce a fine-tuned `model.pkl`, which is then hot-swapped into the `ml-api` container.
+The project includes a **Training Kit** and a **Model Registry** for full lifecycle management.
+
+*   **Training Notebook:** The `notebook/frd-dtct_model_train.ipynb` demonstrates the entire pipeline—loading data, feature engineering (Graph + Temporal), training XGBoost, and saving the model.
+*   **Model Registry (UI):** Analysts can upload new datasets via the dashboard to trigger background training jobs. The system versions, tracks, and allows hot-swapping of models without downtime.
+*   **Sovereign Retraining:** In a real deployment, bank data scientists would run the training notebook or use the registry on their internal secure servers using private data.
 
 ---
 
