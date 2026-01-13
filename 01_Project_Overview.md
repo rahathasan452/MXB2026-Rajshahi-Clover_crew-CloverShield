@@ -61,6 +61,7 @@ Instead of asking banks to send their data to the cloud, we bring the AI to the 
 1.  **Detect** fraud in real-time using models trained on their private data.
 2.  **Investigate** using interactive network graphs and XAI (Explainable AI).
 3.  **Adapt** by backtesting new fraud rules in a safe "Policy Lab" environment.
+4.  **Govern** with immutable Audit Logs and automated SAR (Suspicious Activity Report) generation for BFIU compliance.
 
 ---
 
@@ -72,11 +73,11 @@ Instead of asking banks to send their data to the cloud, we bring the AI to the 
 
 ### 2. Chief Risk Officers (CROs)
 - **Role:** Executive decision-makers.
-- **Need:** Assurance that data never leaves their servers ("Zero-Trust Deployment") and tools to audit model performance.
+- **Need:** Assurance that data never leaves their servers ("Zero-Trust Deployment") and tools to audit model performance and analyst actions.
 
 ### 3. Compliance Teams
 - **Role:** Regulatory auditors.
-- **Need:** "Glass-box" transparency—knowing exactly why a model flagged a transaction (SHAP values).
+- **Need:** "Glass-box" transparency—knowing exactly why a model flagged a transaction (SHAP values) and a complete audit trail of investigations.
 
 ---
 
