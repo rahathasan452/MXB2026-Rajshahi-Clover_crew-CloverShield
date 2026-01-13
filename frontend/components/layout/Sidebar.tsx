@@ -15,7 +15,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileOpen }) => {
   const pathname = usePathname()
-  const { language, authUser, theme, setTheme } = useAppStore()
+  const { language, authUser } = useAppStore()
 
   // Determine role from auth metadata or default to 'analyst'
   const currentRole: UserRole = (authUser?.app_metadata?.role as UserRole) ||
@@ -112,29 +112,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, setMobileO
 
       {/* User Footer & Theme Toggle */}
       <div className="p-4 border-t border-white/5 bg-[#080b12] space-y-4">
-        {/* Theme Toggle Strip */}
-        <div className="flex items-center justify-between px-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
-            {language === 'bn' ? 'থিম' : 'Interface'}
-          </span>
-          <div className="flex bg-white/5 rounded-lg p-1 border border-white/5">
-            <button
-              onClick={() => setTheme('light')}
-              className={`p-1.5 rounded-md transition-all ${theme === 'light' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-gray-500 hover:text-gray-300'}`}
-              title="Light Mode"
-            >
-              <Icon name="light_mode" size={16} />
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              className={`p-1.5 rounded-md transition-all ${theme === 'dark' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-gray-500 hover:text-gray-300'}`}
-              title="Dark Mode"
-            >
-              <Icon name="dark_mode" size={16} />
-            </button>
-          </div>
-        </div>
-
         {authUser ? (
           <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5 hover:border-white/10 transition-colors group cursor-pointer">
             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-2 ring-[#0A0E17] group-hover:ring-emerald-500/50 transition-all uppercase">

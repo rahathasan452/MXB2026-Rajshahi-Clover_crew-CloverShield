@@ -1,4 +1,3 @@
-add day and night theme change option in user setting bottom left. 
 
 audit pdf export
 
