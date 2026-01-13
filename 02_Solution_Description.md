@@ -47,54 +47,55 @@ CloverShield transforms the role of a fraud analyst from a "spreadsheet reviewer
 - **Immutable Audit Trail:** Every click, view, and decision is logged in Supabase. Who approved this transaction? When? Why?
 - **SAR Generator:** Automatically generates a "Suspicious Activity Report" (SAR) narrative formatted for the Bangladesh Financial Intelligence Unit (BFIU), summarizing the fraud pattern and evidence.
 
+### 8. Model Health Monitor
+**The "AI Pulse Check."**
+- **Drift Detection:** Alerts the team if the live transaction patterns start diverging from the training data (e.g., a sudden spike in high-value transfers).
+- **Performance Metrics:** Tracks real-time accuracy and latency (<200ms) to guarantee SLA compliance.
+
+### 9. Secure QR Data Bridge
+**The "Air-Gap Connector."**
+- **Zero-Network Import:** Allows analysts to transfer investigation evidence (e.g., police reports, external bank statements) from a secure tablet to the air-gapped workstation using QR codes.
+- **Security:** Ensures no USB drives or internet connections are needed, maintaining the strict "Zero-Trust" environment.
+
 ---
 
-## Analyst Workflow: The Investigation Loop
+## Analyst Workflow: The Connected Ecosystem
+
+The power of CloverShield lies in how these modules talk to each other. It's not a set of tools; it's a unified **Investigation Loop**.
 
 ```mermaid
 flowchart TD
-    subgraph "Phase 1: Automated Detection"
-        TX[Live Transaction Stream] --> MODEL[XGBoost Inference]
-        MODEL --> DECISION{Risk Score}
-        DECISION -->|Score < 0.3| PASS[Auto-Approve]
-        DECISION -->|Score > 0.7| BLOCK[Auto-Block]
-        DECISION -->|0.3 < Score < 0.7| QUEUE[Investigative Queue]
+    subgraph "Phase 1: Detection & Ingest"
+        QR[QR Data Bridge] -->|Import External Data| DASH
+        TX[Live Stream] --> MODEL[Fraud Scanner]
+        MODEL -->|Score > 0.7| ALERT[High Risk Alert]
     end
 
-    subgraph "Phase 2: Analyst Investigation"
-        QUEUE --> ASSIGN[Assign to Analyst]
-        ASSIGN --> DASH[Mission Control]
-        DASH --> EXPLAIN[Check XAI Reasons]
-        DASH --> GRAPH[Trace Network Graph]
+    subgraph "Phase 2: Deep Dive Investigation"
+        ALERT --> DASH[Mission Control]
+        DASH --> GRAPH[Network Graph Analysis]
         DASH --> COPILOT[Ask AI Assistant]
-        
-        GRAPH --> VERDICT{Final Verdict}
-        VERDICT -->|False Alarm| RELEASE[Release Transaction]
-        VERDICT -->|Confirmed Fraud| CASE[Create Case File]
+        GRAPH -->|Confirm Ring| CASE[Create Case]
     end
 
-    subgraph "Phase 3: Action & Compliance"
-        CASE --> CHECK[Complete Checklist]
-        CHECK --> SAR[Generate SAR Report]
-        SAR --> BAN[Ban User & Network]
-        BAN --> AUDIT[Log to Audit Trail]
+    subgraph "Phase 3: Resolution & Adaptation"
+        CASE --> SAR[Auto-Generate SAR]
+        CASE --> AUDIT[Log Decision]
+        CASE -->|Feedback Loop| HEALTH[Model Health]
+        HEALTH -->|Drift Detected| TRAIN[Trigger Retraining]
     end
     
-    style PASS fill:#10b981,color:#fff
-    style BLOCK fill:#ef4444,color:#fff
-    style QUEUE fill:#f59e0b,color:#fff
-    style ASSIGN fill:#3b82f6,color:#fff
-    style SAR fill:#8b5cf6,color:#fff
+    style ALERT fill:#ef4444,color:#fff
+    style CASE fill:#3b82f6,color:#fff
+    style TRAIN fill:#f59e0b,color:#fff
 ```
 
-### Step-by-Step Investigation
-
-1.  **Automated Triage:** The XGBoost model acts as the first line of defense.
-2.  **Assignment:** A senior analyst picks a high-priority alert from the queue.
-3.  **Deep Dive:** They consult the **Analyst Copilot** ("Is this typical behavior for this user?") and trace funds on the **Network Graph**.
-4.  **Case Creation:** Fraud is confirmed. A case file is opened, and the **Investigation Checklist** is followed.
-5.  **Reporting:** The **SAR Generator** creates a formal report for the authorities.
-6.  **Closure:** The user is banned, and the entire timeline is saved to the **Audit Trail**.
+### The "Smooth Workflow" in Action
+1.  **Ingest:** Data arrives via live stream or **Secure QR Bridge**.
+2.  **Detect:** The **Fraud Scanner** flags a suspicious cluster.
+3.  **Investigate:** The analyst uses **Customer 360** and **Copilot** to confirm a money laundering ring.
+4.  **Act:** A case is opened, evidence is attached, and a **SAR** is auto-generated.
+5.  **Adapt:** The confirmed fraud feeds into the **Model Health** monitor. If accuracy drops, a **Retraining** job is triggered automatically.
 
 ---
 

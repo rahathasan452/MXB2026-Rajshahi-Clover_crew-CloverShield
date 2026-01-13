@@ -39,6 +39,8 @@ The project follows a microservices architecture orchestrated by Docker Compose:
 5.  **Analyst Copilot (Chatbot):** An LLM-powered assistant to query system status, explain fraud patterns, and draft reports.
 6.  **Advanced Case Management:** Comprehensive investigative tools with checklists, status tracking, and automated SAR (Suspicious Activity Report) generation.
 7.  **Audit Trail & Governance:** Immutable logging of every analyst action and model prediction for regulatory compliance.
+8.  **Model Health Monitor:** Real-time dashboards tracking concept drift, prediction accuracy, and system latency to ensure AI reliability.
+9.  **Secure QR Data Bridge:** An air-gapped data transfer mechanism allowing analysts to securely import external evidence via QR codes without internet connectivity.
 
 ---
 
