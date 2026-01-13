@@ -25,6 +25,16 @@ export const Chatbot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  const getPageContext = (path: string) => {
+    if (path.includes('/dashboard/graph')) return "Network Graph (Customer 360). User is visualizing connections between accounts to find fraud rings."
+    if (path.includes('/dashboard/simulator')) return "Fraud Scanner / Simulator. User is manually testing transactions or viewing the live feed."
+    if (path.includes('/dashboard/cases')) return "Case Management. User is investigating specific cases or generating SARs."
+    if (path.includes('/dashboard/policy')) return "Policy Lab. User is creating or backtesting fraud detection rules."
+    if (path.includes('/dashboard/settings')) return "Settings & Audit Log. User is viewing system logs or configuring the workstation."
+    if (path === '/dashboard') return "Mission Control Dashboard. User is viewing high-level KPIs and pending alerts."
+    return `Unknown page: ${path}`
+  }
+
   useEffect(() => {
     scrollToBottom()
   }, [messages, isLoading, isOpen])
@@ -40,7 +50,8 @@ export const Chatbot = () => {
     try {
       // Pass the last few messages for context
       const contextMessages = [...messages, userMessage].slice(-6) 
-      const response = await chatWithBot(contextMessages, `User is currently on page: ${pathname}`)
+      const pageContext = getPageContext(pathname)
+      const response = await chatWithBot(contextMessages, `User is currently on page: ${pageContext}`)
       
       const botMessage: ChatMessage = { 
         role: 'assistant', 
