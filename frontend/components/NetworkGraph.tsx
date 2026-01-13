@@ -46,7 +46,7 @@ const getNodeColor = (risk: number, type: 'sender' | 'receiver') => {
   return type === 'sender' ? '#60A5FA' : '#F472B6' // Default Blue/Pink
 }
 
-export const NetworkGraph: React.FC<NetworkGraphProps> = ({ 
+export const NetworkGraph: React.FC<NetworkGraphProps> = ({
   height = 400,
   language = 'en',
   latestTransaction,
@@ -62,7 +62,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     setData(currentData => {
       const newNodes = [...currentData.nodes]
       const newLinks = [...currentData.links]
-      
+
       transactions.forEach(tx => {
         const p = tx.fraud_probability || 0
         const senderId = tx.sender_id || (tx as any).nameOrig
@@ -70,42 +70,42 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
         // Link
         const linkExists = newLinks.find(l => {
-            const s = typeof l.source === 'string' ? l.source : (l.source as any).id
-            const t = typeof l.target === 'string' ? l.target : (l.target as any).id
-            return (s === senderId && t === receiverId) || (s === receiverId && t === senderId)
+          const s = typeof l.source === 'string' ? l.source : (l.source as any).id
+          const t = typeof l.target === 'string' ? l.target : (l.target as any).id
+          return (s === senderId && t === receiverId) || (s === receiverId && t === senderId)
         })
 
         if (!linkExists) {
-            newLinks.push({
-                source: senderId,
-                target: receiverId,
-                color: p > 0.7 ? '#EF4444' : p > 0.3 ? '#F59E0B' : '#22D3EE',
-                width: p > 0.7 ? 4 : 2,
-                particles: p > 0.7 ? 4 : 0
-            })
+          newLinks.push({
+            source: senderId,
+            target: receiverId,
+            color: p > 0.7 ? '#EF4444' : p > 0.3 ? '#F59E0B' : '#22D3EE',
+            width: p > 0.7 ? 4 : 2,
+            particles: p > 0.7 ? 4 : 0
+          })
         }
 
         // Nodes
         const updateOrAdd = (id: string, type: 'sender' | 'receiver') => {
-            const idx = newNodes.findIndex(n => n.id === id)
-            if (idx === -1) {
-                newNodes.push({
-                    id,
-                    val: 4 + (p * 2),
-                    color: getNodeColor(p, type),
-                    type,
-                    riskScore: p
-                })
-            } else {
-                const node = newNodes[idx]
-                const newRisk = Math.max(node.riskScore, p)
-                newNodes[idx] = {
-                    ...node,
-                    riskScore: newRisk,
-                    color: getNodeColor(newRisk, type),
-                    val: 4 + (newRisk * 2)
-                }
+          const idx = newNodes.findIndex(n => n.id === id)
+          if (idx === -1) {
+            newNodes.push({
+              id,
+              val: 4 + (p * 2),
+              color: getNodeColor(p, type),
+              type,
+              riskScore: p
+            })
+          } else {
+            const node = newNodes[idx]
+            const newRisk = Math.max(node.riskScore, p)
+            newNodes[idx] = {
+              ...node,
+              riskScore: newRisk,
+              color: getNodeColor(newRisk, type),
+              val: 4 + (newRisk * 2)
             }
+          }
         }
 
         updateOrAdd(senderId, 'sender')
@@ -113,9 +113,9 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       })
 
       // Limit to last 200 nodes/links for performance
-      return { 
-          nodes: newNodes.slice(-200), 
-          links: newLinks.slice(-200) 
+      return {
+        nodes: newNodes.slice(-200),
+        links: newLinks.slice(-200)
       }
     })
   }, [])
@@ -149,17 +149,17 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       // 2. Extract neighbors for 2nd degree
       const neighbors = new Set<string>()
       firstDegree.forEach(tx => {
-          if (tx.sender_id !== selectedNode.id) neighbors.add(tx.sender_id)
-          if (tx.receiver_id !== selectedNode.id) neighbors.add(tx.receiver_id)
+        if (tx.sender_id !== selectedNode.id) neighbors.add(tx.sender_id)
+        if (tx.receiver_id !== selectedNode.id) neighbors.add(tx.receiver_id)
       })
 
       if (neighbors.size > 0) {
-          // Fetch 2nd degree connections for top 5 neighbors (limit depth)
-          const topNeighbors = Array.from(neighbors).slice(0, 5)
-          const secondDegree = await getNetworkConnections(topNeighbors, 20)
-          addTransactionsToGraph(secondDegree)
+        // Fetch 2nd degree connections for top 5 neighbors (limit depth)
+        const topNeighbors = Array.from(neighbors).slice(0, 5)
+        const secondDegree = await getNetworkConnections(topNeighbors, 20)
+        addTransactionsToGraph(secondDegree)
       }
-      
+
       setSelectedNode(null)
     } catch (error) {
       console.error("Expansion failed:", error)
@@ -174,6 +174,14 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       fgRef.current.d3Force('charge').strength(-150)
       // Increase link distance
       fgRef.current.d3Force('link').distance(50)
+
+      // Auto-center the graph when data updates
+      // Delay slightly to allow the force engine to spread nodes first
+      setTimeout(() => {
+        if (fgRef.current) {
+          fgRef.current.zoomToFit(1000, 50)
+        }
+      }, 800)
     }
   }, [data])
 
@@ -181,7 +189,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
     setData({ nodes: [], links: [] })
     // Re-initialize from history
     if (history.length > 0) {
-        addTransactionsToGraph(history)
+      addTransactionsToGraph(history)
     }
   }
 
@@ -198,7 +206,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           </p>
         </div>
 
-        <button 
+        <button
           onClick={handleReset}
           className="pointer-events-auto flex items-center gap-1 bg-slate-900/50 hover:bg-slate-800 backdrop-blur-sm px-3 py-1.5 rounded-md border border-white/5 text-slate-400 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest"
         >
@@ -206,12 +214,12 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
           {language === 'bn' ? 'রিসেট' : 'RESET VIEW'}
         </button>
       </div>
-      
+
       <div className="scanline" />
-      
+
       <ForceGraph2D
         ref={fgRef}
-        width={undefined} 
+        width={undefined}
         height={height}
         graphData={data}
         nodeLabel="id"
@@ -224,7 +232,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
         linkDirectionalParticles="particles"
         linkDirectionalParticleSpeed={0.005}
         linkDirectionalParticleWidth={4}
-        backgroundColor="#00000000" 
+        backgroundColor="#00000000"
         d3AlphaDecay={0.03}
         d3VelocityDecay={0.4}
         warmupTicks={200}
@@ -232,30 +240,30 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       />
 
       {selectedNode && (
-        <div 
+        <div
           className="absolute z-50 bg-slate-900 border border-emerald-500/50 rounded-lg p-2 shadow-xl flex gap-2 animate-fade-in"
-          style={{ 
-            left: '50%', 
-            top: '50%', 
-            transform: 'translate(-50%, -50%)' 
+          style={{
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)'
           }}
         >
           <div className="text-xs text-slate-300 px-2 py-1 font-mono border-r border-slate-800">
             {selectedNode.id}
           </div>
-          <button 
+          <button
             onClick={handleExpand}
             disabled={expanding}
             className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded transition-all disabled:opacity-50"
           >
             {expanding ? (
-                <Icon name="progress_activity" size={12} className="animate-spin" />
+              <Icon name="progress_activity" size={12} className="animate-spin" />
             ) : (
-                <Icon name="add_circle" size={12} />
+              <Icon name="add_circle" size={12} />
             )}
             {expanding ? (language === 'bn' ? 'প্রক্রিয়াকরণ' : 'EXPANDING...') : (language === 'bn' ? 'প্রসারণ' : 'EXPAND')}
           </button>
-          <button 
+          <button
             onClick={() => setSelectedNode(null)}
             className="text-slate-500 hover:text-white transition-colors"
           >
@@ -267,7 +275,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({
       <div className="absolute bottom-4 right-4 z-10">
         <RiskLegend language={language} />
       </div>
-      
+
       {data.nodes.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center text-text-secondary opacity-50">

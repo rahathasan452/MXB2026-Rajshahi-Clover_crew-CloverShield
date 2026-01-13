@@ -4,7 +4,7 @@
  * Supports both Regular Mode and Test Data Mode
  */
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { User } from '@/lib/supabase'
 import { useAppStore } from '@/store/useAppStore'
 import toast from 'react-hot-toast'
@@ -36,7 +36,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 }) => {
   const { transactionForm, setTransactionForm, selectedUser } = useAppStore()
   const [errors, setErrors] = useState<Record<string, string>>({})
-  
+
+  // Refs to prevent search effect from running when selecting an item
+  const ignoreSenderSearchRef = useRef(false)
+  const ignoreReceiverSearchRef = useRef(false)
+
   // Always in Test Data Mode (using dataset)
   const isTestDataMode = true
   const [testSenders, setTestSenders] = useState<string[]>([])
@@ -161,6 +165,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
   // Search senders with debounce
   useEffect(() => {
+    if (ignoreSenderSearchRef.current) {
+      ignoreSenderSearchRef.current = false
+      return
+    }
+
     if (!senderSearch.trim()) {
       setSenderSuggestions([])
       setShowSenderSuggestions(false)
@@ -171,13 +180,13 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       try {
         setLoadingSenderSearch(true)
         const endpoint = `/api/test-dataset/senders?search=${encodeURIComponent(senderSearch)}&limit=10`
-        
+
         const response = await fetch(endpoint)
         if (!response.ok) {
           throw new Error('Failed to search senders')
         }
         const data = await response.json()
-        
+
         setSenderSuggestions((data.senders || []).map((id: string) => ({ id })))
         setShowSenderSuggestions(true)
       } catch (error: any) {
@@ -193,6 +202,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
   // Search receivers with debounce (only when sender is selected)
   useEffect(() => {
+    if (ignoreReceiverSearchRef.current) {
+      ignoreReceiverSearchRef.current = false
+      return
+    }
+
     if (!transactionForm.senderId) {
       setReceiverSuggestions([])
       setShowReceiverSuggestions(false)
@@ -207,15 +221,15 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         // Show at least 10, but more if available
         const limit = receiverSearch.trim() ? 50 : 100 // More results when not searching
         const endpoint = `/api/test-dataset/receivers?senderId=${encodeURIComponent(senderId)}${searchParam}&limit=${limit}`
-        
+
         const response = await fetch(endpoint)
         if (!response.ok) {
           throw new Error('Failed to search receivers')
         }
         const data = await response.json()
-        
+
         setReceiverSuggestions((data.receivers || []).map((id: string) => ({ id })))
-        
+
         // Always show suggestions if there are receivers (automatically show all receivers)
         if (data.receivers?.length > 0) {
           setShowReceiverSuggestions(true)
@@ -354,7 +368,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           transactionForm.type === 'CASH_OUT' || transactionForm.type === 'TRANSFER'
             ? testTransactionDetails.oldBalanceOrig - transactionForm.amount
             : testTransactionDetails.oldBalanceOrig
-        
+
         const newBalanceDest =
           transactionForm.type === 'TRANSFER'
             ? testTransactionDetails.oldBalanceDest + transactionForm.amount
@@ -374,8 +388,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     } catch (error) {
       console.error('Error submitting transaction:', error)
       toast.error(
-        language === 'bn' 
-          ? 'লেনদেন প্রক্রিয়াকরণে ত্রুটি হয়েছে' 
+        language === 'bn'
+          ? 'লেনদেন প্রক্রিয়াকরণে ত্রুটি হয়েছে'
           : 'Error processing transaction'
       )
     } finally {
@@ -440,6 +454,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     key={suggestion.id}
                     type="button"
                     onClick={() => {
+                      ignoreSenderSearchRef.current = true
                       setTransactionForm({ senderId: suggestion.id })
                       setSenderSearch(suggestion.id)
                       setShowSenderSuggestions(false)
@@ -505,22 +520,20 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             <button
               type="button"
               onClick={() => setTransactionForm({ type: 'CASH_OUT' })}
-              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
-                transactionForm.type === 'CASH_OUT'
-                  ? 'bg-primary text-white shadow-lg'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
+              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${transactionForm.type === 'CASH_OUT'
+                ? 'bg-primary text-white shadow-lg'
+                : 'text-text-secondary hover:text-text-primary'
+                }`}
             >
               {language === 'bn' ? 'ক্যাশ আউট' : 'Cash Out'}
             </button>
             <button
               type="button"
               onClick={() => setTransactionForm({ type: 'TRANSFER' })}
-              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
-                transactionForm.type === 'TRANSFER'
-                  ? 'bg-primary text-white shadow-lg'
-                  : 'text-text-secondary hover:text-text-primary'
-              }`}
+              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${transactionForm.type === 'TRANSFER'
+                ? 'bg-primary text-white shadow-lg'
+                : 'text-text-secondary hover:text-text-primary'
+                }`}
             >
               {language === 'bn' ? 'স্থানান্তর' : 'Transfer'}
             </button>
@@ -547,7 +560,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
                 </div>
               )}
-              
+
               {!loadingReceiverSearch && receiverSuggestions.length === 0 && !receiverSearch && (
                 <div className="w-full bg-dark-bg/50 border border-white/10 rounded-xl px-4 py-3 text-text-secondary text-center text-sm">
                   {language === 'bn' ? 'এই প্রেরকের সাথে কোন লেনদেন নেই' : 'No transactions found with this sender'}
@@ -590,6 +603,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                         key={suggestion.id}
                         type="button"
                         onClick={() => {
+                          ignoreReceiverSearchRef.current = true
                           setTransactionForm({ receiverId: suggestion.id })
                           setReceiverSearch(suggestion.id)
                           setShowReceiverSuggestions(false)
@@ -723,8 +737,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           {isSubmitting && (
             <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
           )}
-          {isSubmitting 
-            ? (language === 'bn' ? 'বিশ্লেষণ করা হচ্ছে...' : 'Analyzing...') 
+          {isSubmitting
+            ? (language === 'bn' ? 'বিশ্লেষণ করা হচ্ছে...' : 'Analyzing...')
             : (language === 'bn' ? 'লেনদেন বিশ্লেষণ করুন' : 'Analyze Transaction')
           }
         </button>
