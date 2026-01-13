@@ -116,7 +116,7 @@ interface SARReportProps {
 }
 
 // The PDF Document Definition
-const SARDocument = ({ caseId, transactions, narrative, analystName }: { caseId: string, transactions: any[], narrative: string, analystName: string }) => (
+export const SARDocument = ({ caseId, transactions, narrative, analystName }: { caseId: string, transactions: any[], narrative: string, analystName: string }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>

@@ -25,6 +25,8 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
 import { toast } from 'react-hot-toast'
+import { PDFDownloadLink } from '@react-pdf/renderer'
+import { SARDocument } from '@/components/SARReportGenerator'
 
 export default function CaseDetailPage() {
   const params = useParams()
@@ -254,57 +256,47 @@ export default function CaseDetailPage() {
                 </div>
               </div>
 
-              {/* Force the QR to show and be interactive */}
-              <div className="bg-white p-4 rounded-xl shadow-lg transform scale-110">
-                {/* 
-                    Using a modified version of QRDataBridge implicitly by just rendering it.
-                    Since QRDataBridge has its own toggle logic, we might need to trick it or 
-                    just rely on its default behavior. But here we want it OPEN by default if possible.
-                    However, the component controls its own state. 
-                    Ideally we would pass a prop `defaultOpen` but let's see if we can just wrap it nicely.
-                 */}
-                <QRDataBridge
-                  data={sarData}
-                  label="SAR Payload"
-                  variant="inline"
-                />
-              </div>
-
-              <div className="w-full bg-slate-950 rounded-lg p-4 border border-slate-800">
-                <h4 className="text-xs font-bold text-slate-500 uppercase mb-2">Payload Preview</h4>
-                <pre className="text-[10px] font-mono text-slate-400 overflow-x-auto whitespace-pre-wrap max-h-32">
-                  {JSON.stringify(sarData, null, 2)}
-                </pre>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  const blob = new Blob([JSON.stringify(sarData, null, 2)], { type: 'application/json' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = `SAR_${caseId}.json`
-                  document.body.appendChild(a)
-                  a.click()
-                  document.body.removeChild(a)
-                  URL.revokeObjectURL(url)
-                  toast.success("SAR downloaded as JSON")
-                }}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-semibold text-sm transition-colors border border-slate-700 flex items-center gap-2"
-              >
-                <Icon name="download" size={16} />
-                Download JSON
-              </button>
-              <button
-                onClick={() => setSarData(null)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-              >
-                Done
-              </button>
-            </div>
-          </div>
+                            {/* Force the QR to show and be interactive */}
+                            <div className="bg-white p-4 rounded-xl shadow-lg transform scale-110">
+                               {/* 
+                                  Using a modified version of QRDataBridge implicitly by just rendering it.
+                                  Since QRDataBridge has its own toggle logic, we might need to trick it or 
+                                  just rely on its default behavior. But here we want it OPEN by default if possible.
+                                  However, the component controls its own state. 
+                                  Ideally we would pass a prop `defaultOpen` but let's see if we can just wrap it nicely.
+                               */}
+                               <QRDataBridge 
+                                 data={sarData} 
+                                 label="SAR Payload" 
+                                 variant="inline" 
+                               />
+                            </div>
+                          </div>
+              
+                          <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-end gap-3">
+                            <PDFDownloadLink
+                              document={
+                                <SARDocument 
+                                  caseId={sarData.incident.case_id} 
+                                  transactions={[sarData.incident]} 
+                                  narrative={sarData.narrative} 
+                                  analystName={sarData.analyst.email} 
+                                />
+                              }
+                              fileName={`SAR_${caseId}.pdf`}
+                              className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-semibold text-sm transition-colors border border-slate-700 flex items-center gap-2"
+                            >
+                              {({ blob, url, loading, error }) =>
+                                loading ? 'Preparing PDF...' : <><Icon name="download" size={16} /> Download PDF</>
+                              }
+                            </PDFDownloadLink>
+                            <button 
+                              onClick={() => setSarData(null)}
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+                            >
+                              Done
+                            </button>
+                          </div>          </div>
         </div>
       )}
 

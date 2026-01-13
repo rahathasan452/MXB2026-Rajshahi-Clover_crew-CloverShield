@@ -56,6 +56,7 @@ export interface Transaction {
   note?: string
   analyst_id?: string
   reviewed_at?: string
+  is_simulated?: boolean
 }
 
 // Supabase helper functions
@@ -160,7 +161,7 @@ export const getTransaction = async (transactionId: string): Promise<Transaction
     return null
   }
 
-  return historyData as Transaction // Cast history to Transaction (compatible)
+  return { ...historyData, is_simulated: true } as Transaction
 }
 
 export const getTransactionHistory = async (
@@ -210,6 +211,7 @@ export const updateTransaction = async (
   transactionId: string,
   updates: Partial<Transaction>
 ): Promise<Transaction> => {
+  // Try updating the main transactions table first
   const { data, error } = await supabase
     .from('transactions')
     .update(updates)
@@ -217,7 +219,21 @@ export const updateTransaction = async (
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    // If not found in main table, try transaction_history
+    if (error.code === 'PGRST116') {
+       const { data: histData, error: histError } = await supabase
+        .from('transaction_history')
+        .update(updates)
+        .eq('transaction_id', transactionId)
+        .select()
+        .single()
+      
+      if (histError) throw histError
+      return { ...histData, is_simulated: true }
+    }
+    throw error
+  }
   return data
 }
 
@@ -229,9 +245,36 @@ export const createAnalystAction = async (action: {
   analyst_id: string
   analyst_name?: string
 }) => {
+  // Clone action to avoid mutating original
+  const finalAction = { ...action }
+
+  // Handle Simulated Users (FK Violation Prevention)
+  if (finalAction.user_id) {
+    const u = await getUser(finalAction.user_id)
+    if (u && u.is_from_test_dataset) {
+      finalAction.action_data = { 
+        ...finalAction.action_data, 
+        simulated_user_id: finalAction.user_id 
+      }
+      finalAction.user_id = undefined // Remove FK
+    }
+  }
+
+  // Handle Simulated Transactions (FK Violation Prevention)
+  if (finalAction.transaction_id) {
+    const tx = await getTransaction(finalAction.transaction_id)
+    if (tx && tx.is_simulated) {
+      finalAction.action_data = { 
+        ...finalAction.action_data, 
+        simulated_transaction_id: finalAction.transaction_id 
+      }
+      finalAction.transaction_id = undefined // Remove FK
+    }
+  }
+
   const { data, error } = await supabase
     .from('analyst_actions')
-    .insert(action)
+    .insert(finalAction)
     .select()
     .single()
 
@@ -244,6 +287,19 @@ export const flagAccount = async (
   reason: string,
   flaggedBy: string
 ) => {
+  // Check if user is simulated
+  const user = await getUser(userId)
+  if (user && user.is_from_test_dataset) {
+    console.warn(`Skipping DB flag for simulated user: ${userId}`)
+    // Return a mock success response
+    return {
+      flag_id: 'simulated-' + Date.now(),
+      user_id: userId,
+      flag_reason: reason,
+      status: 'simulated'
+    }
+  }
+
   const { data, error } = await supabase
     .from('flagged_accounts')
     .insert({
