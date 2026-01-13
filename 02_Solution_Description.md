@@ -30,6 +30,23 @@ CloverShield transforms the role of a fraud analyst from a "spreadsheet reviewer
 - **Impact Analysis:** Instantly see: "This rule would have caught 500 frauds but blocked 20 legitimate users (False Positives)."
 - **Safe Deployment:** Move from "Guesswork" to "Data-Driven Policy."
 
+### 5. Advanced Case Management
+**The "Digital Dossier" for Investigators.**
+- **Investigation Checklists:** Standardized SOPs (e.g., "Verify KYC", "Call Customer") ensure no step is missed during a review.
+- **Status Tracking:** Track cases from "Open" to "Under Review" to "Closed" with assigned owners.
+- **Quick Actions:** One-click Freeze/Unfreeze accounts directly from the case file.
+
+### 6. The Analyst Copilot (AI Chatbot)
+**The "24/7 Expert Assistant."**
+- **Natural Language Queries:** "Show me all high-risk transfers from the last hour" or "Explain the Smurfing pattern."
+- **Context-Aware Help:** The bot understands the current screen (e.g., viewing a specific user) and offers relevant insights.
+- **Automated Drafting:** Asks the analyst for key details and drafts a formal investigation report in seconds.
+
+### 7. Compliance & Governance
+**The "Regulatory Shield."**
+- **Immutable Audit Trail:** Every click, view, and decision is logged in Supabase. Who approved this transaction? When? Why?
+- **SAR Generator:** Automatically generates a "Suspicious Activity Report" (SAR) narrative formatted for the Bangladesh Financial Intelligence Unit (BFIU), summarizing the fraud pattern and evidence.
+
 ---
 
 ## Analyst Workflow: The Investigation Loop
@@ -45,35 +62,39 @@ flowchart TD
     end
 
     subgraph "Phase 2: Analyst Investigation"
-        QUEUE --> ANALYST[Human Analyst]
-        ANALYST --> DASH[Mission Control]
+        QUEUE --> ASSIGN[Assign to Analyst]
+        ASSIGN --> DASH[Mission Control]
         DASH --> EXPLAIN[Check XAI Reasons]
         DASH --> GRAPH[Trace Network Graph]
+        DASH --> COPILOT[Ask AI Assistant]
         
         GRAPH --> VERDICT{Final Verdict}
         VERDICT -->|False Alarm| RELEASE[Release Transaction]
-        VERDICT -->|Confirmed Fraud| BAN[Ban User & Network]
+        VERDICT -->|Confirmed Fraud| CASE[Create Case File]
     end
 
-    subgraph "Phase 3: Policy Adaptation"
-        BAN --> LAB[Policy Lab]
-        LAB --> TEST[Backtest New Rule]
-        TEST --> DEPLOY[Update Model/Rules]
+    subgraph "Phase 3: Action & Compliance"
+        CASE --> CHECK[Complete Checklist]
+        CHECK --> SAR[Generate SAR Report]
+        SAR --> BAN[Ban User & Network]
+        BAN --> AUDIT[Log to Audit Trail]
     end
     
     style PASS fill:#10b981,color:#fff
     style BLOCK fill:#ef4444,color:#fff
     style QUEUE fill:#f59e0b,color:#fff
-    style ANALYST fill:#3b82f6,color:#fff
+    style ASSIGN fill:#3b82f6,color:#fff
+    style SAR fill:#8b5cf6,color:#fff
 ```
 
 ### Step-by-Step Investigation
 
-1.  **Automated Triage:** The XGBoost model acts as the first line of defense, auto-blocking obvious fraud and auto-approving safe traffic. The "Gray Zone" (medium risk) is sent to the **Investigative Queue**.
-2.  **Deep Dive:** The analyst opens a case. They see the **SHAP** score (e.g., "High velocity").
-3.  **Network Tracing:** They click the user profile to open the **Network Graph**. They notice the money is immediately flowing to a known high-risk node.
-4.  **Action:** The analyst confirms fraud.
-5.  **Adaptation:** The analyst goes to the **Policy Lab** to test a rule that would catch similar patterns automatically next time.
+1.  **Automated Triage:** The XGBoost model acts as the first line of defense.
+2.  **Assignment:** A senior analyst picks a high-priority alert from the queue.
+3.  **Deep Dive:** They consult the **Analyst Copilot** ("Is this typical behavior for this user?") and trace funds on the **Network Graph**.
+4.  **Case Creation:** Fraud is confirmed. A case file is opened, and the **Investigation Checklist** is followed.
+5.  **Reporting:** The **SAR Generator** creates a formal report for the authorities.
+6.  **Closure:** The user is banned, and the entire timeline is saved to the **Audit Trail**.
 
 ---
 
