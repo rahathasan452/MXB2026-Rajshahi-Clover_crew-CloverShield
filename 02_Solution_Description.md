@@ -12,11 +12,11 @@ CloverShield transforms the role of a fraud analyst from a "spreadsheet reviewer
 - **Investigative Queue:** Uses real-time scoring to prioritize high-risk cases. Analysts stop fishing for fraud and start investigating the top 1% of threats.
 - **Language Switcher:** Instantly toggles the entire interface and AI explanations between English and Bengali, empowering local analysts.
 
-### 2. The Fraud Scanner (Real-Time XAI)
+### 2. The Fraud Scanner (Hybrid Detection Engine)
 **The "Engine Room" of Detection.**
-- **Sub-200ms Inference:** Powered by an optimized XGBoost model (trained on temporal splits to handle drift).
-- **Explainable AI (XAI):** We don't just say "Block." We use **SHAP (SHapley Additive exPlanations)** to visualize exactly *why*—e.g., "This transaction is 500% higher than the user's median."
-- **LLM Synthesis:** A local LLM translates these technical math weights into a plain-English (or Bangla) narrative for the analyst.
+- **Hybrid Logic:** Combines the predictive power of **XGBoost** (Black Box) with deterministic **SQL Rules** (White Box). We don't rely solely on AI; if a transaction hits a hard rule (e.g., "Ban all transfers > 1 Lakh at 3 AM"), it is blocked immediately, regardless of the model score.
+- **Sub-200ms Inference:** Optimized for high-speed performance.
+- **Explainable AI (XAI):** We don't just say "Block." We use **SHAP** to visualize exactly *why*.
 
 ### 3. Customer 360 (Network Graph)
 **The "Syndicate Hunter."**
@@ -24,17 +24,18 @@ CloverShield transforms the role of a fraud analyst from a "spreadsheet reviewer
 - **Star Detection:** Instantly spots "mule accounts" (one central node receiving funds from many victims) or "layering" schemes.
 - **Graph Neural Features:** Calculates `PageRank` and `Centrality` scores in real-time to detect reputable vs. suspicious nodes.
 
-### 4. The Policy Lab (Rule Sandbox)
+### 4. The Policy Lab (Rule Sandbox & Deployer)
 **The "Safe Zone" for Strategy.**
-- **Backtesting Engine:** Analysts can write new logic (e.g., `amount > 50000 AND hour == 3 AM`) and test it against historical data *before* deployment.
-- **Impact Analysis:** Instantly see: "This rule would have caught 500 frauds but blocked 20 legitimate users (False Positives)."
+- **Backtesting Engine:** Analysts can write new logic and test it against historical data *before* deployment.
+- **Active Deployment:** Once a rule is verified, it is pushed to the **Fraud Scanner** as a live filter. This allows analysts to instantly stop new fraud vectors (Zero-Day attacks) without retraining the entire AI model.
 - **Safe Deployment:** Move from "Guesswork" to "Data-Driven Policy."
 
 ### 5. Advanced Case Management
 **The "Digital Dossier" for Investigators.**
 - **Investigation Checklists:** Standardized SOPs (e.g., "Verify KYC", "Call Customer") ensure no step is missed during a review.
 - **Status Tracking:** Track cases from "Open" to "Under Review" to "Closed" with assigned owners.
-- **Quick Actions:** One-click Freeze/Unfreeze accounts directly from the case file.
+- **Quick Actions:** One-click **Freeze/Unfreeze** accounts directly from the case file.
+- **Connected Workflow:** Seamlessly jump from an alert to the Graph, then to a Case, and finally to the Policy Lab to patch the vulnerability.
 
 ### 6. The Analyst Copilot (AI Chatbot)
 **The "24/7 Expert Assistant."**
@@ -43,8 +44,8 @@ CloverShield transforms the role of a fraud analyst from a "spreadsheet reviewer
 - **Automated Drafting:** Asks the analyst for key details and drafts a formal investigation report in seconds.
 
 ### 7. Compliance & Governance
-**The "Regulatory Shield."**
-- **Immutable Audit Trail:** Every click, view, and decision is logged in Supabase. Who approved this transaction? When? Why?
+**The "Regulatory Shield" & "Analyst Watchdog".**
+- **Immutable Audit Trail:** Every click, view, export, and decision is logged in Supabase. This monitors the analysts themselves, preventing internal collusion or data theft.
 - **SAR Generator:** Automatically generates a "Suspicious Activity Report" (SAR) narrative formatted for the Bangladesh Financial Intelligence Unit (BFIU), summarizing the fraud pattern and evidence.
 
 ### 8. Model Health Monitor
