@@ -1,7 +1,7 @@
 # Implementation Plan - Landing Page Redesign
 
 ## Phase 1: Redesign & Content Update
-- [x] Task: Rewrite `frontend/app/page.tsx` 8ab49c0
+- [x] Task: Rewrite `frontend/app/page.tsx` b7d4cd5
     - [ ] Sub-task: Implement new Hero section with "Command Center" vibe.
     - [ ] Sub-task: Create "Digital Immune System" feature grid (6 items).
     - [ ] Sub-task: Add "Technical Deep Dive" section (Zero Trust/Docker).
