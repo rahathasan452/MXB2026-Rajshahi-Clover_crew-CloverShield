@@ -37,7 +37,7 @@ export default function CaseDetailPage() {
   const [targetTx, setTargetTx] = useState<Transaction | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
-  
+
   // State for SAR QR Modal
   const [sarData, setSarData] = useState<any | null>(null)
 
@@ -158,9 +158,9 @@ export default function CaseDetailPage() {
             },
             subject: {
               user_id: targetUser?.user_id || 'Unknown',
-              name: targetUser?.name || 'Unknown',
+              name: targetUser?.name_en || 'Unknown',
               phone: targetUser?.phone || 'Unknown',
-              risk_score: targetUser?.risk_score || 0
+              risk_score: 0, // User type does not have risk_score
             },
             incident: {
               case_id: caseData.case_id,
@@ -172,7 +172,7 @@ export default function CaseDetailPage() {
             },
             narrative: `Suspicious activity detected in transaction ${targetTx?.transaction_id}. Fraud score: ${((targetTx?.fraud_probability || 0) * 100).toFixed(1)}%. Initiating detailed review.`
           }
-          
+
           setSarData(payload)
           toast.success("SAR generated. Ready for secure transfer.")
 
@@ -238,36 +238,36 @@ export default function CaseDetailPage() {
                 <Icon name="verified_user" className="text-emerald-400" />
                 SAR Generated
               </h3>
-              <button 
+              <button
                 onClick={() => setSarData(null)}
                 className="text-slate-400 hover:text-white transition-colors"
               >
                 <Icon name="close" size={24} />
               </button>
             </div>
-            
+
             <div className="p-8 flex flex-col items-center gap-6">
               <div className="text-center space-y-2">
                 <p className="text-slate-300">Scan this QR code with your secure terminal to transfer the Suspicious Activity Report.</p>
                 <div className="inline-block bg-emerald-500/10 text-emerald-400 text-xs font-mono px-2 py-1 rounded">
-                  CASE-{caseId.slice(0,8).toUpperCase()}
+                  CASE-{caseId.slice(0, 8).toUpperCase()}
                 </div>
               </div>
 
               {/* Force the QR to show and be interactive */}
               <div className="bg-white p-4 rounded-xl shadow-lg transform scale-110">
-                 {/* 
+                {/* 
                     Using a modified version of QRDataBridge implicitly by just rendering it.
                     Since QRDataBridge has its own toggle logic, we might need to trick it or 
                     just rely on its default behavior. But here we want it OPEN by default if possible.
                     However, the component controls its own state. 
                     Ideally we would pass a prop `defaultOpen` but let's see if we can just wrap it nicely.
                  */}
-                 <QRDataBridge 
-                   data={sarData} 
-                   label="SAR Payload" 
-                   variant="inline" 
-                 />
+                <QRDataBridge
+                  data={sarData}
+                  label="SAR Payload"
+                  variant="inline"
+                />
               </div>
 
               <div className="w-full bg-slate-950 rounded-lg p-4 border border-slate-800">
@@ -297,7 +297,7 @@ export default function CaseDetailPage() {
                 <Icon name="download" size={16} />
                 Download JSON
               </button>
-              <button 
+              <button
                 onClick={() => setSarData(null)}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
               >
@@ -336,8 +336,8 @@ export default function CaseDetailPage() {
         <div className="flex gap-2 items-center">
           {/* Navigation Tools */}
           {caseData.user_id && (
-            <Link 
-              href={`/dashboard/profile/${caseData.user_id}`} 
+            <Link
+              href={`/dashboard/profile/${caseData.user_id}`}
               className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm"
             >
               <Icon name="hub" size={18} />
@@ -345,8 +345,8 @@ export default function CaseDetailPage() {
             </Link>
           )}
           {caseData.transaction_id && (
-            <Link 
-              href={`/dashboard/simulator?txn=${caseData.transaction_id}`} 
+            <Link
+              href={`/dashboard/simulator?txn=${caseData.transaction_id}`}
               className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm"
             >
               <Icon name="radar" size={18} />
