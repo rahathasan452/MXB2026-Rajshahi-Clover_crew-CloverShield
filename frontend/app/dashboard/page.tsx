@@ -118,7 +118,7 @@ export default function DashboardLanding() {
       color: 'text-yellow-400'
     },
     {
-      title: language === 'bn' ? 'পলিসি' : 'Policy',
+      title: language === 'bn' ? 'পলিসি' : 'Policy Lab',
       desc: language === 'bn' ? 'নিয়ম পরীক্ষা' : 'Rule Sandbox',
       link: '/dashboard/sandbox',
       icon: 'science',

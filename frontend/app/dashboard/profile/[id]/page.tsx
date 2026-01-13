@@ -29,8 +29,15 @@ export default function ProfilePage() {
   const [history, setHistory] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reportId, setReportId] = useState<string>('')
 
   const userId = params.id as string
+
+  useEffect(() => {
+    if (userId && userId !== 'search') {
+      setReportId(`CASE-${userId}-${Date.now().toString().slice(-4)}`)
+    }
+  }, [userId])
 
   useEffect(() => {
     if (!userId || userId === 'search') {
@@ -343,7 +350,7 @@ export default function ProfilePage() {
           </h2>
           <div className="bg-card-bg border border-white/10 rounded-xl p-6 h-full">
             <SARReportGenerator
-              caseId={`CASE-${userId}-${Date.now().toString().slice(-4)}`}
+              caseId={reportId}
               transactions={history}
               analystName="System Administrator"
               analystNotes={`Investigating high-risk activity for user ${userId}.`}

@@ -33,7 +33,7 @@ export const QRDataBridge: React.FC<QRDataBridgeProps> = ({ data, label = "Secur
         risk: data.risk_level || data.riskScore,
         type: data.type || data.transaction_type,
         amt: data.amount,
-        ts: data.timestamp || new Date().toISOString()
+        ts: data.timestamp || "N/A"
       })
     }
     
