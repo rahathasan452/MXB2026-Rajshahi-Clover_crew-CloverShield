@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Icon } from './Icon'
 import { format } from 'date-fns'
+import { QRDataBridge } from './QRDataBridge'
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 
 interface AuditLog {
   id: string
@@ -15,6 +17,46 @@ interface AuditLog {
   resource_id?: string
   metadata?: any
 }
+
+const styles = StyleSheet.create({
+  page: { flexDirection: 'column', padding: 20, backgroundColor: '#FFFFFF', fontFamily: 'Helvetica' },
+  header: { marginBottom: 20, borderBottomWidth: 1, paddingBottom: 10, borderColor: '#10B981' },
+  title: { fontSize: 20, fontWeight: 'bold', color: '#064E3B' },
+  subtitle: { fontSize: 10, color: 'gray' },
+  table: { display: 'flex', width: 'auto', borderStyle: 'solid', borderWidth: 1, borderColor: '#bfbfbf', marginTop: 10 },
+  tableRow: { margin: 'auto', flexDirection: 'row', borderBottomWidth: 1, borderColor: '#bfbfbf' },
+  tableCol: { width: '15%', borderRightWidth: 1, borderColor: '#bfbfbf', padding: 4 },
+  tableColLarge: { width: '40%', borderRightWidth: 1, borderColor: '#bfbfbf', padding: 4 },
+  tableCell: { margin: 'auto', fontSize: 8, textAlign: 'left' },
+  tableHeader: { fontWeight: 'bold', backgroundColor: '#f0f0f0' }
+});
+
+const AuditLogDocument = ({ logs }: { logs: AuditLog[] }) => (
+  <Document>
+    <Page size="A4" style={styles.page}>
+      <View style={styles.header}>
+        <Text style={styles.title}>CloverShield Audit Log</Text>
+        <Text style={styles.subtitle}>Generated: {new Date().toLocaleString()} | Total Records: {logs.length}</Text>
+      </View>
+      <View style={styles.table}>
+        <View style={[styles.tableRow, styles.tableHeader]}>
+          <View style={styles.tableCol}><Text style={styles.tableCell}>Time</Text></View>
+          <View style={styles.tableCol}><Text style={styles.tableCell}>Action</Text></View>
+          <View style={styles.tableCol}><Text style={styles.tableCell}>User</Text></View>
+          <View style={styles.tableColLarge}><Text style={styles.tableCell}>Message</Text></View>
+        </View>
+        {logs.slice(0, 100).map((log, i) => (
+          <View key={i} style={styles.tableRow}>
+             <View style={styles.tableCol}><Text style={styles.tableCell}>{format(new Date(log.created_at), 'MM/dd HH:mm:ss')}</Text></View>
+             <View style={styles.tableCol}><Text style={styles.tableCell}>{log.action_type}</Text></View>
+             <View style={styles.tableCol}><Text style={styles.tableCell}>{log.user_email || 'SYSTEM'}</Text></View>
+             <View style={styles.tableColLarge}><Text style={styles.tableCell}>{log.human_readable_message}</Text></View>
+          </View>
+        ))}
+      </View>
+    </Page>
+  </Document>
+);
 
 export const AuditLogTable: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([])
@@ -120,6 +162,25 @@ export const AuditLogTable: React.FC = () => {
       </div>
 
       <div className="overflow-x-auto min-h-[400px]">
+        
+        {/* Actions Bar */}
+        <div className="mb-4 flex flex-col sm:flex-row gap-4 justify-end">
+          <QRDataBridge 
+            data={filteredLogs.slice(0, 20).map(l => ({ id: l.id, action: l.action_type, msg: l.human_readable_message }))} 
+            label="Sync Recent Logs" 
+          />
+          
+          <PDFDownloadLink
+            document={<AuditLogDocument logs={filteredLogs} />}
+            fileName={`audit_log_${new Date().toISOString().split('T')[0]}.pdf`}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition-colors text-sm font-medium h-[52px]" // Height matching QR bridge default approx
+          >
+            {({ blob, url, loading, error }) =>
+              loading ? 'Preparing PDF...' : <><Icon name="download" /> Export PDF</>
+            }
+          </PDFDownloadLink>
+        </div>
+
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-700 text-slate-400 text-xs uppercase tracking-widest font-bold">

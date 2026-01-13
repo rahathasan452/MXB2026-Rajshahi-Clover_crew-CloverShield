@@ -17,13 +17,30 @@ export const QRDataBridge: React.FC<QRDataBridgeProps> = ({ data, label = "Secur
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Compress data to essential fields for static mode
-  const staticData = JSON.stringify({
-    id: data.caseId || data.transaction_id,
-    risk: data.risk_level || data.riskScore,
-    type: data.type || data.transaction_type,
-    amt: data.amount,
-    ts: data.timestamp || new Date().toISOString()
-  })
+  const staticData = React.useMemo(() => {
+    if (Array.isArray(data)) {
+      return JSON.stringify({ 
+        type: 'batch_transfer', 
+        count: data.length, 
+        sample_id: data[0]?.id || data[0]?.transaction_id 
+      })
+    }
+    
+    // Check if it's a transaction-like object
+    if (data.caseId || data.transaction_id || data.amount) {
+      return JSON.stringify({
+        id: data.caseId || data.transaction_id,
+        risk: data.risk_level || data.riskScore,
+        type: data.type || data.transaction_type,
+        amt: data.amount,
+        ts: data.timestamp || new Date().toISOString()
+      })
+    }
+    
+    // Fallback for generic data
+    const str = JSON.stringify(data)
+    return str.length > 500 ? str.substring(0, 500) + '...' : str
+  }, [data])
 
   // Prepare frames when data changes or mode switches
   useEffect(() => {
@@ -128,7 +145,7 @@ export const QRDataBridge: React.FC<QRDataBridgeProps> = ({ data, label = "Secur
           )}
 
           <div className="mt-2 text-[10px] text-gray-500 text-center break-all w-full max-w-[250px]">
-            {mode === 'static' ? `MD5: ${data.caseId?.substring(0, 8)}...` : 'Transferring Full Payload...'}
+            {mode === 'static' ? `Preview: ${staticData.substring(0, 20)}...` : 'Transferring Full Payload...'}
           </div>
         </div>
       )}

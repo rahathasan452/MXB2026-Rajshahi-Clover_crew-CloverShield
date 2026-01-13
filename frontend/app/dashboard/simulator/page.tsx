@@ -23,6 +23,8 @@ import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
 import { DecisionZone } from '@/components/DecisionZone'
 import { RiskDrivers } from '@/components/RiskDrivers'
 import { LLMExplanationBox } from '@/components/LLMExplanationBox'
+import { SARReportGenerator } from '@/components/SARReportGenerator'
+import { QRDataBridge } from '@/components/QRDataBridge'
 import { Icon } from '@/components/Icon'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -50,6 +52,7 @@ function SimulatorContent() {
 
   const [receiver, setReceiver] = useState<any>(null)
   const [showRiskDrivers, setShowRiskDrivers] = useState(false)
+  const [lastTransaction, setLastTransaction] = useState<any>(null)
 
   // Handle Transaction Submission
   const handleTransactionSubmit = async (data: any) => {
@@ -162,6 +165,8 @@ function SimulatorContent() {
         decision: prediction.prediction.decision,
         riskLevel: prediction.prediction.risk_level,
       })
+
+      setLastTransaction(transaction)
 
       incrementTransactions()
       if (prediction.prediction.decision === 'block') incrementFraudDetected(data.amount)
@@ -304,6 +309,22 @@ function SimulatorContent() {
                         </button>
                       </div>
                       {showRiskDrivers && <RiskDrivers shapExplanations={currentPrediction.shap_explanations} language={language} hideTitle={true} />}
+                    </div>
+                  )}
+
+                  {lastTransaction && (
+                    <div className="bg-card-bg rounded-xl p-6 border border-white/10 space-y-4">
+                      <h3 className="text-xl font-bold text-text-primary border-b border-white/10 pb-2">
+                        {language === 'bn' ? 'অ্যাকশন এবং রিপোর্ট' : 'Actions & Reporting'}
+                      </h3>
+                      <SARReportGenerator 
+                        caseId={lastTransaction.transaction_id || 'SIM-000'}
+                        transactions={[lastTransaction]}
+                        analystName={authUser?.email || 'Analyst'} 
+                      />
+                      <div className="pt-2">
+                        <QRDataBridge data={lastTransaction} label="Transaction Handoff" />
+                      </div>
                     </div>
                   )}
                 </>
