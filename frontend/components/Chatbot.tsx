@@ -16,6 +16,11 @@ export const Chatbot = () => {
 
   const toggleChat = () => setIsOpen(!isOpen)
 
+  const handleReset = () => {
+    setMessages([])
+    setInputValue('')
+  }
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -77,9 +82,18 @@ export const Chatbot = () => {
               </div>
               <h3 className="font-semibold text-text-primary">CloverShield AI</h3>
             </div>
-            <button onClick={toggleChat} className="text-text-secondary hover:text-white transition-colors">
-              <Icon name="close" size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleReset}
+                className="text-text-secondary hover:text-white transition-colors"
+                title="Reset Chat"
+              >
+                <Icon name="refresh" size={20} />
+              </button>
+              <button onClick={toggleChat} className="text-text-secondary hover:text-white transition-colors">
+                <Icon name="close" size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Messages Area */}
