@@ -95,6 +95,17 @@ The system transforms raw transaction logs into 15 "Sovereign Features" without 
 - **Audit Logging:** Every API call and analyst action is logged to a secure Supabase table.
 - **Internal Anomaly Detection:** A background worker scans audit logs for suspicious internal behavior (e.g., an analyst bulk-exporting customer data) and flags it to the CRO.
 
+### 6. The Air-Gapped Data Bridge (QR)
+- **Challenge:** Importing external evidence (police reports, bank statements) into a machine that has *no internet*.
+- **Solution:** A unidirectional "QR Bridge."
+- **Mechanism:** The external file is base64 encoded into a sequence of QR codes on a secure tablet. The workstation's webcam scans the stream, decodes it back into a file, and attaches it to the case—all without a network handshake.
+
+### 7. Model Health Monitoring
+- **Real-Time Metrics:**
+    -   **Drift:** Kullback-Leibler (KL) divergence between training data distribution and live traffic.
+    -   **Latency:** p99 inference time (target < 200ms).
+-   **Feedback Loop:** If drift exceeds a threshold (e.g., 0.1), the system alerts the data scientist to inspect the "Retraining Queue."
+
 ---
 
 ## The Explainability Stack (XAI)
