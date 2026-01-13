@@ -17,8 +17,12 @@
 ## Key Features
 
 -   **Mission Control Dashboard:** A localized "Security HUD" built with Next.js 14, prioritizing high-risk transactions and offering full bilingual (English/Bangla) support.
--   **Fraud Scanner:** Real-time risk scoring engine leveraging XGBoost, providing immediate feedback on transaction legitimacy.
+-   **Fraud Scanner:** A Hybrid Detection Engine combining real-time XGBoost risk scoring with active SQL rules, providing immediate feedback on transaction legitimacy.
 -   **Customer 360 Network Graph:** Advanced visualization tool with on-demand expansion (up to 2nd degree) and risk-based node coloring for tracing complex fraud rings.
--   **Policy Lab:** A sandbox environment for backtesting new fraud detection rules against historical data, allowing for safe iteration and improvement of security policies.
+-   **Policy Lab:** A sandbox environment for backtesting and deploying new fraud detection rules, allowing analysts to instantly block new vectors without model retraining.
+-   **Analyst Copilot:** An LLM-powered chatbot assistant that provides context-aware insights, explains fraud patterns, and drafts reports.
 -   **Audit Trail:** A comprehensive, immutable record of system activities, ML predictions, and analyst decisions, ensuring regulatory compliance and "Sovereign Defense" integrity.
--   **Case Management Station:** A dedicated workflow for deep-dive investigations, featuring a persistent investigation checklist, quick-action toolkit (Freeze/Block/SAR), and collaborative case tracking.
+-   **Case Management Station:** A dedicated workflow for deep-dive investigations, featuring persistent checklists, automated SAR generation for BFIU reporting, and collaborative tracking.
+-   **Model Registry:** A code-free interface for uploading datasets, retraining models, and hot-swapping versions, democratizing AI maintenance for non-technical teams.
+-   **Model Health Monitor:** Real-time tracking of concept drift and system latency to ensure continued reliability.
+-   **Secure QR Data Bridge:** An air-gapped mechanism for importing external evidence via QR codes, maintaining the zero-trust environment.

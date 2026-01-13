@@ -256,47 +256,47 @@ export default function CaseDetailPage() {
                 </div>
               </div>
 
-                            {/* Force the QR to show and be interactive */}
-                            <div className="bg-white p-4 rounded-xl shadow-lg transform scale-110">
-                               {/* 
+              {/* Force the QR to show and be interactive */}
+              <div className="bg-white p-4 rounded-xl shadow-lg transform scale-110">
+                {/* 
                                   Using a modified version of QRDataBridge implicitly by just rendering it.
                                   Since QRDataBridge has its own toggle logic, we might need to trick it or 
                                   just rely on its default behavior. But here we want it OPEN by default if possible.
                                   However, the component controls its own state. 
                                   Ideally we would pass a prop `defaultOpen` but let's see if we can just wrap it nicely.
                                */}
-                               <QRDataBridge 
-                                 data={sarData} 
-                                 label="SAR Payload" 
-                                 variant="inline" 
-                               />
-                            </div>
-                          </div>
-              
-                          <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-end gap-3">
-                            <PDFDownloadLink
-                              document={
-                                <SARDocument 
-                                  caseId={sarData.incident.case_id} 
-                                  transactions={[sarData.incident]} 
-                                  narrative={sarData.narrative} 
-                                  analystName={sarData.analyst.email} 
-                                />
-                              }
-                              fileName={`SAR_${caseId}.pdf`}
-                              className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-semibold text-sm transition-colors border border-slate-700 flex items-center gap-2"
-                            >
-                              {({ blob, url, loading, error }) =>
-                                loading ? 'Preparing PDF...' : <><Icon name="download" size={16} /> Download PDF</>
-                              }
-                            </PDFDownloadLink>
-                            <button 
-                              onClick={() => setSarData(null)}
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-                            >
-                              Done
-                            </button>
-                          </div>          </div>
+                <QRDataBridge
+                  data={sarData}
+                  label="SAR Payload"
+                  variant="inline"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-end gap-3">
+              <PDFDownloadLink
+                document={
+                  <SARDocument
+                    caseId={sarData.incident.case_id}
+                    transactions={[sarData.incident]}
+                    narrative={sarData.narrative}
+                    analystName={sarData.analyst.email}
+                  />
+                }
+                fileName={`SAR_${caseId}.pdf`}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-semibold text-sm transition-colors border border-slate-700 flex items-center gap-2"
+              >
+                {({ blob, url, loading, error }) =>
+                  loading ? 'Preparing PDF...' : <><Icon name="download" size={16} /> Download PDF</>
+                }
+              </PDFDownloadLink>
+              <button
+                onClick={() => setSarData(null)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+              >
+                Done
+              </button>
+            </div>          </div>
         </div>
       )}
 
@@ -318,9 +318,7 @@ export default function CaseDetailPage() {
             <span className="flex items-center gap-1">
               <Icon name="schedule" size={14} /> Created {format(new Date(caseData.created_at), 'MMM d, yyyy HH:mm')}
             </span>
-            <span className="flex items-center gap-1">
-              <Icon name="person" size={14} /> Analyst: <span className="text-emerald-400">{caseData.analyst_id || 'Unassigned'}</span>
-            </span>
+
             <CasePriorityBadge priority={caseData.priority} />
           </div>
         </div>

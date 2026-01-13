@@ -1,0 +1,8 @@
+{
+  "track_id": "documentation_update_20260114",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-01-14T00:00:00Z",
+  "updated_at": "2026-01-14T00:00:00Z",
+  "description": "Rewrite documentation (README and 01-05.md) to reflect new features like Analyst Chatbot, Audit Logging, and Case Management."
+}

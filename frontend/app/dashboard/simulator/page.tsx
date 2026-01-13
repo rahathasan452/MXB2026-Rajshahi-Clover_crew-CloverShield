@@ -52,7 +52,8 @@ function SimulatorContent() {
     authUser,
     activePolicy,
     isPolicyDetectionEnabled,
-    togglePolicyDetection
+    togglePolicyDetection,
+    isAuthInitialized
   } = useAppStore()
 
   const [receiver, setReceiver] = useState<any>(null)
@@ -219,52 +220,37 @@ function SimulatorContent() {
     const autoRun = searchParams.get('autoRun')
 
     const runFromTxnId = async (tid: string) => {
-       try {
-         // Dynamically import getTransaction to avoid circular dependency issues if any,
-         // or just use the imported one if safe. Since we are in client component, 
-         // we might need to rely on the API or the supabase lib function.
-         // Let's use the one from lib/supabase we already imported? No, we didn't import getTransaction yet.
-         // So we need to add it to imports.
-         // Wait, we need to add getTransaction to imports first.
-         
-         // Assuming getTransaction is available or we fetch via API.
-         // Since we have direct supabase access in lib, let's try to use the imported getTransaction.
-         // Note: We need to add getTransaction to the imports list at the top of the file first!
-         
-         // Let's assume we added it.
-         // Using the imported getTransaction
-         const tx = await getTransaction(tid)
-         if (tx) {
-           const submitData = {
-              senderId: tx.sender_id,
-              receiverId: tx.receiver_id,
-              amount: tx.amount,
-              type: tx.transaction_type,
-              oldBalanceOrig: tx.old_balance_orig,
-              newBalanceOrig: tx.new_balance_orig,
-              oldBalanceDest: tx.old_balance_dest,
-              newBalanceDest: tx.new_balance_dest,
-              step: tx.step || 1,
-              isTestData: true, // Treat as test data to avoid modifying balances of real users for re-analysis? 
-                                // Or false? If we want to re-analyze a real historical transaction, 
-                                // we should probably treat it as 'isTestData' to use its snapshot balances 
-                                // instead of current user balances.
-              isSimulation: false
-           }
-           // Update form state for visibility
-           setTransactionForm({
-             senderId: tx.sender_id,
-             receiverId: tx.receiver_id,
-             amount: tx.amount,
-             type: tx.transaction_type as any
-           })
-           
-           handleTransactionSubmit(submitData)
-         }
-       } catch (e) {
-         console.error("Failed to load transaction for simulator", e)
-         toast.error("Could not load transaction details")
-       }
+      try {
+        // Dynamically import getTransaction if needed, or rely on imported one
+        const tx = await getTransaction(tid)
+        if (tx) {
+          const submitData = {
+            senderId: tx.sender_id,
+            receiverId: tx.receiver_id,
+            amount: tx.amount,
+            type: tx.transaction_type,
+            oldBalanceOrig: tx.old_balance_orig,
+            newBalanceOrig: tx.new_balance_orig,
+            oldBalanceDest: tx.old_balance_dest,
+            newBalanceDest: tx.new_balance_dest,
+            step: tx.step || 1,
+            isTestData: true,
+            isSimulation: false
+          }
+          // Update form state for visibility
+          setTransactionForm({
+            senderId: tx.sender_id,
+            receiverId: tx.receiver_id,
+            amount: tx.amount,
+            type: tx.transaction_type as any
+          })
+
+          handleTransactionSubmit(submitData)
+        }
+      } catch (e) {
+        console.error("Failed to load transaction for simulator", e)
+        toast.error("Could not load transaction details")
+      }
     }
 
     if (txnId) {
@@ -318,10 +304,10 @@ function SimulatorContent() {
 
   // Route protection
   useEffect(() => {
-    if (!authUser) {
+    if (isAuthInitialized && !authUser) {
       router.push('/')
     }
-  }, [authUser, router])
+  }, [isAuthInitialized, authUser, router])
 
   // Load users on mount
   useEffect(() => {
@@ -339,6 +325,10 @@ function SimulatorContent() {
     }
     loadUsers()
   }, [])
+
+  if (!isAuthInitialized) {
+    return <div className="min-h-screen bg-[#050714] flex items-center justify-center text-primary">Initializing Security Protocols...</div>
+  }
 
   if (!authUser) return null
 
@@ -364,53 +354,49 @@ function SimulatorContent() {
                   {language === 'bn' ? 'রিয়েল-টাইম ফ্রড স্ক্যানার' : 'Real-time Fraud Scanner'}
                 </h2>
 
-                                <button 
+                <button
 
-                                  onClick={() => activePolicy.length > 0 && togglePolicyDetection()}
+                  onClick={() => activePolicy.length > 0 && togglePolicyDetection()}
 
-                                  disabled={activePolicy.length === 0}
+                  disabled={activePolicy.length === 0}
 
-                                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all border shadow-lg ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all border shadow-lg ${activePolicy.length === 0
 
-                                    activePolicy.length === 0
+                      ? 'bg-white/5 text-text-secondary border-white/5 cursor-not-allowed opacity-50'
 
-                                      ? 'bg-white/5 text-text-secondary border-white/5 cursor-not-allowed opacity-50'
+                      : isPolicyDetectionEnabled
 
-                                      : isPolicyDetectionEnabled 
+                        ? 'bg-emerald-500 text-white border-emerald-400 hover:bg-emerald-600 hud-glow-green scale-105 active:scale-95'
 
-                                        ? 'bg-emerald-500 text-white border-emerald-400 hover:bg-emerald-600 hud-glow-green scale-105 active:scale-95' 
+                        : 'bg-slate-800 text-slate-300 border-slate-600 hover:border-primary hover:text-white active:scale-95'
 
-                                        : 'bg-slate-800 text-slate-300 border-slate-600 hover:border-primary hover:text-white active:scale-95'
+                    }`}
 
-                                  }`}
+                >
 
-                                >
+                  <div className={`w-2.5 h-2.5 rounded-full ${activePolicy.length === 0
 
-                                  <div className={`w-2.5 h-2.5 rounded-full ${
+                      ? 'bg-slate-600'
 
-                                    activePolicy.length === 0 
+                      : isPolicyDetectionEnabled ? 'bg-white animate-pulse' : 'bg-slate-500'
 
-                                      ? 'bg-slate-600' 
+                    }`}></div>
 
-                                      : isPolicyDetectionEnabled ? 'bg-white animate-pulse' : 'bg-slate-500'
+                  {activePolicy.length === 0
 
-                                  }`}></div>
+                    ? (language === 'bn' ? 'কোন পলিসি নেই' : 'No Policy Deployed')
 
-                                  {activePolicy.length === 0
+                    : isPolicyDetectionEnabled
 
-                                    ? (language === 'bn' ? 'কোন পলিসি নেই' : 'No Policy Deployed')
+                      ? (language === 'bn' ? 'পলিসি সক্রিয়' : 'Policy: ACTIVE')
 
-                                    : isPolicyDetectionEnabled 
+                      : (language === 'bn' ? 'পলিসি নিষ্ক্রিয়' : 'Policy: INACTIVE')}
 
-                                      ? (language === 'bn' ? 'পলিসি সক্রিয়' : 'Policy: ACTIVE') 
+                  {activePolicy.length > 0 && <Icon name={isPolicyDetectionEnabled ? 'check_circle' : 'pause_circle'} size={16} />}
 
-                                      : (language === 'bn' ? 'পলিসি নিষ্ক্রিয়' : 'Policy: INACTIVE')}
+                </button>
 
-                                  {activePolicy.length > 0 && <Icon name={isPolicyDetectionEnabled ? 'check_circle' : 'pause_circle'} size={16} />}
 
-                                </button>
-
-                
               </div>
 
               <TransactionForm users={users} onSubmit={handleTransactionSubmit} language={language} />
@@ -447,9 +433,9 @@ function SimulatorContent() {
                         analystName={authUser?.email || 'Analyst'}
                       />
                       <div className="pt-2">
-                        <QRDataBridge 
-                          data={lastTransaction} 
-                          label="Transaction Handoff" 
+                        <QRDataBridge
+                          data={lastTransaction}
+                          label="Transaction Handoff"
                           variant="inline"
                         />
                       </div>

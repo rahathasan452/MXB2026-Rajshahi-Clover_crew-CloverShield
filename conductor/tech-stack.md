@@ -11,7 +11,7 @@
 ## Backend (ML API)
 - **Framework:** FastAPI (Python)
 - **Machine Learning:** XGBoost
-- **Explainability:** SHAP
+- **Explainability:** SHAP, Groq (LLM for Narratives & Chatbot)
 - **Graph Analysis:** NetworkX
 - **Hosting/Deployment:** Hugging Face Spaces
 
