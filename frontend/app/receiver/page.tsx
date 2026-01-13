@@ -5,6 +5,7 @@ import { Scanner } from '@yudiel/react-qr-scanner'
 import { URDecoder } from '@/lib/ur-encoder'
 import { Icon } from '@/components/Icon'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { UserProfileCard } from '@/components/UserProfileCard'
 import { useAppStore } from '@/store/useAppStore'
 
@@ -14,7 +15,18 @@ export default function ReceiverPage() {
     const [isScanning, setIsScanning] = useState(true)
     const [debugStats, setDebugStats] = useState({ scans: 0, lastFrame: '' })
     const decoderRef = useRef(new URDecoder())
-    const { language } = useAppStore()
+    const { language, authUser, isAuthInitialized, setAuthModalOpen } = useAppStore()
+    const router = useRouter()
+
+    useEffect(() => {
+        if (isAuthInitialized && !authUser) {
+            router.push('/')
+            setTimeout(() => setAuthModalOpen(true), 100)
+        }
+    }, [isAuthInitialized, authUser, router, setAuthModalOpen])
+
+    if (!isAuthInitialized) return null
+    if (!authUser) return null
 
     const handleScan = (text: string) => {
         if (!text) return

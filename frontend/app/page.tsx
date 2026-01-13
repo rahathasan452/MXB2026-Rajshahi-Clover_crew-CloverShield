@@ -10,8 +10,18 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { AuthButton } from '@/components/AuthButton'
 import { Icon } from '@/components/Icon'
+import { useAppStore } from '@/store/useAppStore'
 
 export default function LandingPage() {
+  const { authUser, setAuthModalOpen } = useAppStore()
+
+  const handleAuthCheck = (e: React.MouseEvent) => {
+    if (!authUser) {
+      e.preventDefault()
+      setAuthModalOpen(true)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#02040a] text-white font-sans selection:bg-emerald-500/30">
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[#02040a]/80 border-b border-emerald-900/30">
@@ -43,6 +53,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-4">
               <Link
                 href="/dashboard"
+                onClick={handleAuthCheck}
                 className="px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm font-medium"
               >
                 Dashboard
@@ -64,22 +75,23 @@ export default function LandingPage() {
         <div className="relative z-10 container mx-auto max-w-7xl">
           <div className="flex flex-col items-center text-center mb-16">
 
-            
+
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6 animate-fade-in-up delay-100">
               <span className="block text-white mb-2">Secure Every</span>
               <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
                 Transaction
               </span>
             </h1>
-            
+
             <p className="text-xl md:text-2xl text-gray-400 max-w-3xl leading-relaxed mb-10 animate-fade-in-up delay-200">
-              The Sovereign AI Fraud Analyst Workstation for Bangladesh&apos;s Mobile Finance. 
+              The Sovereign AI Fraud Analyst Workstation for Bangladesh&apos;s Mobile Finance.
               Deploy privately on your servers with <span className="text-emerald-400 font-semibold">one Docker command</span>.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up delay-300">
               <Link
                 href="/dashboard"
+                onClick={handleAuthCheck}
                 className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-[#02040a] rounded-xl text-lg font-bold transition-all transform hover:scale-[1.02] shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
               >
                 <Icon name="rocket_launch" />
@@ -274,7 +286,7 @@ export default function LandingPage() {
         <div className="container mx-auto max-w-5xl">
           <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-3xl p-8 md:p-12 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-            
+
             <div className="flex flex-col md:flex-row gap-12 relative z-10">
               <div className="flex-1">
                 <div className="inline-block p-2 px-3 bg-emerald-500/20 text-emerald-400 rounded text-xs font-bold uppercase tracking-wider mb-4">
@@ -284,7 +296,7 @@ export default function LandingPage() {
                   Your Data, Your Infrastructure.
                 </h2>
                 <p className="text-gray-300 mb-6 leading-relaxed">
-                  Financial data is sensitive. That's why CloverShield is designed as a self-contained, <strong>Dockerized container</strong>. 
+                  Financial data is sensitive. That's why CloverShield is designed as a self-contained, <strong>Dockerized container</strong>.
                 </p>
                 <p className="text-gray-300 mb-8 leading-relaxed">
                   You don't send data to our cloud. You bring our AI to your data. This ensures 100% compliance with Bangladeshi financial data residency laws and internal security policies.
@@ -304,7 +316,7 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex-1 bg-[#02040a] rounded-xl p-6 border border-white/10 font-mono text-sm shadow-2xl">
                 <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-4">
                   <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -320,11 +332,11 @@ export default function LandingPage() {
                     <span className="text-emerald-500">-&gt;</span> <span className="text-blue-400">~</span> <span className="text-gray-400">cd deploy &amp;&amp; docker-compose up -d</span>
                   </div>
                   <div className="text-gray-500 animate-pulse">
-                    [+] Running 3/3<br/>
-                    &nbsp;v Container clovershield-db &nbsp;&nbsp;&nbsp;&nbsp;Started<br/>
-                    &nbsp;v Container clovershield-ml-api &nbsp;Started<br/>
-                    &nbsp;v Container clovershield-web &nbsp;&nbsp;&nbsp;&nbsp;Started<br/>
-                    <br/>
+                    [+] Running 3/3<br />
+                    &nbsp;v Container clovershield-db &nbsp;&nbsp;&nbsp;&nbsp;Started<br />
+                    &nbsp;v Container clovershield-ml-api &nbsp;Started<br />
+                    &nbsp;v Container clovershield-web &nbsp;&nbsp;&nbsp;&nbsp;Started<br />
+                    <br />
                     <span className="text-emerald-400">v System Online at http://localhost:3000</span>
                   </div>
                 </div>

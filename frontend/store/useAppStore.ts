@@ -34,6 +34,10 @@ interface AppState {
   setAuthSession: (session: any | null) => void
   setAuthInitialized: (initialized: boolean) => void
 
+  // Auth Modal
+  isAuthModalOpen: boolean
+  setAuthModalOpen: (isOpen: boolean) => void
+
   // Users
   users: User[]
   selectedUser: User | null
@@ -89,6 +93,7 @@ const initialState = {
   authUser: null,
   authSession: null,
   isAuthInitialized: false,
+  isAuthModalOpen: false,
   users: [],
   selectedUser: null,
   transactionForm: {
@@ -126,6 +131,7 @@ export const useAppStore = create<AppState>((set) => ({
   setAuthUser: (user) => set({ authUser: user }),
   setAuthSession: (session) => set({ authSession: session }),
   setAuthInitialized: (initialized) => set({ isAuthInitialized: initialized }),
+  setAuthModalOpen: (isOpen) => set({ isAuthModalOpen: isOpen }),
 
   setUsers: (users) => set({ users }),
   setSelectedUser: (user) => set({ selectedUser: user }),

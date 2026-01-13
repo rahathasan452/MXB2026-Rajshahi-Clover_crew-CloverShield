@@ -15,12 +15,11 @@ import toast from 'react-hot-toast'
 
 export const AuthButton: React.FC = () => {
   const router = useRouter()
-  const { authUser, language, setAuthUser, setAuthSession } = useAppStore()
-  const [showAuthForm, setShowAuthForm] = useState(false)
+  const { authUser, language, setAuthUser, setAuthSession, isAuthModalOpen, setAuthModalOpen } = useAppStore()
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (showAuthForm) {
+    if (isAuthModalOpen) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = 'unset'
@@ -28,7 +27,7 @@ export const AuthButton: React.FC = () => {
     return () => {
       document.body.style.overflow = 'unset'
     }
-  }, [showAuthForm])
+  }, [isAuthModalOpen])
 
   const handleSignOut = async () => {
     try {
@@ -68,10 +67,10 @@ export const AuthButton: React.FC = () => {
         </div>
 
         {/* Auth Form Modal */}
-        {showAuthForm && (
+        {isAuthModalOpen && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto min-h-screen">
             <div className="flex items-center justify-center min-h-full w-full py-8">
-              <AuthForm onClose={() => setShowAuthForm(false)} />
+              <AuthForm onClose={() => setAuthModalOpen(false)} />
             </div>
           </div>
         )}
@@ -82,7 +81,7 @@ export const AuthButton: React.FC = () => {
   return (
     <>
       <button
-        onClick={() => setShowAuthForm(true)}
+        onClick={() => setAuthModalOpen(true)}
         className="px-4 py-2 bg-primary text-white rounded-full text-sm font-semibold hover:bg-primary/80 transition-colors flex items-center gap-2"
       >
         <Icon name="login" size={18} />
@@ -90,11 +89,11 @@ export const AuthButton: React.FC = () => {
       </button>
 
       {/* Auth Form Modal */}
-      {showAuthForm && (
+      {isAuthModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto min-h-screen">
           <div className="flex items-center justify-center min-h-full w-full py-8">
             <AuthForm
-              onClose={() => setShowAuthForm(false)}
+              onClose={() => setAuthModalOpen(false)}
               initialMode="signin"
             />
           </div>

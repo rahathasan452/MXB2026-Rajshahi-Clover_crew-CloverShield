@@ -1,0 +1,7 @@
+{
+  "track_id": "chatbot_reset_20260114",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-14T00:00:00Z",
+  "description": "Add a 'Reset Chat' button to the chatbot UI to clear conversation history."
+}

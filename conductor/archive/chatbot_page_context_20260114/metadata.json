@@ -1,0 +1,7 @@
+{
+  "track_id": "chatbot_page_context_20260114",
+  "type": "enhancement",
+  "status": "new",
+  "created_at": "2026-01-14T00:00:00Z",
+  "description": "Improve chatbot context awareness by mapping URL paths to descriptive user intents."
+}

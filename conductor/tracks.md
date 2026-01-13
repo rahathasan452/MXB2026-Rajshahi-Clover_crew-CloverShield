@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Enhance Analyst Copilot with comprehensive project context (User Guide, Solution Desc) to make it a true expert system.
-*Link: [./conductor/tracks/chatbot_context_20260114/](./conductor/tracks/chatbot_context_20260114/)*
+## [x] Track: Improve chatbot context awareness by mapping URL paths to descriptive user intents.
+*Link: [./conductor/tracks/chatbot_page_context_20260114/](./conductor/tracks/chatbot_page_context_20260114/)*
