@@ -199,48 +199,70 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-            {/* Feature 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            {/* Feature 1: Hybrid Engine */}
             <div className="group bg-[#0A0F1C] border border-white/5 rounded-2xl p-8 hover:border-emerald-500/30 transition-all hover:bg-[#0F1629]">
               <div className="w-14 h-14 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Icon name="psychology" size={32} className="text-emerald-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3">Explainable AI (XAI)</h3>
+              <h3 className="text-xl font-bold mb-3">Hybrid Detection Engine</h3>
               <p className="text-gray-400 leading-relaxed text-sm">
-                Black boxes are dangerous. We use <strong>SHAP values</strong> to decompose every risk score, showing exactly which features (e.g., "Account Age &lt; 1 day") triggered the alert.
+                The best of both worlds. We combine high-speed <strong>XGBoost AI scoring</strong> with a flexible <strong>SQL Policy Lab</strong>. Catch known fraud patterns instantly while the AI learns new vectors in real-time.
               </p>
             </div>
 
-            {/* Feature 2 */}
-            <div className="group bg-[#0A0F1C] border border-white/5 rounded-2xl p-8 hover:border-teal-500/30 transition-all hover:bg-[#0F1629]">
-              <div className="w-14 h-14 bg-teal-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Icon name="science" size={32} className="text-teal-400" />
+            {/* Feature 2: Analyst Copilot */}
+            <div className="group bg-[#0A0F1C] border border-white/5 rounded-2xl p-8 hover:border-blue-500/30 transition-all hover:bg-[#0F1629]">
+              <div className="w-14 h-14 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Icon name="smart_toy" size={32} className="text-blue-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3">Policy Lab Sandbox</h3>
+              <h3 className="text-xl font-bold mb-3">Analyst Copilot</h3>
               <p className="text-gray-400 leading-relaxed text-sm">
-                Safely backtest new rules like "Block if amount &gt; 50k AND location changed" against historical data before they go live. No more guessing.
+                Your AI partner in the loop. Ask questions like <em>"Why was this blocked?"</em> or <em>"Draft a SAR report for this case."</em> Powered by context-aware LLMs to speed up investigations.
               </p>
             </div>
 
-            {/* Feature 3 */}
+            {/* Feature 3: Customer 360 Graph */}
             <div className="group bg-[#0A0F1C] border border-white/5 rounded-2xl p-8 hover:border-cyan-500/30 transition-all hover:bg-[#0F1629]">
               <div className="w-14 h-14 bg-cyan-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Icon name="hub" size={32} className="text-cyan-400" />
               </div>
               <h3 className="text-xl font-bold mb-3">Customer 360 Graph</h3>
               <p className="text-gray-400 leading-relaxed text-sm">
-                Visualize the money trail. Our interactive Network Graph reveals hidden connections between seemingly unrelated accounts, exposing syndicates.
+                Visualize the money trail. Our interactive <strong>Network Graph</strong> reveals hidden connections between seemingly unrelated accounts, exposing complex money laundering syndicates at a glance.
               </p>
             </div>
 
-            {/* Feature 4 */}
+            {/* Feature 4: Governance & Audit */}
+            <div className="group bg-[#0A0F1C] border border-white/5 rounded-2xl p-8 hover:border-orange-500/30 transition-all hover:bg-[#0F1629]">
+              <div className="w-14 h-14 bg-orange-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Icon name="gavel" size={32} className="text-orange-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Governance & Compliance</h3>
+              <p className="text-gray-400 leading-relaxed text-sm">
+                Every click is logged. Our immutable <strong>Audit Trail</strong> tracks every decision, view, and action. Automatically generate <strong>SARs</strong> (Suspicious Activity Reports) for BFIU submission.
+              </p>
+            </div>
+
+            {/* Feature 5: Model Registry */}
+            <div className="group bg-[#0A0F1C] border border-white/5 rounded-2xl p-8 hover:border-teal-500/30 transition-all hover:bg-[#0F1629]">
+              <div className="w-14 h-14 bg-teal-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Icon name="model_training" size={32} className="text-teal-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Model Registry</h3>
+              <p className="text-gray-400 leading-relaxed text-sm">
+                Democratized AI maintenance. Upload new labeled datasets and retrain the model via a <strong>Code-Free UI</strong>. Hot-swap model versions in production without downtime.
+              </p>
+            </div>
+
+            {/* Feature 6: Secure QR Bridge */}
             <div className="group bg-[#0A0F1C] border border-white/5 rounded-2xl p-8 hover:border-red-500/30 transition-all hover:bg-[#0F1629]">
               <div className="w-14 h-14 bg-red-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Icon name="inbox" size={32} className="text-red-400" />
+                <Icon name="qr_code_scanner" size={32} className="text-red-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3">Priority Inbox</h3>
+              <h3 className="text-xl font-bold mb-3">Secure QR Bridge</h3>
               <p className="text-gray-400 leading-relaxed text-sm">
-                Stop drowning in noise. Our intelligent queue dynamically ranks alerts by urgency (Risk Score + Amount), ensuring analysts focus on the <strong className="text-white">top 1% of threats</strong> that matter right now.
+                Zero-Trust data ingest. Import external evidence (PDFs, Images) from the outside world via <strong>Air-Gapped QR Codes</strong>. Keep your workstation completely isolated from the public internet.
               </p>
             </div>
           </div>
