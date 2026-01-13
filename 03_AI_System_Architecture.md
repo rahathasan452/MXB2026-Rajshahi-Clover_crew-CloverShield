@@ -119,8 +119,9 @@ CloverShield solves the "Black Box" problem using a tiered explainability stack:
 
 ---
 
-## Security & Scalability
+## Security, Scalability & Deployment
 
+- **One-Click Sovereignty:** The entire stack (UI, API, DB) is wrapped in a single `docker-compose` definition. A bank IT admin can deploy a production-ready fraud workstation with a single command (`./deploy.sh`), requiring zero external configuration or complex cloud setup.
 - **Horizontal Scaling:** Because the ML API is Dockerized, the bank can spin up 10+ containers to handle peak loads (e.g., during Eid or salary days) using Kubernetes.
 - **Data Residency:** 100% compliant. No data leaves the bank's VPC.
 - **Authentication:** Integrated with Supabase/Postgres for Row-Level Security, ensuring analysts only see transactions within their assigned region or branch.
