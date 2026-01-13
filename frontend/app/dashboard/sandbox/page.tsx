@@ -47,7 +47,7 @@ interface Condition {
 }
 
 export default function SandboxPage() {
-  const { language } = useAppStore()
+  const { language, setActivePolicy, togglePolicyDetection } = useAppStore()
   const [conditions, setConditions] = useState<Condition[]>([
     { id: '1', feature: 'amount', operator: '>', value: '50000' }
   ])
@@ -93,6 +93,12 @@ export default function SandboxPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleDeploy = () => {
+    setActivePolicy(conditions)
+    togglePolicyDetection(true)
+    toast.success(language === 'bn' ? 'পলিসি স্ক্যানারে প্রয়োগ করা হয়েছে' : 'Policy deployed to Scanner')
   }
 
   const addCondition = () => {
@@ -371,14 +377,14 @@ export default function SandboxPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <button
                     onClick={handleExplainRule}
                     disabled={explaining || conditions.length === 0}
                     className="bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors border border-purple-500/20"
                   >
                     {explaining ? <Icon name="autorenew" className="animate-spin" /> : <Icon name="psychology" />}
-                    Explain Logic
+                    Explain
                   </button>
                   <button
                     onClick={handleRun}
@@ -390,7 +396,14 @@ export default function SandboxPage() {
                     ) : (
                       <Icon name="play_arrow" />
                     )}
-                    Run Simulation
+                    Run Sim
+                  </button>
+                  <button
+                    onClick={handleDeploy}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-500/20"
+                  >
+                    <Icon name="rocket_launch" />
+                    Deploy
                   </button>
                 </div>
 

@@ -16,6 +16,7 @@ import {
 } from '@/lib/supabase'
 import { predictFraud } from '@/lib/ml-api'
 import { initAnalytics, trackTransaction, trackMLAPICall } from '@/lib/analytics'
+import { evaluatePolicy } from '@/lib/policy-engine'
 import { sendTransactionAlertEmail } from '@/lib/email'
 import { TransactionForm } from '@/components/TransactionForm'
 import { UserProfileCard } from '@/components/UserProfileCard'
@@ -48,6 +49,9 @@ function SimulatorContent() {
     language,
     brandTheme,
     authUser,
+    activePolicy,
+    isPolicyDetectionEnabled,
+    togglePolicyDetection
   } = useAppStore()
 
   const [receiver, setReceiver] = useState<any>(null)
@@ -104,6 +108,28 @@ function SimulatorContent() {
         )
 
         trackMLAPICall({ success: true, processingTimeMs: Date.now() - startTime })
+        
+        // Policy Check Overlay
+        if (isPolicyDetectionEnabled && activePolicy && activePolicy.length > 0) {
+          const policyTx = {
+            amount: data.amount,
+            type: data.type,
+            oldBalanceOrig: oldBalanceOrig,
+            orig_txn_count: 0, // Placeholder if needed
+            // Add other derived features if available in the future
+          }
+          
+          if (evaluatePolicy(policyTx, activePolicy)) {
+            prediction.prediction.decision = 'block'
+            prediction.prediction.risk_level = 'high'
+            prediction.prediction.fraud_probability = Math.max(prediction.prediction.fraud_probability, 0.99)
+            if (prediction.llm_explanation) {
+              prediction.llm_explanation.text = (language === 'bn' ? 'সতর্কতা: এই লেনদেনটি একটি সক্রিয় ফ্রড পলিসি দ্বারা ব্লক করা হয়েছে। ' : 'ALERT: This transaction was BLOCKED by an active fraud policy. ') + prediction.llm_explanation.text
+            }
+            toast.error(language === 'bn' ? 'পলিসি ভায়োলেশন সনাক্ত হয়েছে!' : 'Policy Violation Detected!')
+          }
+        }
+
         setCurrentPrediction(prediction)
       } catch (error: any) {
         trackMLAPICall({ success: false, processingTimeMs: Date.now() - startTime, error: error.message })
@@ -283,10 +309,29 @@ function SimulatorContent() {
         <div className="space-y-8 mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-                <Icon name="account_balance_wallet" size={28} className="text-primary" />
-                {language === 'bn' ? 'রিয়েল-টাইম ফ্রড স্ক্যানার' : 'Real-time Fraud Scanner'}
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+                  <Icon name="account_balance_wallet" size={28} className="text-primary" />
+                  {language === 'bn' ? 'রিয়েল-টাইম ফ্রড স্ক্যানার' : 'Real-time Fraud Scanner'}
+                </h2>
+                
+                {activePolicy.length > 0 && (
+                  <button 
+                    onClick={() => togglePolicyDetection()}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                      isPolicyDetectionEnabled 
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' 
+                        : 'bg-white/5 text-text-secondary border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${isPolicyDetectionEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`}></div>
+                    {isPolicyDetectionEnabled 
+                      ? (language === 'bn' ? 'পলিসি সক্রিয়' : 'Policy Active') 
+                      : (language === 'bn' ? 'পলিসি নিষ্ক্রিয়' : 'Policy Inactive')}
+                  </button>
+                )}
+              </div>
+              
               <TransactionForm users={users} onSubmit={handleTransactionSubmit} language={language} />
             </div>
             <div className="space-y-6">

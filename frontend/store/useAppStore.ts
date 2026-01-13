@@ -53,6 +53,12 @@ interface AppState {
   currentPrediction: PredictResponse | null
   setCurrentPrediction: (prediction: PredictResponse | null) => void
 
+  // Policy Engine
+  activePolicy: any[]
+  isPolicyDetectionEnabled: boolean
+  setActivePolicy: (policy: any[]) => void
+  togglePolicyDetection: (enabled?: boolean) => void
+
   // Analytics
   analytics: {
     moneySaved: number
@@ -90,6 +96,8 @@ const initialState = {
     note: '',
   },
   currentPrediction: null,
+  activePolicy: [],
+  isPolicyDetectionEnabled: false,
   analytics: {
     moneySaved: 2547890,
     transactionsProcessed: 15847,
@@ -129,6 +137,12 @@ export const useAppStore = create<AppState>((set) => ({
     }),
 
   setCurrentPrediction: (prediction) => set({ currentPrediction: prediction }),
+
+  setActivePolicy: (policy) => set({ activePolicy: policy }),
+  togglePolicyDetection: (enabled) => 
+    set((state) => ({ 
+      isPolicyDetectionEnabled: enabled !== undefined ? enabled : !state.isPolicyDetectionEnabled 
+    })),
 
   setAnalytics: (analytics) =>
     set((state) => ({
