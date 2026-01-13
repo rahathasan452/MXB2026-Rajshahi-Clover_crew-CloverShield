@@ -97,42 +97,42 @@ export default function DashboardLanding() {
   // --- TOOLS GRID ---
   const tools = [
     {
-      title: 'Cases',
+      title: language === 'bn' ? 'কেস ফাইল' : 'Cases',
       desc: language === 'bn' ? 'সব কেস ম্যানেজ করুন' : 'Manage all files',
       link: '/dashboard/cases',
       icon: 'folder_managed',
       color: 'text-teal-400'
     },
     {
-      title: 'Customer 360',
+      title: language === 'bn' ? 'গ্রাহক প্রোফাইল' : 'Customer 360',
       desc: language === 'bn' ? 'গ্রাহক প্রোফাইল' : 'Profile Search',
       link: '/dashboard/profile/search',
       icon: 'person_search',
       color: 'text-purple-400'
     },
     {
-      title: 'Fraud Scanner',
+      title: language === 'bn' ? 'ফ্রড স্ক্যানার' : 'Fraud Scanner',
       desc: language === 'bn' ? 'ম্যানুয়াল চেক' : 'Manual Check',
       link: '/dashboard/simulator',
       icon: 'bolt',
       color: 'text-yellow-400'
     },
     {
-      title: 'Policy',
+      title: language === 'bn' ? 'পলিসি' : 'Policy',
       desc: language === 'bn' ? 'নিয়ম পরীক্ষা' : 'Rule Sandbox',
       link: '/dashboard/sandbox',
       icon: 'science',
       color: 'text-blue-400'
     },
     {
-      title: 'Health',
+      title: language === 'bn' ? 'হেলথ' : 'Health',
       desc: language === 'bn' ? 'মডেল স্ট্যাটাস' : 'Model Status',
       link: '/dashboard/model-health',
       icon: 'monitoring',
       color: 'text-emerald-400'
     },
     {
-      title: 'Training',
+      title: language === 'bn' ? 'ট্রেনিং' : 'Training',
       desc: language === 'bn' ? 'মডেল ট্রেনিং' : 'Retrain Model',
       link: '/dashboard/training',
       icon: 'school',

@@ -1,15 +1,18 @@
 'use client'
 
-import React, { useEffect } from 'react'
-import { AuditLogTable } from '@/components/AuditLogTable'
+import React, { useEffect, useState } from 'react'
+import { AuditLogTable, AuditLog, AuditLogDocument } from '@/components/AuditLogTable'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useAppStore } from '@/store/useAppStore'
 import { logAudit } from '@/lib/audit'
 import Link from 'next/link'
 import { Icon } from '@/components/Icon'
+import { PDFDownloadLink } from '@react-pdf/renderer'
+import { QRDataBridge } from '@/components/QRDataBridge'
 
 export default function AuditTrailPage() {
   const { language } = useAppStore()
+  const [logs, setLogs] = useState<AuditLog[]>([])
 
   /* Dynamic System Status Check */
   const [systemStatus, setSystemStatus] = React.useState({
@@ -84,13 +87,25 @@ export default function AuditTrailPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => window.print()}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 border border-slate-700 transition-all"
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <QRDataBridge 
+                data={logs.slice(0, 20).map(l => ({ id: l.id, action: l.action_type, msg: l.human_readable_message }))} 
+                label="Sync Recent Logs" 
+              />
+              
+              <PDFDownloadLink
+                document={<AuditLogDocument logs={logs} />}
+                fileName={`audit_log_${new Date().toISOString().split('T')[0]}.pdf`}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 border border-slate-700 transition-all h-[52px]"
               >
-                <Icon name="print" size={18} /> {language === 'bn' ? 'রিপোর্ট প্রিন্ট করুন' : 'Export PDF'}
-              </button>
+                {({ blob, url, loading, error }) =>
+                  loading ? (
+                    <><Icon name="sync" className="animate-spin" size={18} /> Preparing...</>
+                  ) : (
+                    <><Icon name="download" size={18} /> {language === 'bn' ? 'পিডিএফ ডাউনলোড' : 'Export PDF'}</>
+                  )
+                }
+              </PDFDownloadLink>
             </div>
           </div>
 
@@ -121,7 +136,7 @@ export default function AuditTrailPage() {
 
           {/* Main Table */}
           <div className="w-full">
-            <AuditLogTable />
+            <AuditLogTable onLogsLoaded={setLogs} />
           </div>
         </div>
       </div>

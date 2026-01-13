@@ -10,7 +10,7 @@ interface QRDataBridgeProps {
 
 export const QRDataBridge: React.FC<QRDataBridgeProps> = ({ data, label = "Secure Air-Gap Transfer" }) => {
   const [showQR, setShowQR] = useState(false)
-  const [mode, setMode] = useState<'static' | 'animated'>('static')
+  const [mode, setMode] = useState<'static' | 'animated'>('animated')
   const [frames, setFrames] = useState<string[]>([])
   const [currentFrameIdx, setCurrentFrameIdx] = useState(0)
   const [fps, setFps] = useState(5) // Default 5 frames per second

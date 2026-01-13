@@ -7,7 +7,7 @@ import { format } from 'date-fns'
 import { QRDataBridge } from './QRDataBridge'
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 
-interface AuditLog {
+export interface AuditLog {
   id: string
   action_type: string
   human_readable_message: string
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   tableHeader: { fontWeight: 'bold', backgroundColor: '#f0f0f0' }
 });
 
-const AuditLogDocument = ({ logs }: { logs: AuditLog[] }) => (
+export const AuditLogDocument = ({ logs }: { logs: AuditLog[] }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
@@ -58,7 +58,11 @@ const AuditLogDocument = ({ logs }: { logs: AuditLog[] }) => (
   </Document>
 );
 
-export const AuditLogTable: React.FC = () => {
+interface AuditLogTableProps {
+  onLogsLoaded?: (logs: AuditLog[]) => void;
+}
+
+export const AuditLogTable: React.FC<AuditLogTableProps> = ({ onLogsLoaded }) => {
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -113,6 +117,7 @@ export const AuditLogTable: React.FC = () => {
       
       if (error) throw error
       setLogs(data)
+      onLogsLoaded?.(data)
     } catch (error) {
       console.error('Error fetching logs:', error)
     } finally {
@@ -162,25 +167,6 @@ export const AuditLogTable: React.FC = () => {
       </div>
 
       <div className="overflow-x-auto min-h-[400px]">
-        
-        {/* Actions Bar */}
-        <div className="mb-4 flex flex-col sm:flex-row gap-4 justify-end">
-          <QRDataBridge 
-            data={filteredLogs.slice(0, 20).map(l => ({ id: l.id, action: l.action_type, msg: l.human_readable_message }))} 
-            label="Sync Recent Logs" 
-          />
-          
-          <PDFDownloadLink
-            document={<AuditLogDocument logs={filteredLogs} />}
-            fileName={`audit_log_${new Date().toISOString().split('T')[0]}.pdf`}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition-colors text-sm font-medium h-[52px]" // Height matching QR bridge default approx
-          >
-            {({ blob, url, loading, error }) =>
-              loading ? 'Preparing PDF...' : <><Icon name="download" /> Export PDF</>
-            }
-          </PDFDownloadLink>
-        </div>
-
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-700 text-slate-400 text-xs uppercase tracking-widest font-bold">
