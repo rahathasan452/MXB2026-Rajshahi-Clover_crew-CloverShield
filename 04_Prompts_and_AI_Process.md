@@ -71,7 +71,47 @@ Finally, we used prompt engineering to humanize the **SHAP** explanations for th
 
 ---
 
-## 5. Deployment Strategy & Task Pipeline Generation
+## 5. The Analyst Assistant (Chatbot)
+
+We developed a context-aware chatbot to act as a 24/7 expert peer.
+
+### System Prompt Strategy
+**Goal:** Create a helpful assistant that knows the specific features of CloverShield and can explain fraud concepts.
+
+> **System Prompt (Internal):** "You are CloverShield, an expert AI Fraud Analyst Assistant designed for mobile financial services in Bangladesh.
+> Your goal is to help human analysts detect fraud, understand the system, and improve policies.
+>
+> **Capabilities & App Knowledge:**
+> - **Dashboard (HUD):** Explain pending alerts and risk scores.
+> - **Policy Lab:** Suggest rules (e.g., 'To catch high-value bursts, try: amount > 10000 and orig_txn_count > 5').
+> - **Fraud Patterns:** Explain terms like 'Smurfing' or 'Mule Account'.
+>
+> **Tone:** Professional, concise, and helpful. Do NOT use Markdown formatting."
+
+---
+
+## 6. Automated SAR Generation
+
+To streamline compliance, we engineered a prompt to convert raw case data into a formal legal document.
+
+**Goal:** Generate a BFIU-compliant "Suspicious Activity Report" (SAR) narrative.
+
+> **Prompt:** "You are a Senior Financial Crime Investigator. Write the 'Narrative' section of a SAR for the following case.
+>
+> **Case Data:** Total Volume: 500,000 BDT. Transaction Types: CASH_OUT.
+> **Analyst Notes:** 'User received multiple small transfers then cashed out immediately.'
+>
+> **Instructions:**
+> 1. Include sections: RISK INDICATORS, BEHAVIORAL PATTERN ANALYSIS, RECOMMENDED ACTIONS.
+> 2. Use UPPERCASE for headers.
+> 3. Tone: Objective and regulatory-focused."
+
+**Outcome:**
+- Reduces report writing time from 30 minutes to 5 seconds per case.
+
+---
+
+## 7. Deployment Strategy & Task Pipeline Generation
 
 To ensure the "Black Box" Sovereign Workstation met the strict security and operational requirements of MFS providers, we used AI to break down the complex deployment goal into a precise, execution-ready task pipeline.
 
