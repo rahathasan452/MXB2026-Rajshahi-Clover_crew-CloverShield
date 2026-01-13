@@ -67,15 +67,17 @@ stateDiagram-v2
 **Goal:** Perfect the single-node experience for individual analysts.
 
 -   **Zero-Trust Docker Kit:** Ensure the `docker-compose up` experience is flawless on air-gapped servers.
--   **The Policy Lab:** Finalize the "Backtesting Engine" that allows analysts to simulate rule changes on historical data without affecting live traffic.
--   **Bilingual 2.0:** Expand Bengali support to cover deep technical explanations in the XAI module.
+-   **Policy Lab (Rule Sandbox):** ✅ Completed. Analysts can simulate rule changes on historical data.
+-   **Analyst Copilot:** ✅ Completed. An LLM-powered assistant is now available for 24/7 help.
+-   **Advanced Case Management:** ✅ Completed. Full lifecycle tracking with investigation checklists.
+-   **Audit & Governance:** ✅ Completed. End-to-end logging and SAR generation for compliance.
 
 ## Phase 2: Enterprise Integration (Q2 2026)
 **Goal:** Fit seamlessly into existing Bank IT infrastructure.
 
 -   **Kubernetes (K8s) Helm Charts:** Move beyond Docker Compose. Provide Helm charts for banks to deploy CloverShield on their internal OpenShift or K8s clusters for high availability (HA).
--   **LDAP/SSO Integration:** allow analysts to log in using their corporate Bank credentials instead of a separate account.
--   **Audit Logging:** Immutable logs of every analyst action (who viewed which transaction) for internal compliance.
+-   **Active Directory / LDAP Auth:** Allow analysts to log in using their corporate Bank credentials instead of a separate account.
+-   **Model Registry v2:** Automate model retraining pipelines triggered by data drift alerts.
 
 ## Phase 3: The Collaborative Grid (Q3-Q4 2026)
 **Goal:** Solve the "Silo Problem" without breaking privacy.
