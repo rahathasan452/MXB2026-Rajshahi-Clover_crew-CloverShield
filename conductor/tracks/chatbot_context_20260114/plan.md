@@ -11,4 +11,4 @@
     - [x] Sub-task: Replace the hardcoded prompt in `/chat` endpoint.
 
 ## Phase 3: Verification
-- [ ] Task: Conductor - User Manual Verification 'Chatbot Context' (Protocol in workflow.md).
+- [x] Task: Conductor - User Manual Verification 'Chatbot Context' (Protocol in workflow.md).
