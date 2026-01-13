@@ -88,7 +88,7 @@ export default function AuditTrailPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-3">
-              <QRDataBridge 
+              <QRDataBridge
                 data={{
                   doc_type: 'AUDIT_LOG_EXPORT',
                   generated_at: new Date().toISOString(),
@@ -96,13 +96,13 @@ export default function AuditTrailPage() {
                     id: l.id,
                     time: l.created_at,
                     action: l.action_type,
-                    actor: l.actor_id,
+                    actor: l.user_email, // Changed from actor_id to user_email
                     details: l.human_readable_message
                   }))
                 }}
-                label="Sync Recent Logs" 
+                label="Sync Recent Logs"
               />
-              
+
               <PDFDownloadLink
                 document={<AuditLogDocument logs={logs} />}
                 fileName={`audit_log_${new Date().toISOString().split('T')[0]}.pdf`}
