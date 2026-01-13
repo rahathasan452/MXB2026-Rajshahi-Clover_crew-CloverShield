@@ -13,6 +13,7 @@ import {
   createTransaction,
   updateTransaction,
   createTransactionHistory,
+  getTransaction,
 } from '@/lib/supabase'
 import { predictFraud } from '@/lib/ml-api'
 import { initAnalytics, trackTransaction, trackMLAPICall } from '@/lib/analytics'
@@ -210,13 +211,65 @@ function SimulatorContent() {
 
   // Handle Auto-Run from Query Params
   useEffect(() => {
+    const txnId = searchParams.get('txn')
     const senderId = searchParams.get('sender')
     const receiverId = searchParams.get('receiver')
     const amountStr = searchParams.get('amount')
     const type = searchParams.get('type')
     const autoRun = searchParams.get('autoRun')
 
-    if (senderId && receiverId && amountStr && type) {
+    const runFromTxnId = async (tid: string) => {
+       try {
+         // Dynamically import getTransaction to avoid circular dependency issues if any,
+         // or just use the imported one if safe. Since we are in client component, 
+         // we might need to rely on the API or the supabase lib function.
+         // Let's use the one from lib/supabase we already imported? No, we didn't import getTransaction yet.
+         // So we need to add it to imports.
+         // Wait, we need to add getTransaction to imports first.
+         
+         // Assuming getTransaction is available or we fetch via API.
+         // Since we have direct supabase access in lib, let's try to use the imported getTransaction.
+         // Note: We need to add getTransaction to the imports list at the top of the file first!
+         
+         // Let's assume we added it.
+         // Using the imported getTransaction
+         const tx = await getTransaction(tid)
+         if (tx) {
+           const submitData = {
+              senderId: tx.sender_id,
+              receiverId: tx.receiver_id,
+              amount: tx.amount,
+              type: tx.transaction_type,
+              oldBalanceOrig: tx.old_balance_orig,
+              newBalanceOrig: tx.new_balance_orig,
+              oldBalanceDest: tx.old_balance_dest,
+              newBalanceDest: tx.new_balance_dest,
+              step: tx.step || 1,
+              isTestData: true, // Treat as test data to avoid modifying balances of real users for re-analysis? 
+                                // Or false? If we want to re-analyze a real historical transaction, 
+                                // we should probably treat it as 'isTestData' to use its snapshot balances 
+                                // instead of current user balances.
+              isSimulation: false
+           }
+           // Update form state for visibility
+           setTransactionForm({
+             senderId: tx.sender_id,
+             receiverId: tx.receiver_id,
+             amount: tx.amount,
+             type: tx.transaction_type as any
+           })
+           
+           handleTransactionSubmit(submitData)
+         }
+       } catch (e) {
+         console.error("Failed to load transaction for simulator", e)
+         toast.error("Could not load transaction details")
+       }
+    }
+
+    if (txnId) {
+      runFromTxnId(txnId)
+    } else if (senderId && receiverId && amountStr && type) {
       const amount = parseFloat(amountStr)
 
       // Update form state
