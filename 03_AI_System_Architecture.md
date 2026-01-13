@@ -86,20 +86,25 @@ The system transforms raw transaction logs into 15 "Sovereign Features" without 
 - **Temporal Features:** Detects "Midnight Raids" (high-velocity transfers at odd hours).
 - **Behavioral Ratios:** Compares current transaction amount against the user's historical median stored in the local DB.
 
-### 4. The Retraining Pipeline (Jupyter)
-- **Role:** We provide a standardized training notebook.
-- **Process:** Bank data scientists can run this notebook against their **real private data** to create a "CloverShield Fine-tuned Model."
-- **Privacy:** Since the notebook runs on the bank's local server, the Clover Crew team never sees the real data, yet the bank gets a model optimized for their specific regional fraud patterns.
+### 4. The Model Registry & Retraining (Jupyter)
+- **Role:** Full lifecycle management of ML models.
+- **Registry UI:** Allows uploading new datasets, triggering background training jobs, and hot-swapping the active model version (v1.0 -> v1.1) without downtime.
+- **Privacy:** Training happens on the bank's local server. The Clover Crew team never sees the real data.
+
+### 5. Compliance & Governance Layer
+- **Audit Logging:** Every API call and analyst action is logged to a secure Supabase table.
+- **Internal Anomaly Detection:** A background worker scans audit logs for suspicious internal behavior (e.g., an analyst bulk-exporting customer data) and flags it to the CRO.
 
 ---
 
-## The Explainability Layer (XAI)
+## The Explainability Stack (XAI)
 
 CloverShield solves the "Black Box" problem using a tiered explainability stack:
 
 1.  **Global Interpretability:** High-level feature importance across the entire dataset.
-2.  **Local Interpretability (SHAP):** For every single blocked transaction, the system calculates **SHAP values**. This tells the analyst exactly which features (e.g., "Account Age" or "Transaction Amount") pushed the risk score over the limit.
-3.  **Human Synthesis (LLM):** A local LLM takes the SHAP numbers and generates a summary: *"This was blocked because the recipient is a new account created 2 hours ago and is receiving 10x the usual amount."*
+2.  **Local Interpretability (SHAP):** For every single blocked transaction, the system calculates **SHAP values**.
+3.  **Human Synthesis (LLM):** A local LLM takes the SHAP numbers and generates a summary: *"This was blocked because the recipient is a new account created 2 hours ago..."*
+4.  **SAR Narrative Generation:** The LLM is also used to auto-draft formal **Suspicious Activity Reports**. It ingests the case evidence (transaction history + analyst notes) and produces a BFIU-compliant narrative.
 
 ---
 
