@@ -16,6 +16,16 @@ The system combines a high-performance **XGBoost** model for real-time risk scor
 
 ---
 
+## 📚 Analyst User Guide
+**Are you a Fraud Analyst?**
+👉 **[Click here to read the detailed Analyst User Guide](./USER_GUIDE.md)** for step-by-step instructions on:
+*   Resolving High-Risk Alerts
+*   Writing & Deploying Fraud Rules
+*   Using the Secure QR Bridge
+*   Generating SAR Reports
+
+---
+
 ## 🏗️ Architecture & Tech Stack
 
 The project follows a microservices architecture orchestrated by Docker Compose:
