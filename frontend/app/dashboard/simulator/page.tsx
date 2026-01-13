@@ -280,8 +280,6 @@ function SimulatorContent() {
       </div>
 
       <div className="container mx-auto px-4 pb-8">
-        <AnalyticsDashboard language={language} />
-
         <div className="space-y-8 mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">

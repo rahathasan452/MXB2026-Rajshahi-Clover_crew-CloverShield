@@ -335,6 +335,38 @@ export default function ProfilePage() {
       {/* Identity Card */}
       <UserProfileCard user={user} language={language} />
 
+      {/* Investigative Tools */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-white/10">
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-emerald-400">
+            <Icon name="assignment" /> SAR Generator
+          </h2>
+          <div className="bg-card-bg border border-white/10 rounded-xl p-6 h-full">
+            <SARReportGenerator
+              caseId={`CASE-${userId}-${Date.now().toString().slice(-4)}`}
+              transactions={history}
+              analystName="System Administrator"
+              analystNotes={`Investigating high-risk activity for user ${userId}.`}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-emerald-400">
+            <Icon name="qr_code_scanner" /> Evidence Export
+          </h2>
+          <div className="bg-card-bg border border-white/10 rounded-xl p-6 h-full">
+            <QRDataBridge
+              data={{
+                caseId: `CASE-${userId}`,
+                transactions: history.slice(0, 5),
+                risk: user.risk_level
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Transaction History */}
         <div className="space-y-4">
@@ -403,37 +435,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Investigative Tools */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8 border-t border-white/10">
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold flex items-center gap-2 text-emerald-400">
-            <Icon name="assignment" /> SAR Generator
-          </h2>
-          <div className="bg-card-bg border border-white/10 rounded-xl p-6 h-full">
-            <SARReportGenerator
-              caseId={`CASE-${userId}-${Date.now().toString().slice(-4)}`}
-              transactions={history}
-              analystName="System Administrator"
-              analystNotes={`Investigating high-risk activity for user ${userId}.`}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold flex items-center gap-2 text-emerald-400">
-            <Icon name="qr_code_scanner" /> Evidence Export
-          </h2>
-          <div className="bg-card-bg border border-white/10 rounded-xl p-6 h-full">
-            <QRDataBridge
-              data={{
-                caseId: `CASE-${userId}`,
-                transactions: history.slice(0, 5),
-                risk: user.risk_level
-              }}
-            />
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

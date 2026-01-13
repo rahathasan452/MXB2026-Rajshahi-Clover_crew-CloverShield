@@ -75,10 +75,10 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
         
         <ThemeLanguageControls />
 
-        <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+        <Link href="/dashboard/investigate" className="relative p-2 text-gray-400 hover:text-white transition-colors">
           <Icon name="notifications" />
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-[#0A0E17] animate-pulse" />
-        </button>
+        </Link>
       </div>
     </header>
   )

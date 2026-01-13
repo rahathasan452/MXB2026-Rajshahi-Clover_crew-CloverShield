@@ -313,9 +313,15 @@ export default function DashboardLanding() {
               <h3 className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em] mb-1">
                 {language === 'bn' ? 'ডাটাবেস স্ট্যাটাস' : 'Engine Connectivity'}
               </h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono text-gray-300">Supabase Cloud</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold">14ms</span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono text-gray-300">Supabase Cloud</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold">14ms</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono text-gray-300">ML Hugging Face Space</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 font-bold">28ms</span>
+                </div>
               </div>
             </div>
           </div>
