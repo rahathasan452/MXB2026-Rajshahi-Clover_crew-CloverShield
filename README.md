@@ -61,9 +61,9 @@ The project follows a microservices architecture orchestrated by Docker Compose:
 *   **Git** installed.
 *   (Optional for manual dev) Node.js 18+ and Python 3.9+.
 
-### Option 1: Quick Start (Docker - Recommended)
+### Option 1: One-Command Deploy (Recommended)
 
-This will spin up the entire system (Frontend + API) in containers, simulating an on-premise deployment.
+Simulate a full on-premise "Sovereign AI" deployment in seconds. This script handles environment setup and spins up the entire stack (Frontend + API + DB).
 
 1.  **Clone the repository:**
     ```bash
@@ -71,26 +71,23 @@ This will spin up the entire system (Frontend + API) in containers, simulating a
     cd MXB2026-Rajshahi-Clover_crew-CloverShield
     ```
 
-2.  **Environment Setup:**
-    *   Navigate to `frontend/` and copy the template:
-        ```bash
-        cp frontend/env.template frontend/.env.local
-        ```
-    *   Navigate to `ml-api/` and copy the template:
-        ```bash
-        cp ml-api/env.template ml-api/.env
-        ```
-    *   *Note:* The default templates are pre-configured for local Docker communication. You only need to add your `GROQ_API_KEY` in `ml-api/.env` if you want LLM explanations and Chatbot features.
+2.  **Run the Deployer:**
 
-3.  **Launch the Workstation:**
-    From the root directory, run:
+    **Mac / Linux:**
     ```bash
-    docker-compose up -d --build
+    ./deploy.sh
     ```
 
-4.  **Access the System:**
-    *   **Analyst Dashboard:** Open `http://localhost:3000`
-    *   **ML API Docs:** Open `http://localhost:8000/docs`
+    **Windows:**
+    ```cmd
+    .\deploy.bat
+    ```
+
+3.  **Access the System:**
+    *   **Analyst Dashboard:** `http://localhost:3000`
+    *   **ML API Docs:** `http://localhost:8000/docs`
+
+> **Why One Command?** In a high-security financial environment, ease of deployment minimizes human error. Our "Zero-Trust Container" model ensures that any bank can spin up a fully isolated instance of CloverShield on their private servers without complex configuration.
 
 ---
 
