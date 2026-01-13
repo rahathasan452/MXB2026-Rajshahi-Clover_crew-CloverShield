@@ -208,10 +208,15 @@ export default function CasesPage() {
                   </td>
                   <td className="p-4 text-slate-300">
                     {c.user_id ? (
-                      <div className="flex items-center gap-2">
+                      <Link 
+                        href={`/dashboard/profile/${c.user_id}`}
+                        className="flex items-center gap-2 hover:text-emerald-400 transition-colors"
+                        title="View Customer 360"
+                      >
                         <Icon name="person" size={14} className="text-slate-500" />
                         <span>{c.user_id}</span>
-                      </div>
+                        <Icon name="open_in_new" size={12} className="opacity-0 group-hover:opacity-50" />
+                      </Link>
                     ) : (
                       <div className="flex items-center gap-2">
                         <Icon name="receipt_long" size={14} className="text-slate-500" />

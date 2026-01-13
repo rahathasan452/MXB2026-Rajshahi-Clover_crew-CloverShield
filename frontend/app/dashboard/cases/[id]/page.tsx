@@ -19,6 +19,7 @@ import { CaseStatusBadge, CasePriorityBadge } from '@/components/CaseStatusBadge
 import { UserProfileCard } from '@/components/UserProfileCard'
 import { QuickActionToolbar, QuickActionType } from '@/components/QuickActionToolbar'
 import { InvestigationChecklist } from '@/components/InvestigationChecklist'
+import { QRDataBridge } from '@/components/QRDataBridge'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -36,6 +37,9 @@ export default function CaseDetailPage() {
   const [targetTx, setTargetTx] = useState<Transaction | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+  
+  // State for SAR QR Modal
+  const [sarData, setSarData] = useState<any | null>(null)
 
   useEffect(() => {
     if (caseId) fetchData()
@@ -118,7 +122,9 @@ export default function CaseDetailPage() {
             analyst_name: authUser.email,
             action_data: { reason: 'Freeze Requested via Quick Action' }
           })
-          toast.success(`Account ${targetUser.user_id} flagged for freeze`)
+          toast.success("account freeze")
+          // Mark case as resolved automatically
+          await handleStatusChange('Resolved')
           break
 
         case 'BLOCK':
@@ -134,21 +140,49 @@ export default function CaseDetailPage() {
             analyst_name: authUser.email,
             action_data: { reason: 'Blocked via Quick Action' }
           })
-          toast.success("Transaction blocked")
+          toast.success("blocked txn")
           // Refresh tx
           setTargetTx(prev => prev ? ({ ...prev, status: 'BLOCKED' }) : null)
+          // Mark case as resolved automatically
+          await handleStatusChange('Resolved')
           break
 
         case 'SAR':
-          // Just a simulation/placeholder for now
-          toast.success("SAR Draft generated and sent to email")
+          // Generate detailed SAR payload
+          const payload = {
+            report_type: 'SAR',
+            generated_at: new Date().toISOString(),
+            analyst: {
+              id: authUser.id,
+              email: authUser.email
+            },
+            subject: {
+              user_id: targetUser?.user_id || 'Unknown',
+              name: targetUser?.name || 'Unknown',
+              phone: targetUser?.phone || 'Unknown',
+              risk_score: targetUser?.risk_score || 0
+            },
+            incident: {
+              case_id: caseData.case_id,
+              transaction_id: targetTx?.transaction_id || 'N/A',
+              amount: targetTx?.amount || 0,
+              type: targetTx?.transaction_type || 'N/A',
+              fraud_probability: targetTx?.fraud_probability || 0,
+              timestamp: targetTx?.transaction_timestamp || 'N/A'
+            },
+            narrative: `Suspicious activity detected in transaction ${targetTx?.transaction_id}. Fraud score: ${((targetTx?.fraud_probability || 0) * 100).toFixed(1)}%. Initiating detailed review.`
+          }
+          
+          setSarData(payload)
+          toast.success("SAR generated. Ready for secure transfer.")
+
           await createAnalystAction({
             action_type: 'REPORT_FRAUD',
             transaction_id: caseData.transaction_id,
             user_id: caseData.user_id,
             analyst_id: authUser.id,
             analyst_name: authUser.email,
-            action_data: { type: 'SAR' }
+            action_data: { type: 'SAR', payload_preview: 'Generated via Quick Action' }
           })
           break
 
@@ -178,7 +212,86 @@ export default function CaseDetailPage() {
   if (!caseData) return <div className="p-12 text-center text-slate-500">Case not found</div>
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto relative">
+      {/* SAR Generation Modal / Overlay */}
+      {sarData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Icon name="verified_user" className="text-emerald-400" />
+                SAR Generated
+              </h3>
+              <button 
+                onClick={() => setSarData(null)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <Icon name="close" size={24} />
+              </button>
+            </div>
+            
+            <div className="p-8 flex flex-col items-center gap-6">
+              <div className="text-center space-y-2">
+                <p className="text-slate-300">Scan this QR code with your secure terminal to transfer the Suspicious Activity Report.</p>
+                <div className="inline-block bg-emerald-500/10 text-emerald-400 text-xs font-mono px-2 py-1 rounded">
+                  CASE-{caseId.slice(0,8).toUpperCase()}
+                </div>
+              </div>
+
+              {/* Force the QR to show and be interactive */}
+              <div className="bg-white p-4 rounded-xl shadow-lg transform scale-110">
+                 {/* 
+                    Using a modified version of QRDataBridge implicitly by just rendering it.
+                    Since QRDataBridge has its own toggle logic, we might need to trick it or 
+                    just rely on its default behavior. But here we want it OPEN by default if possible.
+                    However, the component controls its own state. 
+                    Ideally we would pass a prop `defaultOpen` but let's see if we can just wrap it nicely.
+                 */}
+                 <QRDataBridge 
+                   data={sarData} 
+                   label="SAR Payload" 
+                   variant="inline" 
+                 />
+              </div>
+
+              <div className="w-full bg-slate-950 rounded-lg p-4 border border-slate-800">
+                <h4 className="text-xs font-bold text-slate-500 uppercase mb-2">Payload Preview</h4>
+                <pre className="text-[10px] font-mono text-slate-400 overflow-x-auto whitespace-pre-wrap max-h-32">
+                  {JSON.stringify(sarData, null, 2)}
+                </pre>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  const blob = new Blob([JSON.stringify(sarData, null, 2)], { type: 'application/json' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `SAR_${caseId}.json`
+                  document.body.appendChild(a)
+                  a.click()
+                  document.body.removeChild(a)
+                  URL.revokeObjectURL(url)
+                  toast.success("SAR downloaded as JSON")
+                }}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-semibold text-sm transition-colors border border-slate-700 flex items-center gap-2"
+              >
+                <Icon name="download" size={16} />
+                Download JSON
+              </button>
+              <button 
+                onClick={() => setSarData(null)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
         <Link href="/dashboard/cases" className="hover:text-emerald-400 transition-colors">Cases</Link>
@@ -204,7 +317,32 @@ export default function CaseDetailPage() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {/* Navigation Tools */}
+          {caseData.user_id && (
+            <Link 
+              href={`/dashboard/profile/${caseData.user_id}`} 
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm"
+            >
+              <Icon name="hub" size={18} />
+              <span className="hidden xl:inline">Customer 360</span>
+            </Link>
+          )}
+          {caseData.transaction_id && (
+            <Link 
+              href={`/dashboard/simulator?txn=${caseData.transaction_id}`} 
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm"
+            >
+              <Icon name="radar" size={18} />
+              <span className="hidden xl:inline">Fraud Scanner</span>
+            </Link>
+          )}
+
+          {/* Divider */}
+          {(caseData.user_id || caseData.transaction_id) && (
+            <div className="w-px h-6 bg-slate-700 mx-1"></div>
+          )}
+
           {/* Status Actions - Placeholder for Quick Actions */}
           {caseData.status === 'Open' && (
             <button onClick={() => handleStatusChange('Investigating')} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-lg shadow-blue-900/20">
