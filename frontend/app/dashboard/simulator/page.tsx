@@ -394,7 +394,11 @@ function SimulatorContent() {
                         analystName={authUser?.email || 'Analyst'}
                       />
                       <div className="pt-2">
-                        <QRDataBridge data={lastTransaction} label="Transaction Handoff" />
+                        <QRDataBridge 
+                          data={lastTransaction} 
+                          label="Transaction Handoff" 
+                          variant="inline"
+                        />
                       </div>
                     </div>
                   )}

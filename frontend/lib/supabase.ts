@@ -360,6 +360,7 @@ export const updateCaseChecklist = async (
 }
 
 
+// Generate Demo Cases by seeding from ML API (Engineered Dataset)
 export const generateDemoCases = async (count: number = 5): Promise<Case[]> => {
   // 0. Cleanup: Remove old cases that are NOT Open or Investigating
   const { error: deleteError } = await supabase
@@ -371,33 +372,36 @@ export const generateDemoCases = async (count: number = 5): Promise<Case[]> => {
     console.error("Cleanup failed", deleteError)
   }
 
-  // 1. Try fetching from transactions (main)
-  let { data: transactions, error: txError } = await supabase
-    .from('transactions')
-    .select('transaction_id, sender_id, fraud_probability')
-    .in('fraud_decision', ['block', 'warn'])
-    .order('transaction_timestamp', { ascending: false })
-    .limit(50)
-
-  // 2. Fallback to transaction_history if empty
-  if (!transactions || transactions.length === 0) {
-    const { data: historyTx } = await supabase
-      .from('transaction_history')
-      .select('transaction_id, sender_id, fraud_probability')
-      .gt('fraud_probability', 0.5) // Filter high risk
-      .order('transaction_timestamp', { ascending: false })
-      .limit(50)
-
-    transactions = historyTx || []
+  // 1. Seed fresh data from the Engineered Dataset via ML API
+  // We use a random offset to get different cases each time
+  try {
+    const randomOffset = Math.floor(Math.random() * 500)
+    // Dynamically import seedQueue to avoid circular dependency issues at top level if any
+    const { seedQueue } = await import('@/lib/ml-api')
+    await seedQueue(count, randomOffset, true)
+  } catch (err) {
+    console.error("Failed to seed queue for cases:", err)
+    // Continue - maybe there's data already
   }
 
-  if (!transactions || transactions.length === 0) return []
+  // 2. Fetch the most recent high-risk transactions from history
+  // These will likely be the ones we just seeded
+  const { data: historyTx, error: txError } = await supabase
+    .from('transaction_history')
+    .select('transaction_id, sender_id, fraud_probability')
+    .gt('fraud_probability', 0.5) // Filter high risk
+    .eq('status', 'REVIEW') // Only pick ones that are pending review
+    .order('transaction_timestamp', { ascending: false })
+    .limit(count * 2) // Fetch a few more to ensure we find non-duplicates
+
+  if (txError) throw txError
+  if (!historyTx || historyTx.length === 0) return []
 
   // 3. Filter out those that might already be cases
   const { data: existingCases } = await supabase.from('cases').select('transaction_id')
   const existingTxIds = new Set(existingCases?.map(c => c.transaction_id) || [])
 
-  const candidates = transactions.filter(tx => !existingTxIds.has(tx.transaction_id))
+  const candidates = historyTx.filter(tx => !existingTxIds.has(tx.transaction_id))
   // Always take top candidates to maintain list
   const toCreate = candidates.slice(0, count)
 

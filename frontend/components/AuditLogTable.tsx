@@ -47,10 +47,10 @@ export const AuditLogDocument = ({ logs }: { logs: AuditLog[] }) => (
         </View>
         {logs.slice(0, 100).map((log, i) => (
           <View key={i} style={styles.tableRow}>
-             <View style={styles.tableCol}><Text style={styles.tableCell}>{format(new Date(log.created_at), 'MM/dd HH:mm:ss')}</Text></View>
-             <View style={styles.tableCol}><Text style={styles.tableCell}>{log.action_type}</Text></View>
-             <View style={styles.tableCol}><Text style={styles.tableCell}>{log.user_email || 'SYSTEM'}</Text></View>
-             <View style={styles.tableColLarge}><Text style={styles.tableCell}>{log.human_readable_message}</Text></View>
+            <View style={styles.tableCol}><Text style={styles.tableCell}>{format(new Date(log.created_at), 'MM/dd HH:mm:ss')}</Text></View>
+            <View style={styles.tableCol}><Text style={styles.tableCell}>{log.action_type}</Text></View>
+            <View style={styles.tableCol}><Text style={styles.tableCell}>{log.user_email || 'SYSTEM'}</Text></View>
+            <View style={styles.tableColLarge}><Text style={styles.tableCell}>{log.human_readable_message}</Text></View>
           </View>
         ))}
       </View>
@@ -72,7 +72,7 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({ onLogsLoaded }) =>
   useEffect(() => {
     fetchLogs()
     fetchActionTypes()
-    
+
     // Real-time subscription
     const subscription = supabase
       .channel('audit_logs_full')
@@ -91,7 +91,7 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({ onLogsLoaded }) =>
       const { data, error } = await supabase
         .from('audit_logs')
         .select('action_type')
-      
+
       if (error) throw error
       const types = Array.from(new Set(data.map(item => item.action_type)))
       setActionTypes(types)
@@ -108,13 +108,13 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({ onLogsLoaded }) =>
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100)
-      
+
       if (actionFilter !== 'ALL') {
         query = query.eq('action_type', actionFilter)
       }
 
       const { data, error } = await query
-      
+
       if (error) throw error
       setLogs(data)
       onLogsLoaded?.(data)
@@ -125,7 +125,7 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({ onLogsLoaded }) =>
     }
   }
 
-  const filteredLogs = logs.filter(log => 
+  const filteredLogs = logs.filter(log =>
     log.human_readable_message.toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.action_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (log.user_email && log.user_email.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -140,9 +140,9 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({ onLogsLoaded }) =>
           </h2>
           <p className="text-xs text-slate-500 mt-1 font-mono uppercase tracking-widest">Sovereign Defense Compliance Log</p>
         </div>
-        
+
         <div className="flex flex-wrap gap-3 w-full md:w-auto">
-          <select 
+          <select
             className="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-300 focus:border-emerald-500 outline-none"
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
@@ -154,9 +154,9 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({ onLogsLoaded }) =>
           </select>
 
           <div className="relative flex-grow md:flex-grow-0">
-            <input 
-              type="text" 
-              placeholder="Filter logs..." 
+            <input
+              type="text"
+              placeholder="Filter logs..."
               className="bg-slate-900 border border-slate-700 rounded px-4 py-2 text-sm focus:border-emerald-500 focus:outline-none w-full md:w-64 text-slate-300 pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -195,12 +195,12 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({ onLogsLoaded }) =>
                   </td>
                   <td className="p-4 text-slate-400">
                     <div className="flex items-center gap-2">
-                      <Icon name="user" size={14} className="text-slate-600" />
+                      <Icon name="person" size={14} className="text-slate-600" />
                       {log.user_email || 'SYSTEM_PROCESS'}
                     </div>
                   </td>
                   <td className="p-4 text-slate-500 italic text-xs">
-                    {log.resource_type ? `${log.resource_type}:${log.resource_id?.slice(0,8)}...` : 'N/A'}
+                    {log.resource_type ? `${log.resource_type}:${log.resource_id?.slice(0, 8)}...` : 'N/A'}
                   </td>
                   <td className="p-4 text-slate-300 max-w-md truncate" title={log.human_readable_message}>
                     {log.human_readable_message}
