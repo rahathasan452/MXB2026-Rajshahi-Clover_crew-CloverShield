@@ -186,6 +186,22 @@ export default function CaseDetailPage() {
           })
           break
 
+        case 'FRICTION':
+          if (!targetUser) {
+            toast.error("No user linked to this case")
+            break
+          }
+          // In a real app, this would call an API to enforce step-up auth
+          await createAnalystAction({
+            action_type: 'FLAG_ACCOUNT', // Re-using flag for now, or could be a custom type if DB supports it
+            user_id: targetUser.user_id,
+            analyst_id: authUser.id,
+            analyst_name: authUser.email,
+            action_data: { reason: 'Applied 2FA/Biometric Friction' }
+          })
+          toast.success("User challenged with 2FA/Biometrics")
+          break
+
         case 'EMAIL':
           toast.success("Verification email sent to user")
           break

@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react'
 import { Icon } from './Icon'
 
-export type QuickActionType = 'FREEZE' | 'BLOCK' | 'SAR' | 'EMAIL' | 'DISMISS' | 'APPROVE'
+export type QuickActionType = 'FREEZE' | 'BLOCK' | 'SAR' | 'EMAIL' | 'DISMISS' | 'APPROVE' | 'FRICTION'
 
 interface QuickActionToolbarProps {
   onAction: (action: QuickActionType) => void
@@ -40,6 +40,9 @@ export const QuickActionToolbar: React.FC<QuickActionToolbarProps> = ({
           break
         case 'a':
           onAction('APPROVE')
+          break
+        case 'v':
+          onAction('FRICTION')
           break
       }
     }
@@ -114,6 +117,14 @@ export const QuickActionToolbar: React.FC<QuickActionToolbarProps> = ({
           shortcut="S"
           colorClass="text-purple-500"
           desc="Draft Suspicious Activity Report"
+        />
+        <ActionButton
+          type="FRICTION"
+          label="Add Friction"
+          icon="fingerprint"
+          shortcut="V"
+          colorClass="text-pink-500"
+          desc="Force 2FA / Biometric Verify"
         />
         <ActionButton
           type="EMAIL"
