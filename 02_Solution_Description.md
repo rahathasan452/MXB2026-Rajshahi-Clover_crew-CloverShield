@@ -57,6 +57,12 @@ CloverShield transforms the role of a fraud analyst from a "spreadsheet reviewer
 - **Zero-Network Import:** Allows analysts to transfer investigation evidence (e.g., police reports, external bank statements) from a secure tablet to the air-gapped workstation using QR codes.
 - **Security:** Ensures no USB drives or internet connections are needed, maintaining the strict "Zero-Trust" environment.
 
+### 10. Code-Free Model Registry
+**The "Democratization Engine."**
+- **No Python Required:** A fully visual interface where analysts can upload a new CSV dataset, configure training parameters (or use auto-defaults), and launch a retraining job with one click.
+- **Version Control:** Automatically versions every model (v1, v2, v3). If a new model performs poorly, rollback to the previous version takes just 5 seconds.
+- **Hot-Swapping:** New models go live instantly without restarting the server or dropping a single transaction.
+
 ---
 
 ## Analyst Workflow: The Connected Ecosystem

@@ -62,6 +62,7 @@ Instead of asking banks to send their data to the cloud, we bring the AI to the 
 2.  **Investigate** using interactive network graphs and XAI (Explainable AI).
 3.  **Adapt** by backtesting new fraud rules in a safe "Policy Lab" environment.
 4.  **Govern** with immutable Audit Logs and automated SAR (Suspicious Activity Report) generation for BFIU compliance.
+5.  **Democratize** AI maintenance with a code-free training UI, allowing non-technical teams to keep the model fresh.
 
 ---
 
