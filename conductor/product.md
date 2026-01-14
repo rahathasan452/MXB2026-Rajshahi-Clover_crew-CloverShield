@@ -22,7 +22,7 @@
 -   **Policy Lab:** A sandbox environment for backtesting and deploying new fraud detection rules, allowing analysts to instantly block new vectors without model retraining.
 -   **Analyst Copilot:** An LLM-powered chatbot assistant that provides context-aware insights, explains fraud patterns, and drafts reports.
 -   **Audit Trail:** A comprehensive, immutable record of system activities, ML predictions, and analyst decisions, ensuring regulatory compliance and "Sovereign Defense" integrity.
--   **Case Management Station:** A dedicated workflow for deep-dive investigations, featuring persistent checklists, automated SAR generation for BFIU reporting, and collaborative tracking.
+- **Case Management Station:** A dedicated workflow for deep-dive investigations, featuring persistent checklists, automated SAR generation for BFIU reporting, and collaborative tracking through explicit analyst assignments.
 -   **Model Registry:** A code-free interface for uploading datasets, retraining models, and hot-swapping versions, democratizing AI maintenance for non-technical teams.
 -   **Model Health Monitor:** Real-time tracking of concept drift and system latency to ensure continued reliability.
 -   **Secure QR Data Bridge:** An air-gapped mechanism for importing external evidence via QR codes, maintaining the zero-trust environment.
