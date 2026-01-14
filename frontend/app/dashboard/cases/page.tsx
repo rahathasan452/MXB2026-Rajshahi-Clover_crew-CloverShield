@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { supabase, getOpenCases, Case, updateCaseStatus, generateDemoCases } from '@/lib/supabase'
+import { supabase, getOpenCases, Case, updateCaseStatus, generateDemoCases, getAnalystNames } from '@/lib/supabase'
 import { Icon } from '@/components/Icon'
 import { CaseStatusBadge, CasePriorityBadge } from '@/components/CaseStatusBadge'
 import { format } from 'date-fns'
@@ -14,6 +14,7 @@ export default function CasesPage() {
   const router = useRouter()
   const { authUser } = useAppStore()
   const [cases, setCases] = useState<Case[]>([])
+  const [analystNames, setAnalystNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'All' | 'Open' | 'Investigating' | 'Resolved'>('All')
@@ -44,7 +45,15 @@ export default function CasesPage() {
         .order('updated_at', { ascending: false })
 
       if (error) throw error
-      setCases(data || [])
+      const casesData = data || []
+      setCases(casesData)
+
+      // Fetch analyst names
+      const analystIds = casesData.map(c => c.analyst_id).filter(Boolean) as string[]
+      if (analystIds.length > 0) {
+        const names = await getAnalystNames(analystIds)
+        setAnalystNames(names)
+      }
     } catch (error) {
       console.error('Error fetching cases:', error)
     } finally {
@@ -242,7 +251,7 @@ export default function CasesPage() {
                       ) : (
                         <span className="flex items-center gap-1 text-xs text-slate-500" title={c.analyst_id}>
                           <Icon name="badge" size={12} />
-                          {c.analyst_id.slice(0, 8)}...
+                          {analystNames[c.analyst_id] || c.analyst_id.slice(0, 8) + '...'}
                         </span>
                       )
                     ) : (

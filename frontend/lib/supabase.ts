@@ -415,6 +415,27 @@ export const updateCaseChecklist = async (
   return data
 }
 
+export const getAnalystNames = async (analystIds: string[]): Promise<Record<string, string>> => {
+  const uniqueIds = Array.from(new Set(analystIds)).filter(Boolean)
+  if (uniqueIds.length === 0) return {}
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('user_id, name_en')
+    .in('user_id', uniqueIds)
+
+  if (error) {
+    // Fail silently (return empty map) rather than crashing UI
+    console.warn("Failed to fetch analyst names:", error.message)
+    return {}
+  }
+
+  return (data || []).reduce((acc: Record<string, string>, user: any) => {
+    acc[user.user_id] = user.name_en
+    return acc
+  }, {})
+}
+
 
 // Generate Demo Cases by seeding from ML API (Engineered Dataset)
 export const generateDemoCases = async (count: number = 5): Promise<Case[]> => {
