@@ -6,10 +6,12 @@ import { Icon } from '@/components/Icon'
 import { CaseStatusBadge, CasePriorityBadge } from '@/components/CaseStatusBadge'
 import { format } from 'date-fns'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
 import { toast } from 'react-hot-toast'
 
 export default function CasesPage() {
+  const router = useRouter()
   const { authUser } = useAppStore()
   const [cases, setCases] = useState<Case[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,7 +59,7 @@ export default function CasesPage() {
     }
 
     try {
-      await updateCaseStatus(caseId, 'Investigating', authUser.email || authUser.id)
+      await updateCaseStatus(caseId, 'Investigating', authUser.id)
       toast.success("Case assigned to you")
       fetchCases()
     } catch (error) {
@@ -176,6 +178,7 @@ export default function CasesPage() {
               <th className="p-4">Target</th>
               <th className="p-4">Priority</th>
               <th className="p-4">Status</th>
+              <th className="p-4">Analyst</th>
               <th className="p-4">Updated</th>
               <th className="p-4 text-right">Action</th>
             </tr>
@@ -230,16 +233,47 @@ export default function CasesPage() {
                   <td className="p-4">
                     <CaseStatusBadge status={c.status} />
                   </td>
+                  <td className="p-4 text-slate-300">
+                    {c.analyst_id ? (
+                      authUser && c.analyst_id === authUser.id ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+                          <Icon name="person" size={12} /> Me
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-xs text-slate-500" title={c.analyst_id}>
+                          <Icon name="badge" size={12} />
+                          {c.analyst_id.slice(0, 8)}...
+                        </span>
+                      )
+                    ) : (
+                      <button
+                        onClick={() => handleAssign(c.case_id)}
+                        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 text-xs transition-colors"
+                      >
+                        <Icon name="add" size={12} /> Assign to Me
+                      </button>
+                    )}
+                  </td>
                   <td className="p-4 text-slate-500">
                     {format(new Date(c.updated_at), 'MMM d, HH:mm')}
                   </td>
                   <td className="p-4 text-right">
-                    <Link
-                      href={`/dashboard/cases/${c.case_id}`}
+                    <button
+                      onClick={async () => {
+                        if (!c.analyst_id && authUser) {
+                          try {
+                            await updateCaseStatus(c.case_id, 'Investigating', authUser.id)
+                            toast.success("Case auto-assigned to you")
+                          } catch (e) {
+                            console.error("Auto-assign failed", e)
+                          }
+                        }
+                        router.push(`/dashboard/cases/${c.case_id}`)
+                      }}
                       className="inline-flex items-center gap-1 bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-md text-xs font-medium transition-all"
                     >
                       View <Icon name="arrow_forward" size={12} />
-                    </Link>
+                    </button>
                   </td>
                 </tr>
               ))
