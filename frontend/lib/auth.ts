@@ -29,6 +29,33 @@ export const signIn = async (email: string, password: string) => {
   })
 
   if (error) throw error
+
+  // Ensure public user profile exists (Client-side failover)
+  if (data.user) {
+    const { data: userProfile } = await supabase
+      .from('users')
+      .select('user_id')
+      .eq('user_id', data.user.id)
+      .single()
+
+    if (!userProfile) {
+      console.log('User profile missing, creating fallback...')
+      await supabase.from('users').insert({
+        user_id: data.user.id,
+        name_en: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+        // Fallback phone formatted to fit potential constraints if migration failed; 
+        // ideally migration 025 fixed column width but we stay safe.
+        phone: data.user.phone || data.user.email || 'No-Contact',
+        provider: 'Auth',
+        balance: 0,
+        account_age_days: 0,
+        verified: false,
+        kyc_complete: false,
+        risk_level: 'low'
+      })
+    }
+  }
+
   return data
 }
 
