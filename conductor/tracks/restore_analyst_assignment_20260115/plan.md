@@ -1,4 +1,4 @@
-# Plan: Restore Analyst Assignment
+# Plan: Restore Analyst Assignment [checkpoint: 24a5d7e]
 
 ## 1. Frontend Implementation
 - [x] **Update Cases Table UI** (3d32d79)
