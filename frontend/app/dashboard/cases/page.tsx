@@ -220,7 +220,7 @@ export default function CasesPage() {
                   </td>
                   <td className="p-4 text-slate-300">
                     {c.user_id ? (
-                      <Link 
+                      <Link
                         href={`/dashboard/profile/${c.user_id}`}
                         className="flex items-center gap-2 hover:text-emerald-400 transition-colors"
                         title="View Customer 360"
@@ -251,7 +251,11 @@ export default function CasesPage() {
                       ) : (
                         <span className="flex items-center gap-1 text-xs text-slate-500" title={c.analyst_id}>
                           <Icon name="badge" size={12} />
-                          {analystNames[c.analyst_id] || c.analyst_id.slice(0, 8) + '...'}
+                          {analystNames[c.analyst_id] ? (
+                            analystNames[c.analyst_id]
+                          ) : (
+                            <span className="font-mono opacity-70">Case Officer {c.analyst_id.slice(0, 6)}</span>
+                          )}
                         </span>
                       )
                     ) : (

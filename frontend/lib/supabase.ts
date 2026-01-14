@@ -222,13 +222,13 @@ export const updateTransaction = async (
   if (error) {
     // If not found in main table, try transaction_history
     if (error.code === 'PGRST116') {
-       const { data: histData, error: histError } = await supabase
+      const { data: histData, error: histError } = await supabase
         .from('transaction_history')
         .update(updates)
         .eq('transaction_id', transactionId)
         .select()
         .single()
-      
+
       if (histError) throw histError
       return { ...histData, is_simulated: true }
     }
@@ -252,9 +252,9 @@ export const createAnalystAction = async (action: {
   if (finalAction.user_id) {
     const u = await getUser(finalAction.user_id)
     if (u && u.is_from_test_dataset) {
-      finalAction.action_data = { 
-        ...finalAction.action_data, 
-        simulated_user_id: finalAction.user_id 
+      finalAction.action_data = {
+        ...finalAction.action_data,
+        simulated_user_id: finalAction.user_id
       }
       finalAction.user_id = undefined // Remove FK
     }
@@ -264,9 +264,9 @@ export const createAnalystAction = async (action: {
   if (finalAction.transaction_id) {
     const tx = await getTransaction(finalAction.transaction_id)
     if (tx && tx.is_simulated) {
-      finalAction.action_data = { 
-        ...finalAction.action_data, 
-        simulated_transaction_id: finalAction.transaction_id 
+      finalAction.action_data = {
+        ...finalAction.action_data,
+        simulated_transaction_id: finalAction.transaction_id
       }
       finalAction.transaction_id = undefined // Remove FK
     }
@@ -419,21 +419,45 @@ export const getAnalystNames = async (analystIds: string[]): Promise<Record<stri
   const uniqueIds = Array.from(new Set(analystIds)).filter(Boolean)
   if (uniqueIds.length === 0) return {}
 
-  const { data, error } = await supabase
+  // 1. Try fetching from public.users table
+  const { data: usersData, error } = await supabase
     .from('users')
     .select('user_id, name_en')
     .in('user_id', uniqueIds)
 
   if (error) {
-    // Fail silently (return empty map) rather than crashing UI
-    console.warn("Failed to fetch analyst names:", error.message)
-    return {}
+    console.warn("Failed to fetch analyst names from users:", error.message)
   }
 
-  return (data || []).reduce((acc: Record<string, string>, user: any) => {
+  const names = (usersData || []).reduce((acc: Record<string, string>, user: any) => {
     acc[user.user_id] = user.name_en
     return acc
   }, {})
+
+  // 2. Identify missing IDs
+  const foundUserIds = new Set(Object.keys(names))
+  const missingIds = uniqueIds.filter(id => !foundUserIds.has(id))
+
+  // 3. Fallback: Try fetching from analyst_actions (where name might be cached)
+  if (missingIds.length > 0) {
+    const { data: actionData } = await supabase
+      .from('analyst_actions')
+      .select('analyst_id, analyst_name')
+      .in('analyst_id', missingIds)
+      .not('analyst_name', 'is', null)
+      .limit(100)
+
+    if (actionData) {
+      actionData.forEach((action: any) => {
+        // Use the first found valid name
+        if (action.analyst_name && !names[action.analyst_id]) {
+          names[action.analyst_id] = action.analyst_name
+        }
+      })
+    }
+  }
+
+  return names
 }
 
 
