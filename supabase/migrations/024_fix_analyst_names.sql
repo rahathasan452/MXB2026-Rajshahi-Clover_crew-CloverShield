@@ -1,5 +1,5 @@
 -- Migration: Fix user_id schema and populate analysts
--- v3: Fixes Unique Phone Constraint Violation
+-- v4: Graceful handling of simulated users (No FK on cases.user_id)
 
 BEGIN;
 
@@ -48,14 +48,11 @@ ALTER TABLE cases ALTER COLUMN user_id TYPE TEXT;
 -- ============================================================================
 -- 2.5 CLEANUP ORPHANS (Fixes 23503 Violation)
 -- ============================================================================
--- Delete cases where the user_id does not exist in the users table relative to old schema
--- NOTE: Since we are widening types, we don't strictly *need* to delete if the ID format was the only issue,
--- but the error showed strictly missing keys. Best to clean up consistency.
-
-DELETE FROM cases WHERE user_id IS NOT NULL AND user_id NOT IN (SELECT user_id FROM users);
+-- Delete broken links to ensure clean state for critical tables
 DELETE FROM flagged_accounts WHERE user_id IS NOT NULL AND user_id NOT IN (SELECT user_id FROM users);
-DELETE FROM transactions WHERE sender_id NOT IN (SELECT user_id FROM users);
-DELETE FROM transactions WHERE receiver_id NOT IN (SELECT user_id FROM users);
+-- Note: We SKIP deleting cases orphans because we want to allow simulated cases even if user doesn't exist
+-- But since we are NOT re-adding the FK for cases, we don't need to delete them! 
+-- (Unless the type conversion fails? TEXT conversion is usually permissive)
 
 -- ============================================================================
 -- 3. RE-ESTABLISH FOREIGN KEYS
@@ -68,8 +65,10 @@ ALTER TABLE flagged_accounts
   ADD CONSTRAINT flagged_accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE;
 ALTER TABLE analyst_actions 
   ADD CONSTRAINT analyst_actions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL;
-ALTER TABLE cases 
-  ADD CONSTRAINT cases_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL;
+
+-- WARNING: We explicitly DO NOT re-add cases_user_id_fkey to allow "Simulated Cases" 
+-- where the user_id might not exist in the users table.
+-- ALTER TABLE cases ADD CONSTRAINT cases_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL;
 
 -- ============================================================================
 -- 4. RECREATE POLICIES
@@ -129,9 +128,6 @@ CREATE POLICY "Users can view own LLM explanations" ON llm_explanations
 -- 5. BACKFILL ANALYSTS
 -- ============================================================================
 
--- We insert auth users into public.users so they can be referenced by cases/analyst names.
--- To satisfy the UNIQUE constraint on 'phone', we generate a unique pseudo-phone for analysts.
-
 INSERT INTO public.users (
     user_id,
     name_en,
@@ -153,8 +149,7 @@ SELECT
       split_part(au.email, '@', 1),
       'Analyst'
     ),
-    -- FIX: Use a unique fallback for phone instead of 'N/A'
-    -- 'Sys-' + first 12 chars of UUID (Sys-12345678-abc) fits in VARCHAR(20)
+    -- Unique phone for analysts
     COALESCE(au.phone, 'Sys-' || substr(au.id::text, 1, 12)),
     'System',
     0.00,
