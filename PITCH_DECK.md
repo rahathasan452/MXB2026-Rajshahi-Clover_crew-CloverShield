@@ -1,177 +1,131 @@
 # 📊 Pitch Deck: CloverShield Sovereign AI
-**Target Audience:** Judges, Investors, Bank CIOs  
 **Theme:** "Ship the Code, Not the Data"
+**Event:** National AI Build-a-thon 2026 (MXB2026)
 
 ---
 
-## 🟢 Slide 1: Title Card
-**Visual:** Large CloverShield Logo (Neon Green Shield) on Dark Background.
-**Text:**
+## 🟢 Slide 1: The Hook
+**Visual:** A split screen. Left side: A bank vault (Locked Data). Right side: A futuristic AI brain (Cloud Intelligence). A jagged lightning bolt separates them.
+**Headline:**
+# The Privacy Paradox
+### Banks have a choice: Stay Secure & Dumb, or Go Cloud & Illegal.
+**Subtext:** "You can't upload citizen financial data to the cloud. But you can't fight modern fraud with 1990s Excel sheets. The industry is in a deadlock."
+
+---
+
+## 🔴 Slide 2: The Pain (Why Now?)
+**Visual:** 3 Big Red Stats/Icons.
+1.  **$X Billion Lost:** To syndicate fraud & mule networks.
+2.  **0 Data Sharing:** Strict National Sovereignty Laws inhibit cloud SaaS.
+3.  **Overwhelmed Analysts:** Human reviewers drowning in false positives without tools.
+
+**Script:** "Fraud is evolving into organized crime. But our banks are fighting back with one hand tied behind their back—unable to use global AI tools due to strict data residency laws."
+
+---
+
+## 🟢 Slide 3: The Solution
+**Visual:** Hero Shot of the **CloverShield Workstation** (Dark Mode Dashboard on a Monitor).
+**Headline:**
 # CloverShield
 ### The Sovereign AI Fraud Analyst Workstation
-**Team:** Clover Crew (Rajshahi) | **Event:** National AI Build-a-thon 2026
+**The Big Idea:** "We don't ask you to send your data to the AI. We send the AI to your data."
 
 ---
 
-## 🔴 Slide 2: The Privacy Paradox (The Problem)
-**Visual:** A Mermaid Mindmap showing the deadlock banks face.
+## 🔵 Slide 4: Under the Hood (The Ecosystem)
+**Visual:** Exploded view of the workstation capabilities.
 
-```mermaid
-mindmap
-  root((THE_DEADLOCK))
-    Fraud_is_Evolving
-      Syndicate_Attacks
-      Mule_Networks
-      Real_time_Speed
-    Banks_Handcuffed
-      Cannot_Share_Data
-      Cloud_AI_Illegal
-      Privacy_Laws_BD
-    The_Result
-      Outdated_Rules
-      Blind_Analysts
-      Billions_Lost
-```
+| 🧠 **Fraud Scanner (Hybrid)** | 🖥️ **Mission Control** |
+| :--- | :--- |
+| **Hybrid Logic:** XGBoost (AI) + SQL Rules (Policy). <br> *Combines predictive power with hard safety nets.* | **The Dashboard:** Real-time investigative queue prioritizing the top 1% of threats. |
 
-**Script:** "Banks in Bangladesh are fighting 21st-century fraud with 20th-century tools. Why? Because they can't upload sensitive data to the cloud AI giants. They are trapped in a deadlock."
+| 🕸️ **Customer 360** | 🤖 **Analyst Copilot** |
+| :--- | :--- |
+| **Network Graph:** Visualizes money trails to spot "Mule Rings" instantly. | **Local LLM:** A 24/7 AI Assistant that explains fraud in **Bangla & English**. |
 
 ---
 
-## 🟡 Slide 3: The Market Gap
-**Visual:** Quadrant Chart positioning CloverShield.
+## 🟣 Slide 5: The "Secret Sauce" (Why Us?)
+**Visual:** A comparison showing our unique "Sovereign Tech Stack."
+
+1.  **No-Code Model Registry:** Banks can retrain models with one click. **No Python required.**
+2.  **Policy Lab (Sandbox):** Test new "Zero-Day" fraud rules on historical data before going live.
+3.  **Air-Gapped QR Bridge:** Zero-trust way to import external evidence without any network connection.
+
+**Script:** "We built features that competitors can't copy because they rely on the cloud. Our Policy Lab and Air-Gapped architecture are designed specifically for the secure, high-stakes environment of Bangladeshi banking."
+
+---
+
+## 📁 Slide 6: Operational Excellence & Compliance
+**Visual:** A "Digital Dossier" icon and a PDF export icon.
+
+*   **Organized Case Files:** A unified workspace for every investigation—evidence, notes, and checklists in one place.
+*   **One-Click SAR Export:** Automatically generate **Suspicious Activity Reports (SAR)** formatted for regulatory compliance (BFIU).
+*   **Secure Data Transfer:** The **QR Bridge** allows analysts to pull in external evidence (police docs) without ever breaking the air-gap.
+
+**Script:** "We don't just detect fraud; we manage the entire investigation lifecycle. From organized case files to automated reporting, we save analysts hours of manual paperwork."
+
+---
+
+## 🟡 Slide 7: Competitive Landscape
+**Visual:** Quadrant Chart.
 
 ```mermaid
 quadrantChart
-    title "The Sovereign Gap"
-    x-axis "Low Privacy (Cloud)" --> "High Privacy (On-Prem)"
-    y-axis "Low Intelligence (Rules)" --> "High Intelligence (AI)"
+    title "The Sovereign Advantage"
+    x-axis "Unsafe (Cloud)" --> "Secure (On-Prem)"
+    y-axis "Dumb (Rules)" --> "Intelligent (GenAI)"
     quadrant-1 "CloverShield"
     quadrant-2 "Legacy Systems"
     quadrant-3 "Spreadsheets"
     quadrant-4 "Global SaaS"
     "Legacy Systems": [0.8, 0.3]
     "Global SaaS": [0.2, 0.9]
-    "CloverShield": [0.9, 0.9]
+    "CloverShield": [0.9, 0.95]
 ```
 
-**Script:** "Existing solutions force a choice: Smart but Risky (Cloud AI) or Safe but Dumb (Legacy Rules). CloverShield creates a new category: **High Intelligence, Zero Data Leakage.**"
+**Script:** "Competitors exist in the 'High AI / Low Privacy' quadrant or the 'High Privacy / Low AI' quadrant. CloverShield stands alone: **Sovereign Intelligence.**"
 
 ---
 
-## 🟢 Slide 4: The Solution - A Sovereign Workstation
-**Visual:** 4-Icon Layout representing the modules.
+## 🟠 Slide 7: Business Model & Traction
+**Visual:** Simple "Land & Expand" Graphic.
 
-| 🖥️ **Mission Control** | 🧠 **Fraud Scanner** |
-| :--- | :--- |
-| **The Dashboard.** <br> localized "Heads-Up Display" prioritizing the top 1% of threats. | **The Engine.** <br> Real-time XGBoost + LLM Explanations (<200ms). |
+1.  **The Product:** "Zero-Trust Container License." (Annual recurring fee per node).
+2.  **The Service:** "Support & Custom Rule Development."
+3.  **Deployment:** **Dockerized.** Deploys in minutes, not months.
 
-| 🕸️ **Customer 360** | 🧪 **Policy Lab** |
-| :--- | :--- |
-| **The Lens.** <br> Network Graph to spot "Mule Rings" instantly. | **The Sandbox.** <br> Test new rules on history before going live. |
-
-**Script:** "We built a unified workstation. It brings the AI *to* the data, running entirely inside the bank's secure walls."
+**Script:** "We sell peace of mind in a box. One command (`docker-compose up`) deploys a bank-grade fraud system. No complex integration projects."
 
 ---
 
-## 🔵 Slide 5: How It Works (Architecture)
-**Visual:** Simplified "Zero-Trust" Diagram.
+## 🔴 Slide 8: The Vision (Roadmap)
+**Visual:** A Map of Bangladesh connecting dots.
 
-```mermaid
-graph LR
-    subgraph "BANK SECURE ZONE (Air-Gapped)"
-        DATA[(Private Data)]
-        
-        subgraph "CloverShield Container"
-            API[AI Engine]
-            UI[Analyst Dash]
-        end
-        
-        DATA <--> API
-        API <--> UI
-    end
-    
-    INTERNET((Internet)) 
-    INTERNET -.->|NO CONNECTION| API
-    
-    style API fill:#00ff00,color:#000
-    style INTERNET fill:#ff0000,color:#fff
-```
+*   **Now (Phase 1):** Secure the **Single Analyst** (Workstation).
+*   **Next (Phase 2):** Secure the **Bank** (Enterprise Cluster).
+*   **Future (Phase 3):** Secure the **Nation** (Federated Learning).
 
-**Script:** "This is our 'Zero-Trust' architecture. We ship the code in a Docker container. You plug it in. No data ever touches the internet."
-
----
-
-## 🟣 Slide 6: The Innovation - Explainable AI (XAI)
-**Visual:** Bar Chart of SHAP Values (The "Why").
-
-```mermaid
-gantt
-    title "Transaction #98221 Analysis"
-    dateFormat X
-    axisFormat %s
-    section Risk Drivers
-    New Device Used       : 0, 80
-    2AM Transaction       : 0, 60
-    High Amount (>50k)    : 0, 40
-    section Mitigators
-    Known Beneficiary     : 0, 10
-```
-
-**Script:** "We don't just say 'Block'. We tell the analyst *why*. Our local LLM translates these math scores into plain Bangla: 'This user is sending 50k at 2 AM from a new device.'"
-
----
-
-## 🟠 Slide 7: Unfair Advantage
-**Visual:** Comparison Table.
-
-| Feature | ☁️ Cloud AI | 🤖 Legacy Rules | 🛡️ CloverShield |
-| :--- | :---: | :---: | :---: |
-| **Data Privacy** | ❌ Unsafe | ✅ Safe | ✅ **Safe** |
-| **Detection Power** | ✅ High | ❌ Low | ✅ **High** |
-| **Latency** | ⚠️ >500ms | ✅ <10ms | ✅ **<200ms** |
-| **Deployment** | ⚠️ Months | ✅ Weeks | ✅ **Minutes (Docker)** |
-
----
-
-## 🔴 Slide 8: Roadmap & Business Model
-**Visual:** Timeline.
-
-```mermaid
-sequenceDiagram
-    participant P1 as Phase 1: MVP
-    participant P2 as Phase 2: Enterprise
-    participant P3 as Phase 3: National Grid
-
-    Note over P1: "Sovereign Workstation"<br/>(Single Node)
-    P1->>P2: Add K8s & LDAP
-    Note over P2: "Connected Defense"<br/>(Bank-Wide)
-    P2->>P3: Federated Learning
-    Note over P3: "National Immunity"<br/>(Central Bank Node)
-```
-
-**Script:** "We start by securing one analyst. We scale to secure the bank. Finally, using Federated Learning, we secure the nation—without sharing a single byte of private data."
+**Script:** "We start by empowering the individual analyst. But our endgame is **Federated Learning**—connecting every bank in Bangladesh to a shared defense grid without ever sharing a single byte of private customer data."
 
 ---
 
 ## 🟢 Slide 9: Team Clover Crew
-**Visual:** 2-Column Photo Layout.
-
-| **[Team Lead]** | **[Member]** |
-| :---: | :---: |
-| **The Architect & Technical Lead** | **Presentation & Strategy** |
-| *System Design & Technical Implementation* | *Presentation, Promotion, Documentation* |
-| [Placeholder Img] | [Placeholder Img] |
-
-**Script:** "We are Clover Crew. A fused unit of technical architecture and strategic execution."
+**Visual:** Photos of the team.
+**Tagline:** "Architects of Sovereign AI."
+*   **Engineering:** Full-stack & ML capability.
+*   **Strategy:** Deep understanding of the Fintech landscape.
 
 ---
 
 ## 🟢 Slide 10: The Ask
-**Visual:** Big QR Code & Contact Info.
+**Visual:** A terminal window with a blinking cursor.
+```bash
+$ docker-compose up clovershield
+Starting defense protocols... [OK]
+```
 
-# Ready to Secure the Future?
-### Deploy CloverShield Today.
+# Ready to Deploy?
+### Safe. Smart. Sovereign.
 
-`docker-compose up`
-
----
+**Contact:** Clover Crew | Rajshahi
