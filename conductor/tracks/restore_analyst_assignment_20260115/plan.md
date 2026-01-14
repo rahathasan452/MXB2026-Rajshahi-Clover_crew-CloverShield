@@ -17,6 +17,13 @@
   - If unassigned, call `handleAssign` (or equivalent API) before navigating (or fire-and-forget).
   - Navigate to the case detail page.
 
+- [x] **Display Analyst Names** (41269b3)
+  - Edit `frontend/lib/supabase.ts`: Add `getAnalystNames` function to fetch `name_en` from `users` table for a list of IDs.
+  - Edit `frontend/app/dashboard/cases/page.tsx`:
+    - Fetch analyst names when cases are loaded.
+    - Create a map of ID -> Name.
+    - Display the name in the table cell.
+
 ## 2. Verification
 - [x] **Manual Verification** (3d32d79)
   - Spin up the dev server.
