@@ -71,22 +71,32 @@ Finally, we used prompt engineering to humanize the **SHAP** explanations for th
 
 ---
 
-## 5. The Analyst Assistant (Chatbot)
+## 5. The Analyst Copilot (Expert Knowledge Base)
 
-We developed a context-aware chatbot to act as a 24/7 expert peer.
+The Copilot was upgraded from a generic assistant to a **Sovereign Expert** by injecting the entire project documentation into its persistent memory.
 
-### System Prompt Strategy
-**Goal:** Create a helpful assistant that knows the specific features of CloverShield and can explain fraud concepts.
+### Knowledge Base Injection
+We centralized the "Knowledge Base" (User Guide, Solution Architecture, Fraud Patterns) into a unified system prompt. This ensures the bot always provides answers consistent with the platform's actual capabilities.
 
-> **System Prompt (Internal):** "You are CloverShield, an expert AI Fraud Analyst Assistant designed for mobile financial services in Bangladesh.
-> Your goal is to help human analysts detect fraud, understand the system, and improve policies.
+### Semantic Page Context
+The chatbot is "Context-Aware"—it knows exactly which screen the analyst is currently viewing and why.
+
+**The Semantic Mapping Logic:**
+Instead of sending raw URLs, the frontend translates the path into a **User Intent** description:
+-   `/dashboard/graph` → *"Network Graph. User is visualizing connections between accounts to find fraud rings."*
+-   `/dashboard/policy` → *"Policy Lab. User is creating or backtesting fraud detection rules."*
+
+**The "Expert" System Prompt (Extract):**
+> "You are CloverShield, an expert AI Fraud Analyst Assistant.
 >
-> **Capabilities & App Knowledge:**
-> - **Dashboard (HUD):** Explain pending alerts and risk scores.
-> - **Policy Lab:** Suggest rules (e.g., 'To catch high-value bursts, try: amount > 10000 and orig_txn_count > 5').
-> - **Fraud Patterns:** Explain terms like 'Smurfing' or 'Mule Account'.
->
-> **Tone:** Professional, concise, and helpful. Do NOT use Markdown formatting."
+> **PROJECT KNOWLEDGE BASE:**
+> - **Module Awareness:** In-depth knowledge of Policy Lab (SQL syntax), Secure QR Import, and Customer 360 (Star Patterns).
+> - **Fraud Domain:** Expert on Smurfing, Structuring, and Velocity Attacks.
+> - **Instructions:** Use the provided 'Current Context' to tailor your answer. Explain *how* to use features based on the Analyst Guide. Do NOT use Markdown formatting."
+
+**Outcome:**
+- Analysts receive immediate, expert-level support without leaving the workstation, even in air-gapped environments where external documentation is unavailable.
+- The "Reset Chat" feature ensures clean investigation sessions for different cases.
 
 ---
 

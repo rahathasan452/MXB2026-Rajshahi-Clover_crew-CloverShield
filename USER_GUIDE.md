@@ -27,7 +27,10 @@ Once a case is open, use the following tools to gather intelligence:
     *   Look for **"Star Patterns"** (one central node receiving funds from many sources).
     *   Red nodes indicate known high-risk accounts.
 *   **Analyst Copilot:**
-    *   Open the Chat window.
+    *   Open the Chat window in the bottom-right corner.
+    *   **Context Aware:** The bot knows which page you are on (e.g., Graph vs. Scanner) and will give relevant advice.
+    *   **Knowledge Base:** Ask any "How to..." question about the platform. It has read this entire guide!
+    *   **Reset Chat:** Click the **Refresh Icon** in the chat header to clear history before starting a new investigation.
     *   Ask: *"Has this user sent money to this recipient before?"* or *"What is the typical behavior for this account age?"*
 
 ### Step 3: Making a Decision

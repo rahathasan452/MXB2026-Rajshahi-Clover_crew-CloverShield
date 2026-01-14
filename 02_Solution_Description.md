@@ -38,10 +38,12 @@ CloverShield transforms the role of a fraud analyst from a "spreadsheet reviewer
 - **Connected Workflow:** Seamlessly jump from an alert to the Graph, then to a Case, and finally to the Policy Lab to patch the vulnerability.
 
 ### 6. The Analyst Copilot (AI Chatbot)
-**The "24/7 Expert Assistant."**
-- **Natural Language Queries:** "Show me all high-risk transfers from the last hour" or "Explain the Smurfing pattern."
-- **Context-Aware Help:** The bot understands the current screen (e.g., viewing a specific user) and offers relevant insights.
-- **Automated Drafting:** Asks the analyst for key details and drafts a formal investigation report in seconds.
+**The "24/7 Expert Assistant & Knowledge Base."**
+- **Semantic Context Awareness:** The bot understands your current workflow. If you are on the **Network Graph**, it offers tips on spotting "Star Schemes." If you are in the **Policy Lab**, it suggests SQL-like rules.
+- **Project Knowledge Base:** Pre-loaded with the entire **CloverShield Analyst Manual**, the bot can answer any "How to..." question instantly without internet access.
+- **Fraud Analysis:** Explain complex patterns like "Smurfing" (structuring) or "Mule Networks."
+- **Automated Drafting:** Asks for key details and drafts formal investigation reports in seconds.
+- **Session Control:** Integrated **Reset Chat** allows for clean handovers between different case investigations.
 
 ### 7. Compliance & Governance
 **The "Regulatory Shield" & "Analyst Watchdog".**
