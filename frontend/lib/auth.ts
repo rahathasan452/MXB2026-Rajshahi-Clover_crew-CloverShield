@@ -41,6 +41,11 @@ export const signOut = async () => {
     // If the session is missing, we are effectively already signed out.
     // We can ignore this specific error to allow the UI to clean up gracefully.
     if (error.message.includes('Auth session missing')) {
+      // Forcefully clear local storage to ensure client state is reset
+      // This prevents the 'AuthProvider' from re-hydrating the dead session
+      if (typeof window !== 'undefined') {
+        window.localStorage.clear()
+      }
       return
     }
     throw error
